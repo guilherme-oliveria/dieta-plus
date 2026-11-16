@@ -2,7 +2,7 @@
 # Ensaio de produção sem VPS (A9): sobe o compose.prod.yaml de verdade (app + Postgres 18 + Caddy + backup) com DOMINIO=localhost,
 # o Caddy usa a CA interna (certificado de teste), e confere readiness, web, API, logs JSON, 426, CORS, cookie do refresh, backup e restauração.
 # Uso: ops/ensaio-producao-wsl.sh        (resultado em build/ensaio-producao.txt; roteiro em docs/operacao/ensaio-producao.md)
-# Variáveis: DIETA_WEB_DIST (padrão ../dieta-mobile/webApp/build/dist/wasmJs/productionExecutable), ENSAIO_MANTER=1 (não derruba no fim).
+# Variáveis: DIETA_WEB_DIST (padrão ../mobile/webApp/build/dist/wasmJs/productionExecutable), ENSAIO_MANTER=1 (não derruba no fim).
 # Usa um projeto Compose próprio (dietamais-ensaio) e segredos descartáveis num diretório temporário: nada vai para o Git nem toca no seu banco.
 # Precisa das portas 80 e 443 livres no WSL.
 set -uo pipefail
@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 raiz=$PWD
 mkdir -p build
 saida=build/ensaio-producao.txt
-dist=${DIETA_WEB_DIST:-$raiz/../dieta-mobile/webApp/build/dist/wasmJs/productionExecutable}
+dist=${DIETA_WEB_DIST:-$raiz/../mobile/webApp/build/dist/wasmJs/productionExecutable}
 tmp=$(mktemp -d)
 projeto=dietamais-ensaio
 falhas=0

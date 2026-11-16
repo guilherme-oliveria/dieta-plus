@@ -1,0 +1,49 @@
+# Diz quais projetos do monorepo mudaram (backend/, mobile/). Usado por ci.yml e develop.yml.
+# Mudança em .github/workflows/ conta para os dois. Push em main, release/** e workflow_dispatch: sempre os dois.
+name: mudancas
+
+on:
+  workflow_call:
+    outputs:
+      backend:
+        value: ${{ jobs.mudancas.outputs.backend }}
+      mobile:
+        value: ${{ jobs.mudancas.outputs.mobile }}
+
+permissions:
+  contents: read
+
+jobs:
+  mudancas:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.f.outputs.backend }}
+      mobile: ${{ steps.f.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: f
+        env:
+          EVENTO: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BASE_PR: ${{ github.event.pull_request.base.sha }}
+          ANTES: ${{ github.event.before }}
+        run: |
+          todos() { echo "backend=true" >> "$GITHUB_OUTPUT"; echo "mobile=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          case "$EVENTO:$REF" in
+            workflow_dispatch:*|push:refs/heads/main|push:refs/heads/release/*) todos ;;
+          esac
+          base=""
+          [ "$EVENTO" = pull_request ] && base="$BASE_PR"
+          [ "$EVENTO" = push ] && base="$ANTES"
+          case "$base" in ""|0000000000000000000000000000000000000000) todos ;; esac
+          git cat-file -e "$base^{commit}" 2>/dev/null || todos
+          arquivos=$(git diff --name-only "$base" "$GITHUB_SHA")
+          echo "$arquivos"
+          comum=$(echo "$arquivos" | grep -c '^\.github/workflows/' || true)
+          for p in backend mobile; do
+            n=$(echo "$arquivos" | grep -c "^$p/" || true)
+            [ $((n + comum)) -gt 0 ] && v=true || v=false
+            echo "$p=$v" >> "$GITHUB_OUTPUT"
+          done

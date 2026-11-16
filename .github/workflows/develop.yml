@@ -1,0 +1,66 @@
+# Cada merge em develop: testa só o que mudou e cria a tag de pré-release vX.(Y+1).0-dev.N (uma por merge, do repositório todo).
+# Para forçar outra próxima versão (ex.: 2.0.0), crie a variável de repositório PROXIMA_VERSAO=2.0.0.
+name: develop
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-develop
+  cancel-in-progress: false
+
+jobs:
+  mudancas:
+    uses: ./.github/workflows/_mudancas.yml
+
+  backend:
+    needs: mudancas
+    if: needs.mudancas.outputs.backend == 'true'
+    uses: ./.github/workflows/_backend.yml
+
+  mobile:
+    needs: mudancas
+    if: needs.mudancas.outputs.mobile == 'true'
+    uses: ./.github/workflows/_mobile.yml
+    with:
+      ios: false
+
+  tag:
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    needs: [mudancas, backend, mobile]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Calcula a versão de desenvolvimento
+        id: versao
+        env:
+          PROXIMA: ${{ vars.PROXIMA_VERSAO }}
+        run: |
+          ultima=$(git tag -l 'v[0-9]*' 'backend-v[0-9]*' 'mobile-v[0-9]*' | sed -E 's/^(backend-|mobile-)?v//' | grep -v -- - | sort -V | tail -n1 || true)
+          ultima="${ultima:-0.0.0}"
+          IFS=. read -r maj min _ <<<"$ultima"
+          base="v${maj}.$((min + 1)).0"
+          if [ -n "$PROXIMA" ]; then
+            maior=$(printf '%s\n%s\n' "${PROXIMA#v}" "${base#v}" | sort -V | tail -n1)
+            base="v$maior"
+          fi
+          n=$(git tag -l "${base}-dev.*" | sed "s/^${base}-dev\.//" | grep -E '^[0-9]+$' | sort -n | tail -n1 || true)
+          tag="${base}-dev.$(( ${n:--1} + 1 ))"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Tag de develop: $tag (última estável: v$ultima)"
+
+      - name: Cria a tag
+        env:
+          TAG: ${{ steps.versao.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
