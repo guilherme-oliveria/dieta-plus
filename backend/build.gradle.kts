@@ -34,7 +34,7 @@ dependencies {
 	implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10")
 	implementation("org.apache.pdfbox:pdfbox:2.0.35")
 	implementation("org.apache.pdfbox:fontbox:2.0.35")
-	implementation("org.apache.pdfbox:xmpbox:2.0.35")
+	implementation("org.apache.pdfbox:xmpbox:3.0.8")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-liquibase")
 	implementation("org.liquibase:liquibase-core")
