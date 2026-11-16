@@ -20,7 +20,7 @@ jobs:
       backend: ${{ steps.f.outputs.backend }}
       mobile: ${{ steps.f.outputs.mobile }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: f
