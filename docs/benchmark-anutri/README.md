@@ -9,6 +9,7 @@
 | --- | --- |
 | [`analise-de-lacunas.md`](analise-de-lacunas.md) | Comparação área por área: o que o A Nutri tem e o Dieta+ não, o que o Dieta+ faz pior e o que já faz melhor. Inclui a parte comercial (planos, teste grátis, limites) e a recomendação sobre a landing page. |
 | [`backlog-1.4.0.md`](backlog-1.4.0.md) | Histórias priorizadas (valor para a nutri × esforço), com critérios de aceite, regras afetadas e divisão sugerida em BE, MOB e DES. É o que o PO pega. |
+| [`../plano-de-execucao-1.4.0.md`](../plano-de-execucao-1.4.0.md) | Plano de execução da release 1.4.0 feito pelo PO a partir do backlog: histórias Must detalhadas, tarefas `BE`, `MOB` e `DES`, ondas 24 a 27, conflitos, decisões e critérios de pronto. |
 
 ## De onde veio
 
