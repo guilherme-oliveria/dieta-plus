@@ -10,3 +10,7 @@ App para nutricionistas e pacientes (multi-nutri, com assinatura). Monorepo com 
 - Instruções para agentes de IA e para quem contribui: [`AGENTS.md`](AGENTS.md) (cada pasta tem o seu, que vence o da raiz).
 - Gitflow: `develop` → `release/X.Y.Z` → `main`. Tags `vX.Y.Z`, `backend-vX.Y.Z`, `mobile-vX.Y.Z`.
 - CI separado por projeto: `.github/workflows/` roda só o que mudou.
+
+## Estado da migração
+
+Histórico dos repositórios `dieta-backend` e `dieta-mobile` preservado neste repositório. Os repositórios antigos serão arquivados depois.
