@@ -1,0 +1,51 @@
+package org.br.dietamais.ui.nutri.avaliacao
+
+import org.br.dietamais.ui.comum.TelaSobreposta
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import org.br.dietamais.data.repositorio.PortaPdf
+import org.br.dietamais.data.repositorio.RecursoPdf
+import org.br.dietamais.recursos.*
+import org.br.dietamais.ui.comum.BotaoPdf
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlin.uuid.Uuid
+
+/** Aba Avaliações da ficha da nutri: histórico ou, com o formulário aberto, a tela de edição. */
+@Composable
+fun AvaliacoesNutriRota(viewModel: AvaliacoesViewModel, pacienteId: Uuid, sexo: org.br.dietamais.data.remoto.dto.Sexo? = null, nascimento: kotlinx.datetime.LocalDate? = null,
+    exames: ExamesNutriViewModel? = null, nomePaciente: String = "") {
+    val estado by viewModel.estado.collectAsState()
+    LaunchedEffect(pacienteId) { viewModel.abrir(pacienteId) }
+    LaunchedEffect(sexo, nascimento) { viewModel.definirPaciente(sexo, nascimento) }
+    val pdf = koinInject<PortaPdf>()
+    val lancando = exames?.estado?.collectAsState()?.value
+    if (exames != null && lancando?.avaliacao != null) TelaSobreposta(aoFechar = exames::fechar) {
+        ExamesNutriTela(lancando, nomePaciente, AcoesExames(exames::fechar, exames::mudarBusca, exames::escolherSecao, exames::mudarValor, exames::mudarCondicao,
+            exames::mudarMostrarAoPaciente, exames::mudarJustificativa, exames::salvar))
+    }
+    // Tela cheia sobre a aba, com o rodapé fixo e o menu principal à vista (não some ao criar/editar).
+    if (estado.formulario != null) TelaSobreposta(aoFechar = viewModel::fechar) { AvaliacaoTela(estado, AcoesAvaliacao(viewModel::mudarMedida, viewModel::mudarParecer, viewModel::mudarCompartilhada,
+        viewModel::mudarJustificativa, viewModel::salvar, viewModel::fechar, viewModel::proximoPasso, viewModel::passoAnterior, viewModel::repetirMedidasDaUltima,
+        viewModel::mudarProtocoloDobras, viewModel::mudarProtocoloMassa, { viewModel.mudarCompartilhamento(medidas = it) }, { viewModel.mudarCompartilhamento(composicao = it) },
+        { viewModel.mudarCompartilhamento(resumo = it) }, viewModel::mudarEnergia, viewModel::mudarInfantil,
+        { viewModel.mudarCompartilhamento(necessidades = it) })) }
+    HistoricoAvaliacoesTela(estado, AcoesHistorico(viewModel::nova, viewModel::editar, viewModel::alternarSelecao, viewModel::comparar,
+        viewModel::voltarDaComparacao, viewModel::recarregar, aoExames = exames?.let { vm -> { a: org.br.dietamais.data.remoto.dto.AvaliacaoResposta -> vm.abrir(a) } },
+        pdf = { a -> BotaoPdf(stringResource(Res.string.pdf_avaliacao), !estado.semConexao, { pdf.link(RecursoPdf.AVALIACAO, a.id) }) }), rolavel = false)
+}
+
+/** Lista somente leitura do paciente (avaliações compartilhadas, vindas do sync). */
+@Composable
+fun AvaliacoesPacienteRota(viewModel: AvaliacoesViewModel) {
+    val estado by viewModel.estado.collectAsState()
+    LaunchedEffect(Unit) { viewModel.abrirComoPaciente() }
+    val pdf = koinInject<PortaPdf>()
+    HistoricoAvaliacoesTela(estado, AcoesHistorico(aoSelecionar = viewModel::alternarSelecao, aoComparar = viewModel::comparar, aoVoltarComparacao = viewModel::voltarDaComparacao,
+        pdf = { a -> BotaoPdf(stringResource(Res.string.pdf_avaliacao), !estado.semConexao, { pdf.link(RecursoPdf.AVALIACAO, a.id) }) }),
+        podeEditar = false)
+}

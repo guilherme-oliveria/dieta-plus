@@ -1,0 +1,101 @@
+package org.br.dietamais.ui.comum
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import org.br.dietamais.ui.theme.Dimens
+import org.br.dietamais.ui.theme.FormasDieta
+
+@Composable
+fun CampoTexto(
+    rotulo: String,
+    valor: String,
+    aoMudar: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    erro: String? = null,
+    habilitado: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    singleLine: Boolean = true,
+    unidade: String? = null,
+    rotuloVisivel: String = rotulo,
+) {
+    val cores = MaterialTheme.colorScheme
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Dimens.espacoMinimo)) {
+        Text(rotuloVisivel, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clearAndSetSemantics {})
+        OutlinedTextField(
+            value = valor, onValueChange = aoMudar, singleLine = singleLine, maxLines = if (singleLine) 1 else 4,
+            enabled = habilitado, isError = erro != null, keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation, keyboardActions = keyboardActions, trailingIcon = trailingIcon ?: unidade?.let { u -> { Text(u, style = MaterialTheme.typography.bodyMedium, color = cores.onSurfaceVariant) } },
+            shape = FormasDieta.campo, textStyle = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.alturaBotao).semantics {
+                contentDescription = rotulo
+                if (erro != null) error(erro)
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = cores.surface,
+                unfocusedContainerColor = cores.surface,
+                errorContainerColor = cores.surface,
+                unfocusedBorderColor = cores.outline,
+                errorBorderColor = cores.error,
+                errorCursorColor = cores.onErrorContainer,
+                errorTextColor = cores.onSurface,
+                errorSupportingTextColor = cores.onErrorContainer,
+            ),
+            supportingText = erro?.let { mensagem ->
+                { Text(mensagem, color = cores.onErrorContainer, style = MaterialTheme.typography.bodySmall) }
+            },
+        )
+    }
+}
+
+@Composable
+fun CampoHora(
+    rotulo: String,
+    valor: String,
+    aoMudar: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    erro: String? = null,
+    habilitado: Boolean = true,
+) = CampoTexto(rotulo, valor, aoMudar, modifier, erro, habilitado, KeyboardOptions(keyboardType = KeyboardType.Ascii))
+
+/**
+ * Campo de número decimal (MOB-UX-10): teclado decimal; a tecla de ação é "Próximo" e leva o foco ao campo seguinte, ou "Concluir"
+ * (fecha o teclado) quando `ultimo`. Vírgula e ponto valem como separador: quem lê o texto troca a vírgula por ponto (`lerDecimal`).
+ */
+@Composable
+fun CampoNumero(
+    rotulo: String,
+    valor: String,
+    aoMudar: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    erro: String? = null,
+    habilitado: Boolean = true,
+    ultimo: Boolean = false,
+) = separarUnidade(rotulo).let { (nome, un) ->
+    val foco = LocalFocusManager.current
+    CampoTexto(rotulo, valor, aoMudar, modifier, erro, habilitado,
+        KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = if (ultimo) ImeAction.Done else ImeAction.Next),
+        keyboardActions = KeyboardActions(onNext = { foco.moveFocus(FocusDirection.Next) }, onDone = { foco.clearFocus() }),
+        unidade = un, rotuloVisivel = nome)
+}
