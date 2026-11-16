@@ -4,7 +4,7 @@ Playwright (Chromium) contra o **backend real** (Postgres 18 + dados de exemplo 
 
 ## Rodar
 
-No WSL, com o `dieta-backend` ao lado (`../dieta-backend`):
+No WSL, com o `backend/` do mesmo repositório (`../backend`):
 
 ```bash
 ops/e2e-wsl.sh                      # sobe tudo, roda o fluxo e derruba tudo

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Teste de ponta a ponta da web (A4): sobe Postgres 18, backend e a web de produção, e roda o Playwright (Chromium) contra eles.
 # Uso: ops/e2e-wsl.sh [argumentos do playwright test]   (ex.: ops/e2e-wsl.sh -g isolamento)
-# Variáveis: DIETA_BACKEND_DIR (padrão ../dieta-backend), E2E_SEM_BUILD=1 (reaproveita a web já construída),
+# Variáveis: DIETA_BACKEND_DIR (padrão ../backend), E2E_SEM_BUILD=1 (reaproveita a web já construída),
 #            E2E_MANTER=1 (não derruba backend e banco no fim), E2E_PG_PORTA (padrão 5433).
 # Resultado: e2e/relatorio (HTML), build/e2e-wsl.txt (resumo) e build/e2e-*.log. Nada disso vai para o Git.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 raiz=$PWD
-backend=${DIETA_BACKEND_DIR:-$raiz/../dieta-backend}
+backend=${DIETA_BACKEND_DIR:-$raiz/../backend}
 pg_porta=${E2E_PG_PORTA:-5433}
 mkdir -p build
 resumo=build/e2e-wsl.txt

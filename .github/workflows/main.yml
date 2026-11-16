@@ -1,0 +1,88 @@
+# Cada merge em main (vindo de release/X.Y.Z ou hotfix/X.Y.Z): testes completos (com iOS) → tags → GitHub Release → PR de back-merge para develop.
+# Tags: vX.Y.Z (o repositório todo) e, para cada projeto que mudou desde a última tag dele, backend-vX.Y.Z e/ou mobile-vX.Y.Z.
+# Deploys por projeto disparam nas tags backend-v* e mobile-v* (workflows futuros).
+# Requisito: Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+name: main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: tag-main
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    uses: ./.github/workflows/_backend.yml
+
+  mobile:
+    uses: ./.github/workflows/_mobile.yml
+    with:
+      ios: true
+
+  release:
+    needs: [backend, mobile]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITFLOW_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Descobre a versão pela branch do PR
+        id: versao
+        run: |
+          origem=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+            --jq '[.[] | select(.base.ref == "main")][0].head.ref // empty')
+          case "$origem" in
+            release/*|hotfix/*) ;;
+            *) echo "::error::Push em main sem PR de release/ ou hotfix/ (origem: '${origem:-nenhuma}'). Nada foi tagueado."; exit 1 ;;
+          esac
+          v="${origem#*/}"; v="${v#v}"
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Versão inválida em '$origem'."; exit 1; }
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+            echo "::error::A tag v$v já existe."; exit 1
+          fi
+          echo "versao=$v" >> "$GITHUB_OUTPUT"
+          echo "origem=$origem" >> "$GITHUB_OUTPUT"
+
+      - name: Tags e GitHub Release
+        env:
+          V: ${{ steps.versao.outputs.versao }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          tags="v$V"
+          for p in backend mobile; do
+            anterior=$(git tag -l "$p-v[0-9]*" --sort=-v:refname | grep -v -- '-dev' | head -n1 || true)
+            if [ -z "$anterior" ] || ! git diff --quiet "$anterior" "$GITHUB_SHA" -- "$p"; then
+              tags="$tags $p-v$V"
+            fi
+          done
+          for t in $tags; do
+            git tag -a "$t" -m "$t" "$GITHUB_SHA"
+            git push origin "refs/tags/$t"
+          done
+          gh release create "v$V" --verify-tag --generate-notes --title "v$V"
+          echo "Tags criadas: $tags" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: PR de back-merge para develop
+        env:
+          V: ${{ steps.versao.outputs.versao }}
+          ORIGEM: ${{ steps.versao.outputs.origem }}
+        run: |
+          git ls-remote --exit-code --heads origin develop >/dev/null || { echo "Sem develop; nada a fazer."; exit 0; }
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/develop; then
+            echo "develop já contém main."; exit 0
+          fi
+          b="backmerge/v$V"
+          git push origin "$GITHUB_SHA:refs/heads/$b"
+          gh pr create --base develop --head "$b" \
+            --title "chore: back-merge v$V para develop" \
+            --body "Leva para develop o que entrou em main pela \`$ORIGEM\` (v$V). Faça merge commit, não squash."

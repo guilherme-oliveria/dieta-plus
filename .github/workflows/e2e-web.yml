@@ -1,14 +1,14 @@
 name: E2E web
 
 # Playwright (Chromium) contra o backend real e a web de produção. Roda nos PRs que mexem em e2e, shared, webApp ou neste fluxo, e à mão (workflow_dispatch).
-# Se o dieta-backend for privado, crie o secret BACKEND_REPO_TOKEN (token com leitura nesse repositório).
+# O backend vem do mesmo repositório (pasta backend/): não há mais checkout do outro repo nem o secret BACKEND_REPO_TOKEN.
 on:
   pull_request:
-    paths: ['e2e/**', 'shared/**', 'webApp/**', 'ops/e2e-wsl.sh', '.github/workflows/e2e-web.yml']
+    paths: ['mobile/e2e/**', 'mobile/shared/**', 'mobile/webApp/**', 'mobile/ops/e2e-wsl.sh', '.github/workflows/e2e-web.yml']
   # Na develop o fluxo também aquece o cache do Gradle (as PRs só leem; o cache só é gravado na branch padrão).
   push:
     branches: [develop]
-    paths: ['e2e/**', 'shared/**', 'webApp/**', 'ops/e2e-wsl.sh', '.github/workflows/e2e-web.yml']
+    paths: ['mobile/e2e/**', 'mobile/shared/**', 'mobile/webApp/**', 'mobile/ops/e2e-wsl.sh', '.github/workflows/e2e-web.yml']
   workflow_dispatch:
 
 # Um push novo na PR cancela a execução anterior (que já estaria obsoleta) em vez de enfileirar 13 min a mais.
@@ -24,12 +24,6 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: guilherme-oliveria/dieta-backend
-          ref: develop
-          path: dieta-backend
-          token: ${{ secrets.BACKEND_REPO_TOKEN || github.token }}
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
@@ -38,14 +32,16 @@ jobs:
         with:
           node-version: '24'
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: mobile
       - name: Cache do Chromium do Playwright
         id: cache-playwright
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('mobile/e2e/package-lock.json') }}
       - name: Dependências do Playwright
-        working-directory: e2e
+        working-directory: mobile/e2e
         run: |
           npm ci --no-audit --no-fund
           if [ "${{ steps.cache-playwright.outputs.cache-hit }}" = "true" ]; then
@@ -55,14 +51,15 @@ jobs:
           fi
       - name: E2E
         env:
-          DIETA_BACKEND_DIR: ${{ github.workspace }}/dieta-backend
+          DIETA_BACKEND_DIR: ${{ github.workspace }}/backend
+        working-directory: mobile
         run: ops/e2e-wsl.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-relatorio
           path: |
-            e2e/relatorio/
-            e2e/test-results/
-            build/e2e-*.log
-            build/e2e-wsl.txt
+            mobile/e2e/relatorio/
+            mobile/e2e/test-results/
+            mobile/build/e2e-*.log
+            mobile/build/e2e-wsl.txt

@@ -1,0 +1,102 @@
+# PRs e pushes em main/release/**: confere o Gitflow e roda só os projetos que mudaram.
+# Checks obrigatórios na proteção de main e develop: "gitflow" e "ci-ok" (o ci-ok sempre roda, mesmo quando um projeto é pulado).
+name: ci
+
+on:
+  pull_request:
+    branches: [main, develop, "release/**"]
+  push:
+    branches: [main, "release/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gitflow:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Branch de origem permitida para a base
+        env:
+          BASE: ${{ github.base_ref }}
+          ORIGEM: ${{ github.head_ref }}
+        run: |
+          erro() { echo "::error::$1"; exit 1; }
+          case "$BASE" in
+            main)
+              case "$ORIGEM" in
+                release/*|hotfix/*) ;;
+                *) erro "Para main só entram release/X.Y.Z ou hotfix/X.Y.Z (veio '$ORIGEM')." ;;
+              esac ;;
+            develop)
+              case "$ORIGEM" in
+                feature/*|bugfix/*|backmerge/*|claude/*|codex/*|copilot/*|dependabot/*|renovate/*) ;;
+                *) erro "Para develop entram feature/, bugfix/ ou backmerge/ (veio '$ORIGEM')." ;;
+              esac ;;
+            release/*)
+              case "$ORIGEM" in
+                bugfix/*|hotfix/*|claude/*|codex/*) ;;
+                *) erro "Numa release só entram correções: bugfix/ (veio '$ORIGEM')." ;;
+              esac ;;
+          esac
+
+      - name: Versão da release/hotfix
+        if: github.base_ref == 'main'
+        env:
+          ORIGEM: ${{ github.head_ref }}
+        run: |
+          v="${ORIGEM#*/}"; v="${v#v}"
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::'$ORIGEM' precisa terminar em X.Y.Z."; exit 1; }
+          git rev-parse -q --verify "refs/tags/v$v" >/dev/null && { echo "::error::A tag v$v já existe."; exit 1; }
+          # Última versão estável: maior entre v*, backend-v* e mobile-v* (sem sufixo -dev/-rc).
+          ultima=$(git tag -l 'v[0-9]*' 'backend-v[0-9]*' 'mobile-v[0-9]*' | sed -E 's/^(backend-|mobile-)?v//' | grep -v -- - | sort -V | tail -n1 || true)
+          if [ -n "$ultima" ]; then
+            maior=$(printf '%s\n%s\n' "$ultima" "$v" | sort -V | tail -n1)
+            [ "$maior" = "$v" ] && [ "$ultima" != "$v" ] || { echo "::error::$v não é maior que a última versão ($ultima)."; exit 1; }
+          fi
+          echo "Versão $v ok (última: ${ultima:-nenhuma})."
+
+      - name: Título em Conventional Commits
+        # Ligue criando a variável de repositório EXIGIR_CONVENTIONAL=true
+        if: vars.EXIGIR_CONVENTIONAL == 'true'
+        env:
+          TITULO: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$TITULO" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|release)(\([[:alnum:]._/-]+\))?!?: .+' ||
+            { echo "::error::Título fora do padrão. Ex.: 'feat: adiciona cadastro da nutri'."; exit 1; }
+
+  mudancas:
+    uses: ./.github/workflows/_mudancas.yml
+
+  backend:
+    needs: mudancas
+    if: needs.mudancas.outputs.backend == 'true'
+    uses: ./.github/workflows/_backend.yml
+
+  mobile:
+    needs: mudancas
+    if: needs.mudancas.outputs.mobile == 'true'
+    uses: ./.github/workflows/_mobile.yml
+    with:
+      # iOS só em release (PR de release/*, push em main ou release/**), nunca em PR comum.
+      ios: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') }}
+
+  ci-ok:
+    if: always()
+    needs: [mudancas, backend, mobile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Nenhum job falhou nem foi cancelado
+        env:
+          RESULTADOS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTADOS"
+          case " $RESULTADOS " in *" failure "*|*" cancelled "*) exit 1 ;; esac

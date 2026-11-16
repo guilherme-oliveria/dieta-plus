@@ -1,11 +1,13 @@
-# AGENTS.md — dieta-backend
+# AGENTS.md — backend/
 
-Instruções para agentes de código (Codex, Claude Code e outros). O `CLAUDE.md` importa este arquivo; edite só aqui.
+Instruções para agentes de código (Codex, Claude Code e outros) **que mexem na pasta `backend/`**. O `CLAUDE.md` desta pasta importa este arquivo; edite só aqui.
+
+> Regras gerais do monorepo (Gitflow, tags, QA, CI, idioma, Orquestrador IA) ficam no [`AGENTS.md` da raiz](../AGENTS.md). Se este arquivo e o da raiz divergirem, **este vence** dentro de `backend/`.
 
 ## O projeto
 
-Dieta+: app para nutricionistas e pacientes (multi-nutri, com assinatura). Este repositório é a **API**: única fonte de verdade e de regras de negócio.
-Repositórios irmãos: `guilherme-oliveria/dieta-mobile` (KMP: Android, iOS, Desktop e web em `wasmJs`). O `guilherme-oliveria/dieta-frontend` (Angular) foi arquivado.
+Dieta+: app para nutricionistas e pacientes (multi-nutri, com assinatura). Esta pasta é a **API**: única fonte de verdade e de regras de negócio.
+Projeto irmão no mesmo repositório: [`../mobile`](../mobile/AGENTS.md) (KMP: Android, iOS, Desktop e web em `wasmJs`). O `dieta-frontend` (Angular) foi arquivado.
 Idioma: **português** em docs, commits, PRs, mensagens de erro e nomes de domínio. Termos técnicos (controller, repository) ficam em inglês.
 
 ## Leia antes de começar
@@ -17,13 +19,15 @@ Idioma: **português** em docs, commits, PRs, mensagens de erro e nomes de domí
 5. `docs/arquitetura/backend.md`: módulos, Liquibase, segurança, testes.
 6. `docs/arquitetura/funcionalidades-mvp.md`: critérios de aceite (`F-xx`).
 
-Os arquivos `visao-geral`, `regras-de-negocio`, `integracao` e `funcionalidades-mvp` são **comuns aos 3 repositórios**; a cópia oficial é esta. Se mudar um deles, diga no PR para atualizar as cópias no mobile e no frontend.
+Os arquivos `visao-geral`, `regras-de-negocio`, `integracao` e `funcionalidades-mvp` são **comuns ao backend e ao mobile**; a cópia oficial é esta (`backend/docs/arquitetura/`). Se mudar um deles, **atualize a cópia em `mobile/docs/arquitetura/` no mesmo PR** (hoje é cópia; unificar em `docs/` na raiz é a tarefa MONO-02).
 
 ## Stack
 
 Java 25 · Spring Boot 4.1.2 (webmvc, data-jpa, security, validation, actuator) · Gradle Kotlin DSL · Postgres 18 · Liquibase (YAML) · Testcontainers · Docker Compose. Pacote raiz `com.br.dietamais`.
 
 ## Comandos
+
+Todos a partir de `backend/` (`cd backend`).
 
 | Ação | Comando |
 | --- | --- |
@@ -57,37 +61,15 @@ Health: `GET http://localhost:8080/actuator/health`. OpenAPI (a partir de BE-01)
 
 ## Fluxo de trabalho
 
-1. Branch a partir da `develop` (Gitflow; ver `docs/arquitetura/plano-de-execucao.md`), com PR de volta para `develop`: `feature/BE-NN-descricao-curta` (ex.: `feature/BE-02-cadastro-nutri`). Se o ambiente já definiu uma branch para você, use a dele.
-2. Commits pequenos, mensagem em português no imperativo (`Adiciona cadastro da nutri`).
-3. Rode `./gradlew build` antes do PR. Se não houver Docker no ambiente, diga isso no PR e confie no CI.
-4. PR com o template `.github/pull_request_template.md`: tarefa (`BE-NN`), regras aplicadas, mudanças de contrato, como testar.
-5. No mesmo PR, marque a tarefa como `[x]` em `docs/arquitetura/plano-de-acao.md`.
-6. Uma tarefa por PR. Se a tarefa for grande demais, divida em `BE-NNa`, `BE-NNb` no plano.
+O Gitflow, o fluxo de PR, a revisão por QA e o Orquestrador IA são **comuns ao monorepo**: leia o [`AGENTS.md` da raiz](../AGENTS.md). Específico do backend:
 
-## Revisão por QA (vale para Codex, Claude e qualquer agente)
-
-Quem escreve o código nunca aprova o próprio trabalho. O fluxo de todo PR de tarefa é:
-
-1. **Agente de código** (Codex ou outro) abre o PR para a `develop` com o ID da tarefa no título (`BE-NN …`, `MOB-NN …`). Ele **nunca** aprova, faz merge, fecha PR alheio ou resolve comentário do QA.
-2. **Agente QA** (Claude, um por repositório) revisa o PR contra a tarefa do `plano-de-acao.md`, a definição de pronto deste arquivo, as regras `RN-xxx` citadas, o contrato (`integracao.md` e os JSONs de `contrato/`) e, no mobile, `docs/design/`. Confere também o CI verde. E publica o veredito:
-   - **Aprovado:** review "Approve" ou, se o GitHub não deixar (mesma conta), comentário que começa com `QA: APROVADO`. Depois o QA faz o merge na `develop`. Merge na `main` é só do Guilherme.
-   - **Corrigir:** review "Request changes" ou comentário que começa com `QA: CORRIGIR`, com a lista do que falta.
-3. **Agente de código**, ao receber `QA: CORRIGIR`: corrige na **mesma branch**, faz push, responde cada apontamento dizendo o que mudou e comenta `QA: PRONTO PARA REVISAR`. Discordou de um apontamento? Responde explicando, sem ignorar.
-4. **Próxima tarefa só depois do veredito.** Antes de começar qualquer tarefa nova, o agente de código confere os PRs que abriu: com `QA: CORRIGIR` pendente, corrige primeiro; sem veredito ainda, para e avisa "aguardando QA" (pode adiantar só tarefas que não dependem daquele PR, saindo da branch dele).
-
-## Orquestrador IA (contexto compartilhado entre os repositórios)
-
-O painel local do Orquestrador IA reúne o `dieta-backend` e o `dieta-mobile` no projeto **`dieta-mais`**. Ele acompanha sozinho os PRs abertos para a `develop` (etapa, CI e vereditos do QA), então o fluxo de PR acima não muda.
-
-Se a sessão tiver o MCP `orquestradoria` (sessões locais na máquina do Guilherme), use-o com `project: "dieta-mais"` e `repo: "guilherme-oliveria/dieta-backend"`:
-
-- Antes de começar uma tarefa: `listar_contexto` deste repositório, para ver decisões e contratos registrados pelo outro lado.
-- Ao tomar uma decisão que o outro repositório precisa respeitar: `registrar_decisao`.
-- Ao criar ou mudar um contrato (endpoint, DTO, código de erro, evento): `registrar_contrato`, com os dois repositórios em `repos`. Para atualizar um registro existente, passe o ID dele em `supersedes`.
-- Risco ou pendência que afeta o outro repositório: `registrar_nota`.
-- `instrucoes_do_papel` devolve as instruções completas do seu papel (PO, Dev ou QA).
-
-Sem o MCP (sessão na nuvem), siga normalmente: os documentos de `docs/arquitetura/` continuam sendo a referência e nada aqui bloqueia o trabalho.
+1. Branch `feature/BE-NN-descricao-curta` a partir da `develop` (ex.: `feature/BE-02-cadastro-nutri`). Se o ambiente já definiu uma branch para você, use a dele.
+2. Título do PR começa com `BE-NN` e só mexe em `backend/` (mudança de contrato que exige o app: ver "PR que cruza projetos" na raiz).
+3. Rode `cd backend && ./gradlew build` antes do PR. Se não houver Docker no ambiente, diga isso no PR e confie no CI.
+4. PR com o template da raiz (`.github/pull_request_template.md`): tarefa (`BE-NN`), regras aplicadas, mudanças de contrato, como testar.
+5. No mesmo PR, marque a tarefa como `[x]` em `backend/docs/arquitetura/plano-de-acao.md`.
+6. Uma tarefa por PR. Se for grande demais, divida em `BE-NNa`, `BE-NNb` no plano.
+7. Tag de release do backend: `backend-vX.Y.Z` (ver raiz).
 
 ## Definição de pronto
 
