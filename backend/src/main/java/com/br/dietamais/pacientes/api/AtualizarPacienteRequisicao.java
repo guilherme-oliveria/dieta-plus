@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
@@ -19,6 +20,9 @@ public record AtualizarPacienteRequisicao(
 		@Schema(nullable = true) @jakarta.validation.constraints.Size(max=2000) String objetivo,
 		@Schema(nullable = true) @jakarta.validation.constraints.Size(max=10000) String observacoes,
 		/** Ausente mantém o cadastro ampliado como está (cliente antigo não apaga); presente substitui, e objeto vazio limpa. */
-		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.Valid CadastroAmpliado cadastroAmpliado) {
-	public AtualizarPacienteRequisicao(String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes){this(nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,null);}
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.Valid CadastroAmpliado cadastroAmpliado,
+		/** Ausente mantém os itens de saúde; presente substitui a lista inteira e lista vazia limpa (BE-68, RN-SAU-01). */
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.constraints.Size(max=50) List<@jakarta.validation.Valid RestricaoSaude> restricoesSaude) {
+	public AtualizarPacienteRequisicao(String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes,CadastroAmpliado cadastroAmpliado){this(nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,cadastroAmpliado,null);}
+	public AtualizarPacienteRequisicao(String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes){this(nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,null,null);}
 }
