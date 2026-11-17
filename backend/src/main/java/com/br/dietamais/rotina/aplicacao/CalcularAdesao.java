@@ -22,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** RN-ROT-02: adesão = refeições FEITO ou TROCADO sobre as esperadas (refeições da dieta publicada × dias desde a primeira publicação, até a janela). */
 @Service
 public class CalcularAdesao implements AdesaoDosPacientes {
-	private final AdesaoStore store;private final ConsultarFichaParaLista fichas;private final UsuarioAtual usuario;private final AuditoriaClinica auditoria;private final Clock relogio;
-	public CalcularAdesao(AdesaoStore store,ConsultarFichaParaLista fichas,UsuarioAtual usuario,AuditoriaClinica auditoria,Clock relogio){this.store=store;this.fichas=fichas;this.usuario=usuario;this.auditoria=auditoria;this.relogio=relogio;}
+	private final AdesaoStore store;private final com.br.dietamais.rotina.infra.RotinaStore rotina;private final ConsultarFichaParaLista fichas;private final UsuarioAtual usuario;private final AuditoriaClinica auditoria;private final Clock relogio;
+	public CalcularAdesao(AdesaoStore store,com.br.dietamais.rotina.infra.RotinaStore rotina,ConsultarFichaParaLista fichas,UsuarioAtual usuario,AuditoriaClinica auditoria,Clock relogio){this.store=store;this.rotina=rotina;this.fichas=fichas;this.usuario=usuario;this.auditoria=auditoria;this.relogio=relogio;}
 
 	@Transactional(readOnly=true)
 	public AdesaoResposta paciente(UUID paciente){
@@ -31,10 +31,15 @@ public class CalcularAdesao implements AdesaoDosPacientes {
 		var ficha=fichas.consultar(paciente,false);
 		var fuso=ZoneId.of(contexto.usuario().fuso());
 		var v=List.of(ficha.vinculoId());
-		var resposta=new AdesaoResposta(ficha.pacienteId(),janela(v,fuso,7).get(ficha.vinculoId()),janela(v,fuso,30).get(ficha.vinculoId()));
+		// RN-ROT-06: humor (médias da semana) e registros fora do plano dos mesmos 7 dias
+		var hoje=LocalDate.now(relogio.withZone(fuso));var inicio=hoje.minusDays(6);
+		var h=store.humor(ficha.vinculoId(),inicio,hoje);
+		var humor=new com.br.dietamais.rotina.api.HumorAdesao(media(h.mediaFome()),media(h.mediaSensacao()),h.registros());
+		var resposta=new AdesaoResposta(ficha.pacienteId(),janela(v,fuso,7).get(ficha.vinculoId()),janela(v,fuso,30).get(ficha.vinculoId()),humor,rotina.foraDoPlanoDoPeriodo(ficha.pacienteId(),inicio,hoje));
 		auditoria.leitura(new ReferenciaClinica("checkin",ficha.vinculoId(),nutri,ficha.pacienteId(),contexto.organizacaoId()));
 		return resposta;
 	}
+	private static BigDecimal media(BigDecimal v){return v==null?null:v.setScale(1,RoundingMode.HALF_UP);}
 	@Override @Transactional(readOnly=true)
 	public Map<UUID,BigDecimal> adesao7d(Collection<UUID> vinculos,ZoneId fuso){
 		var r=new HashMap<UUID,BigDecimal>();

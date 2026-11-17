@@ -17,13 +17,17 @@ public class RotinaStore {
 	public RotinaStore(JdbcTemplate jdbc,JsonMapper mapper){this.jdbc=jdbc;this.mapper=mapper;}
 	public boolean inserirCheckin(UUID id,UUID paciente,UUID vinculo,UUID nutri,CheckinRequisicao r,List<TrocaCheckin> trocas){
 		return jdbc.update("""
-			insert into checkin(id,paciente_id,vinculo_id,nutricionista_id,dieta_id,refeicao_id,data,status,trocas,registrado_em) values(?,?,?,?,?,?,?,?,?::jsonb,?) on conflict(id) do nothing
-			""",id,paciente,vinculo,nutri,r.dietaId(),r.refeicaoId(),java.sql.Date.valueOf(r.data()),r.status().name(),mapper.writeValueAsString(trocas),Timestamp.from(r.registradoEm()))==1;
+			insert into checkin(id,paciente_id,vinculo_id,nutricionista_id,dieta_id,refeicao_id,data,status,trocas,registrado_em,fome_antes,sensacao_depois) values(?,?,?,?,?,?,?,?,?::jsonb,?,?,?) on conflict(id) do nothing
+			""",id,paciente,vinculo,nutri,r.dietaId(),r.refeicaoId(),java.sql.Date.valueOf(r.data()),r.status().name(),mapper.writeValueAsString(trocas),Timestamp.from(r.registradoEm()),r.fomeAntes(),r.sensacaoDepois())==1;
 	}
 	public CheckinResposta checkin(UUID id,UUID paciente){
-		return jdbc.query("select * from checkin where id=? and paciente_id=?",(rs,n)->new CheckinResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getObject("dieta_id",UUID.class),
+		return jdbc.query("select * from checkin where id=? and paciente_id=?",(rs,n)->checkin(rs),id,paciente).stream().findFirst().orElse(null);
+	}
+	private CheckinResposta checkin(ResultSet rs) throws SQLException {
+		return new CheckinResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getObject("dieta_id",UUID.class),
 			rs.getObject("refeicao_id",UUID.class),rs.getObject("data",LocalDate.class),StatusCheckin.valueOf(rs.getString("status")),
-			mapper.readValue(rs.getString("trocas"),new TypeReference<List<TrocaCheckin>>(){}),rs.getTimestamp("registrado_em").toInstant()),id,paciente).stream().findFirst().orElse(null);
+			mapper.readValue(rs.getString("trocas"),new TypeReference<List<TrocaCheckin>>(){}),rs.getTimestamp("registrado_em").toInstant(),
+			rs.getObject("fome_antes",Integer.class),rs.getObject("sensacao_depois",Integer.class));
 	}
 	public boolean existe(String tabela,UUID id){return jdbc.queryForObject("select count(*) from "+tabela+" where id=?",Integer.class,id)>0;}
 	public boolean inserirAgua(UUID id,UUID paciente,AguaRequisicao r){
@@ -43,9 +47,7 @@ public class RotinaStore {
 		return jdbc.query("select id from vinculo where id=? and paciente_id=? and status='ATIVO' and excluido_em is null",(rs,n)->rs.getObject(1,UUID.class),vinculo,paciente).stream().findFirst().orElse(null);
 	}
 	public CheckinResposta checkinDoVinculo(UUID id,UUID nutri){
-		return jdbc.query("select * from checkin where id=? and nutricionista_id=?",(rs,n)->new CheckinResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getObject("dieta_id",UUID.class),
-			rs.getObject("refeicao_id",UUID.class),rs.getObject("data",LocalDate.class),StatusCheckin.valueOf(rs.getString("status")),
-			mapper.readValue(rs.getString("trocas"),new TypeReference<List<TrocaCheckin>>(){}),rs.getTimestamp("registrado_em").toInstant()),id,nutri).stream().findFirst().orElse(null);
+		return jdbc.query("select * from checkin where id=? and nutricionista_id=?",(rs,n)->checkin(rs),id,nutri).stream().findFirst().orElse(null);
 	}
 	public PesoResposta pesoDoPacienteDaNutri(UUID id,UUID nutri){
 		return jdbc.query("""
@@ -53,9 +55,7 @@ public class RotinaStore {
 			""",(rs,n)->new PesoResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getBigDecimal("peso_kg"),rs.getTimestamp("registrado_em").toInstant()),id,nutri).stream().findFirst().orElse(null);
 	}
 	public List<CheckinResposta> checkinsDoPeriodo(UUID paciente,LocalDate de,LocalDate ate){
-		return jdbc.query("select * from checkin where paciente_id=? and data between ? and ? order by registrado_em,id",(rs,n)->new CheckinResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getObject("dieta_id",UUID.class),
-			rs.getObject("refeicao_id",UUID.class),rs.getObject("data",LocalDate.class),StatusCheckin.valueOf(rs.getString("status")),
-			mapper.readValue(rs.getString("trocas"),new TypeReference<List<TrocaCheckin>>(){}),rs.getTimestamp("registrado_em").toInstant()),paciente,java.sql.Date.valueOf(de),java.sql.Date.valueOf(ate));
+		return jdbc.query("select * from checkin where paciente_id=? and data between ? and ? order by registrado_em,id",(rs,n)->checkin(rs),paciente,java.sql.Date.valueOf(de),java.sql.Date.valueOf(ate));
 	}
 	/** Janela semiaberta [inicio, fim). */
 	public List<AguaResposta> aguaDoPeriodo(UUID paciente,Instant inicio,Instant fim){
@@ -69,5 +69,25 @@ public class RotinaStore {
 		var l=new java.util.ArrayList<>(jdbc.query("select registrado_em,peso_kg from registro_peso where paciente_id=? order by registrado_em desc,id desc limit ?",
 			(rs,n)->new com.br.dietamais.rotina.api.PesosEmCasa.Ponto(rs.getTimestamp(1).toInstant(),rs.getBigDecimal(2)),paciente,limite));
 		java.util.Collections.reverse(l);return l;
+	}
+
+	// RN-ROT-06: registros "comi fora do plano" (só inclusão)
+	public boolean inserirForaDoPlano(UUID id,UUID paciente,RegistroForaDoPlanoRequisicao r,String texto){
+		return jdbc.update("insert into registro_fora_do_plano(id,paciente_id,data,texto,refeicao_id,registrado_em) values(?,?,?,?,?,?) on conflict(id) do nothing",
+			id,paciente,java.sql.Date.valueOf(r.data()),texto,r.refeicaoId(),Timestamp.from(r.registradoEm()))==1;
+	}
+	private static RegistroForaDoPlanoResposta foraDoPlano(ResultSet rs) throws SQLException {
+		return new RegistroForaDoPlanoResposta(rs.getObject("id",UUID.class),rs.getObject("data",LocalDate.class),rs.getString("texto"),rs.getObject("refeicao_id",UUID.class),rs.getTimestamp("registrado_em").toInstant());
+	}
+	public RegistroForaDoPlanoResposta foraDoPlano(UUID id,UUID paciente){
+		return jdbc.query("select * from registro_fora_do_plano where id=? and paciente_id=?",(rs,n)->foraDoPlano(rs),id,paciente).stream().findFirst().orElse(null);
+	}
+	public RegistroForaDoPlanoResposta foraDoPlanoDoPacienteDaNutri(UUID id,UUID nutri){
+		return jdbc.query("""
+			select f.* from registro_fora_do_plano f where f.id=? and exists(select 1 from vinculo v where v.paciente_id=f.paciente_id and v.nutricionista_id=? and v.status='ATIVO' and v.excluido_em is null)
+			""",(rs,n)->foraDoPlano(rs),id,nutri).stream().findFirst().orElse(null);
+	}
+	public List<RegistroForaDoPlanoResposta> foraDoPlanoDoPeriodo(UUID paciente,LocalDate de,LocalDate ate){
+		return jdbc.query("select * from registro_fora_do_plano where paciente_id=? and data between ? and ? order by registrado_em desc,id desc",(rs,n)->foraDoPlano(rs),paciente,java.sql.Date.valueOf(de),java.sql.Date.valueOf(ate));
 	}
 }

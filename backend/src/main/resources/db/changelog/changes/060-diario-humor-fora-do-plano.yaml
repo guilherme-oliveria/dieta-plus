@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 060-diario-humor-fora-do-plano
+      author: dietamais
+      changes:
+        - addColumn:
+            tableName: checkin
+            columns:
+              - column: { name: fome_antes, type: smallint }
+              - column: { name: sensacao_depois, type: smallint }
+        - createTable:
+            tableName: registro_fora_do_plano
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: paciente_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_fora_plano_paciente, references: paciente(id) } }
+              - column: { name: data, type: date, constraints: { nullable: false } }
+              - column: { name: texto, type: varchar(280), constraints: { nullable: false } }
+              - column: { name: refeicao_id, type: uuid }
+              - column: { name: registrado_em, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: seq, type: bigint, defaultValueComputed: "nextval('seq_sync')", constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - createIndex:
+            tableName: registro_fora_do_plano
+            indexName: ix_fora_plano_paciente_data
+            columns:
+              - column: { name: paciente_id }
+              - column: { name: data }
+        - sql:
+            sql: >-
+              ALTER TABLE checkin ADD CONSTRAINT ck_checkin_fome CHECK (fome_antes IS NULL OR fome_antes BETWEEN 1 AND 5);
+              ALTER TABLE checkin ADD CONSTRAINT ck_checkin_sensacao CHECK (sensacao_depois IS NULL OR sensacao_depois BETWEEN 1 AND 5);
+              ALTER TABLE registro_fora_do_plano ADD CONSTRAINT ck_fora_plano_texto CHECK (length(btrim(texto)) > 0);
+              ALTER TABLE diario_sync DROP CONSTRAINT ck_diario_sync_colecao;
+              ALTER TABLE diario_sync ADD CONSTRAINT ck_diario_sync_colecao CHECK (colecao IN
+              ('PACIENTES','VINCULOS','NUTRIS','GRUPOS','ALIMENTOS','LISTAS','DIETAS','SNAPSHOTS','DIETA_EM_USO','CHECKINS','AGUA','PESOS','AVALIACOES','MODELOS','QUESTIONARIOS','CONSULTAS','AVISOS','PROTOCOLOS','MODELOS_DIETA','PRODUTOS','REGISTROS_FORA_DO_PLANO'));
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION fora_plano_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
+              DECLARE nutri uuid;
+              BEGIN
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'REGISTROS_FORA_DO_PLANO',NEW.id,NULL,NEW.paciente_id);
+                FOR nutri IN SELECT nutricionista_id FROM vinculo WHERE paciente_id=NEW.paciente_id AND status='ATIVO' AND excluido_em IS NULL LOOP
+                  PERFORM registrar_mudanca_sync('NUTRICIONISTA',nutri,'REGISTROS_FORA_DO_PLANO',NEW.id,nutri,NEW.paciente_id);
+                END LOOP;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            sql: >-
+              CREATE TRIGGER fora_plano_diario_sync AFTER INSERT ON registro_fora_do_plano FOR EACH ROW EXECUTE FUNCTION fora_plano_diario_sync();

@@ -46,4 +46,18 @@ public final class FontesRotinaSync {
 			return dados;
 		}
 	}
+
+	@Component
+	public static class ForaDoPlano implements FonteSync<RegistroForaDoPlanoResposta> {
+		private final DiarioSync diario;private final RotinaStore rotina;private final AuditoriaClinica auditoria;
+		public ForaDoPlano(DiarioSync diario,RotinaStore rotina,AuditoriaClinica auditoria){this.diario=diario;this.rotina=rotina;this.auditoria=auditoria;}
+		@Override public ColecaoSync colecao(){return ColecaoSync.REGISTROS_FORA_DO_PLANO;}
+		@Override public List<ReferenciaSync> mudancasDesde(long seq,ContextoUsuario usuario,int limite){return diario.mudancasDesde(colecao(),seq,usuario,limite);}
+		@Override public RegistroForaDoPlanoResposta carregar(ReferenciaSync referencia,ContextoUsuario usuario){
+			boolean nutri=usuario.perfil()==Perfil.NUTRICIONISTA;
+			var dados=nutri?rotina.foraDoPlanoDoPacienteDaNutri(referencia.id(),usuario.exigirNutricionista()):rotina.foraDoPlano(referencia.id(),usuario.exigirPaciente());
+			if(dados!=null&&nutri)auditoria.leitura(new ReferenciaClinica("registro_fora_do_plano",dados.id(),usuario.exigirNutricionista(),referencia.pacienteId(),usuario.organizacaoId()));
+			return dados;
+		}
+	}
 }
