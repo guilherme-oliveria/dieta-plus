@@ -107,7 +107,8 @@ class AnamneseNutriViewModelTest {
         vm.salvarModelo(); advanceUntilIdle()
         val criado = assertNotNull(p.modeloCriado)
         assertEquals(MensagemAnamnese.MODELO_NO_APARELHO, vm.estado.value.aviso); assertTrue(vm.estado.value.semConexao)
-        assertEquals(setOf(criado.id!!), vm.estado.value.pendentes); assertFalse(vm.estado.value.podeEnviar(criado.id!!))
+        val id = assertNotNull(criado.id)
+        assertEquals(setOf(id), vm.estado.value.pendentes); assertFalse(vm.estado.value.podeEnviar(id))
     }
 
     @Test fun modeloAindaNaFilaNaoEhEnviadoAoPaciente() = runTest {
@@ -120,7 +121,10 @@ class AnamneseNutriViewModelTest {
     }
 
     @Test fun semEscritaOfflineSemRedeNaoEditaModelos() = runTest {
-        val p = PortaAnamneseFalsa(); val vm = vm(p, online = false); vm.abrir(paciente); advanceUntilIdle()
+        // a recarga que dá certo prova que há rede; a conexão cai depois
+        val rede = kotlinx.coroutines.flow.MutableStateFlow(true)
+        val vm = AnamneseNutriViewModel(PortaAnamneseFalsa(), StandardTestDispatcher(testScheduler), rede); vm.abrir(paciente); advanceUntilIdle()
+        rede.value = false; advanceUntilIdle()
         assertFalse(vm.estado.value.podeEditarModelos)
     }
 }
