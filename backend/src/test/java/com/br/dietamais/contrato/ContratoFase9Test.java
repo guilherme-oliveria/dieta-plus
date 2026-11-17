@@ -29,7 +29,7 @@ class ContratoFase9Test {
 		return Stream.of(
 			f9("restricaoSaude.json",RestricaoSaude.class),f9("alertaRestricao.json",AlertaRestricao.class),
 			f9("preferenciasAgenda-requisicao.json",PreferenciasAgendaRequisicao.class),f9("preferenciasAgenda-resposta.json",PreferenciasAgendaResposta.class),
-			f9("consultaPaciente-resposta.json",ConsultaPacienteProjecaoResposta.class),
+			f9("consulta-resposta.json",ConsultaResposta.class),f9("consultaPaciente-resposta.json",ConsultaResposta.class),f9("consulta-requisicao.json",CriarConsultaRequisicao.class),f9("consultaAtualizar-requisicao.json",AtualizarConsultaRequisicao.class),
 			f9("registroForaDoPlano-requisicao.json",RegistroForaDoPlanoRequisicao.class),f9("registroForaDoPlano-resposta.json",RegistroForaDoPlanoResposta.class),
 			f9("humorAdesao.json",HumorAdesao.class),
 			f9("meta-requisicao.json",MetaRequisicao.class),f9("meta-resposta.json",MetaResposta.class),f9("atualizarMeta-requisicao.json",AtualizarMetaRequisicao.class),
