@@ -9,7 +9,9 @@ import com.br.dietamais.relatorios.api.TamanhoListaPdf;
 import com.br.dietamais.alimentos.api.ConsultarAlimentosParaDieta;
 import com.br.dietamais.referencias.api.ConsultaPorcoes;
 import java.text.Normalizer;
-import java.time.Duration;
+import com.br.dietamais.prescricoes.api.*;
+import java.time.*;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,11 @@ public class ServicoPdf {
 	private final GeradorPdf gerador=new GeradorPdf();
 	private final ConsultarAlimentosParaDieta alimentos;
 	private final ConsultaPorcoes porcoes;
+	private final ConsultarSuplementosParaPdf suplementos;private final Clock relogio;
 	public ServicoPdf(ConsultaDietaParaPdf dietas,ConsultaAvaliacaoParaPdf avaliacoes,ConsultaCabecalhoRelatorio cabecalhos,ConsultaNutricionistas nutricionistas,
-			Armazenamento armazenamento,UsuarioAtual usuario,AuditoriaClinica auditoria,GeradorIds ids,ConsultarAlimentosParaDieta alimentos,ConsultaPorcoes porcoes){
+			Armazenamento armazenamento,UsuarioAtual usuario,AuditoriaClinica auditoria,GeradorIds ids,ConsultarAlimentosParaDieta alimentos,ConsultaPorcoes porcoes,ConsultarSuplementosParaPdf suplementos,Clock relogio){
 		this.dietas=dietas;this.avaliacoes=avaliacoes;this.cabecalhos=cabecalhos;this.nutricionistas=nutricionistas;this.armazenamento=armazenamento;this.usuario=usuario;this.auditoria=auditoria;this.ids=ids;
-		this.alimentos=alimentos;this.porcoes=porcoes;
+		this.alimentos=alimentos;this.porcoes=porcoes;this.suplementos=suplementos;this.relogio=relogio;
 	}
 	public PdfResposta listaDaNutri(UUID dietaId,TamanhoListaPdf tamanho){
 		var contexto=usuario.obter();var nutri=contexto.exigirNutricionista();
@@ -45,11 +48,14 @@ public class ServicoPdf {
 		return entregar(gerador.lista(cabecalhoDieta(s),s,referencias,porcoes.porcoes(),tamanho),"lista-substituicao-"+tamanho.name().toLowerCase(java.util.Locale.ROOT)+".pdf");
 	}
 
-	public PdfResposta dietaDaNutri(UUID dietaId){
+	public PdfResposta dietaDaNutri(UUID dietaId){return dietaDaNutri(dietaId,false);}
+	/** BE-77: com {@code incluirSuplementos}, o PDF traz o bloco com os suplementos ativos do paciente (RN-SUP-02). */
+	public PdfResposta dietaDaNutri(UUID dietaId,boolean incluirSuplementos){
 		var contexto=usuario.obter();var nutri=contexto.exigirNutricionista();
 		var s=dietas.daNutri(dietaId);
 		auditoria.leitura(new ReferenciaClinica("dieta",s.dietaId(),nutri,s.pacienteId(),contexto.organizacaoId()));
-		return entregar(gerador.dieta(cabecalhoDieta(s),s),"dieta-"+slug(s.titulo())+".pdf");
+		var suplementosAtivos=incluirSuplementos?suplementos.ativosDaNutri(nutri,s.pacienteId(),LocalDate.now(relogio.withZone(ZoneId.of(contexto.usuario().fuso())))):List.<SuplementoResposta>of();
+		return entregar(gerador.dieta(cabecalhoDieta(s),s,suplementosAtivos),"dieta-"+slug(s.titulo())+".pdf");
 	}
 	public PdfResposta dietaDoPaciente(UUID dietaId){
 		var s=dietas.doPaciente(dietaId);

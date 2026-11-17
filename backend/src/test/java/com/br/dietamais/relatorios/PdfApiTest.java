@@ -50,6 +50,25 @@ class PdfApiTest extends TesteComPaciente {
 		try(var doc=org.apache.pdfbox.pdmodel.PDDocument.load(pdf)){return new org.apache.pdfbox.text.PDFTextStripper().getText(doc);}
 	}
 
+	@Test void pdfDaDietaIncluiSuplementosAtivosSoQuandoPedido() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);var ali=alimentos(a.token(),1);
+		var d=criarDieta(a.token(),p.fichaId(),dieta("Plano com suplemento",refeicao("Café da manhã",0,item(ali.get(0),"2"))));publicar(a.token(),d);
+		var hoje=java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+		String suplementos="/pacientes/"+p.fichaId()+"/suplementos";
+		var ativo=new HashMap<String,Object>();ativo.put("nome","Vitamina D");ativo.put("dose","2.000 UI");ativo.put("inicio",hoje.toString());ativo.put("horarios",List.of("08:00"));
+		assertThat(requisitar("POST",suplementos,a.token(),ativo).statusCode()).isEqualTo(201);
+		var encerrado=new HashMap<String,Object>();encerrado.put("nome","Ômega Antigo");encerrado.put("dose","1 cápsula");encerrado.put("inicio",hoje.minusDays(40).toString());encerrado.put("fim",hoje.minusDays(10).toString());
+		assertThat(requisitar("POST",suplementos,a.token(),encerrado).statusCode()).isEqualTo(201);
+		var futuro=new HashMap<String,Object>();futuro.put("nome","Zinco Futuro");futuro.put("dose","1 comprimido");futuro.put("inicio",hoje.plusDays(10).toString());
+		assertThat(requisitar("POST",suplementos,a.token(),futuro).statusCode()).isEqualTo(201);
+		String caminho="/dietas/"+d.path("id").asString()+"/pdf";
+		var sem=texto(baixar(json(requisitar("GET",caminho,a.token(),null)).path("url").asString()).body());
+		assertThat(sem).doesNotContain("Vitamina D","Suplementos");
+		var com=texto(baixar(json(requisitar("GET",caminho+"?incluirSuplementos=true",a.token(),null)).path("url").asString()).body());
+		assertThat(com).contains("Suplementos","Vitamina D","2.000 UI","08:00").doesNotContain("Ômega Antigo","Zinco Futuro");
+		erro(requisitar("GET",caminho+"?incluirSuplementos=talvez",a.token(),null),400,"FORMATO_INVALIDO");
+	}
+
 	@Test void pdfDaDietaTemCabecalhoDaNutriEPacienteEoLinkExpira() throws Exception {
 		var a=cadastrarNutri();var p=pacienteVinculado(a);var ali=alimentos(a.token(),1);
 		var rascunho=criarDieta(a.token(),p.fichaId(),dieta("Plano de teste",refeicao("Café da manhã",0,item(ali.get(0),"2"))));
