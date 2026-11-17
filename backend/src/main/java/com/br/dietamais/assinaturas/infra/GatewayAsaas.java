@@ -59,6 +59,14 @@ public class GatewayAsaas implements GatewayPagamento {
 		catch (RestClientException erro) { LoggerFactory.getLogger(GatewayAsaas.class).warn("Não foi possível cancelar a assinatura no gateway."); }
 	}
 
+	@Override public void alterar(String id,java.math.BigDecimal valor,boolean anual,String descricao) {
+		try {
+			var corpo=new LinkedHashMap<String,Object>();
+			corpo.put("value",valor);corpo.put("cycle",anual?"YEARLY":"MONTHLY");corpo.put("description",descricao);corpo.put("updatePendingPayments",false);
+			http.post().uri("/v3/subscriptions/{id}",id).body(corpo).retrieve().toBodilessEntity();
+		} catch (RestClientException erro) { throw indisponivel(erro); }
+	}
+
 	@Override public boolean tokenValido(String token) {
 		return !tokenWebhook.isEmpty()&&token!=null&&MessageDigest.isEqual(tokenWebhook.getBytes(StandardCharsets.UTF_8),token.getBytes(StandardCharsets.UTF_8));
 	}

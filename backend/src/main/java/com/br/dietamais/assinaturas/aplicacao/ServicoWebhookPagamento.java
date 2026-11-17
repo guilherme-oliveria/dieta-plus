@@ -32,13 +32,17 @@ public class ServicoWebhookPagamento {
 		if(novo==0)return;
 		var resultado="IGNORADO";UUID assinaturaId=null;
 		if(evento.tipo()!=TipoEvento.IGNORADO&&evento.assinaturaGatewayId()!=null){
-			var linhas=jdbc.query("select id,organizacao_id,status,fim_periodo_em,coalesce(periodicidade_pendente,periodicidade) as ciclo from assinatura where gateway_assinatura_id=? for update",
+			var linhas=jdbc.query("select id,organizacao_id,status,fim_periodo_em,periodicidade,periodicidade_pendente,troca_a_partir_de from assinatura where gateway_assinatura_id=? for update",
 				(rs,n)->new Object[]{rs.getObject("id",UUID.class),rs.getObject("organizacao_id",UUID.class),StatusAssinatura.valueOf(rs.getString("status")),rs.getTimestamp("fim_periodo_em"),
-					"ANUAL".equals(rs.getString("ciclo"))},evento.assinaturaGatewayId());
+					rs.getString("periodicidade"),rs.getString("periodicidade_pendente"),rs.getObject("troca_a_partir_de",LocalDate.class)},evento.assinaturaGatewayId());
 			if(linhas.isEmpty())resultado="ASSINATURA_DESCONHECIDA";
 			else {
 				var l=linhas.getFirst();assinaturaId=(UUID)l[0];
-				resultado=aplicar(evento,assinaturaId,(UUID)l[1],(StatusAssinatura)l[2],(Timestamp)l[3],(Boolean)l[4])?"APLICADO":"IGNORADO";
+				// RN-ASS-10: troca agendada (descer) só vale na cobrança do próximo vencimento em diante; antes disso vale o plano atual
+				var troca=(LocalDate)l[6];
+				boolean aplicaPendente=troca==null||evento.vencimento()!=null&&!LocalDate.parse(evento.vencimento()).isBefore(troca);
+				var ciclo=aplicaPendente&&l[5]!=null?(String)l[5]:(String)l[4];
+				resultado=aplicar(evento,assinaturaId,(UUID)l[1],(StatusAssinatura)l[2],(Timestamp)l[3],"ANUAL".equals(ciclo),aplicaPendente)?"APLICADO":"IGNORADO";
 			}
 		}
 		jdbc.update("update evento_pagamento set resultado=?,assinatura_id=? where evento_id=?",resultado,assinaturaId,evento.eventoId());
@@ -46,7 +50,7 @@ public class ServicoWebhookPagamento {
 	}
 
 	/** {@code anual}: a cobrança confirmada é do ciclo anual (o pendente do checkout ou o atual); o período vai até 1 ano depois do vencimento. */
-	private boolean aplicar(GatewayPagamento.Evento e,UUID id,UUID organizacao,StatusAssinatura status,Timestamp fimAtual,boolean anual) {
+	private boolean aplicar(GatewayPagamento.Evento e,UUID id,UUID organizacao,StatusAssinatura status,Timestamp fimAtual,boolean anual,boolean aplicaPendente) {
 		var agora=relogio.instant();
 		var vencimento=e.vencimento()==null?null:LocalDate.parse(e.vencimento()).atStartOfDay(ZoneOffset.UTC).toInstant();
 		switch(e.tipo()) {
@@ -54,7 +58,9 @@ public class ServicoWebhookPagamento {
 				var base=(vencimento==null?agora:vencimento).atZone(ZoneOffset.UTC);
 				var proximo=(anual?base.plusYears(1):base.plusMonths(1)).toInstant();
 				var fim=fimAtual!=null&&status==StatusAssinatura.ATIVA&&fimAtual.toInstant().isAfter(proximo)?fimAtual.toInstant():proximo;
-				jdbc.update("update assinatura set status='ATIVA',plano_id=coalesce(plano_pendente_id,plano_id),plano_pendente_id=null,periodicidade=coalesce(periodicidade_pendente,periodicidade),periodicidade_pendente=null,fim_periodo_em=? where id=?",Timestamp.from(fim),id);
+				if(aplicaPendente)
+					jdbc.update("update assinatura set status='ATIVA',plano_id=coalesce(plano_pendente_id,plano_id),plano_pendente_id=null,periodicidade=coalesce(periodicidade_pendente,periodicidade),periodicidade_pendente=null,troca_a_partir_de=null,fim_periodo_em=? where id=?",Timestamp.from(fim),id);
+				else jdbc.update("update assinatura set status='ATIVA',fim_periodo_em=? where id=?",Timestamp.from(fim),id);
 				avisar(organizacao,e);return true;
 			}
 			case PAGAMENTO_ATRASADO -> {
@@ -65,8 +71,8 @@ public class ServicoWebhookPagamento {
 			case PAGAMENTO_RECUSADO -> { avisar(organizacao,e);return true; }
 			case ASSINATURA_CANCELADA -> {
 				if(status==StatusAssinatura.ATIVA||status==StatusAssinatura.EM_ATRASO)
-					jdbc.update("update assinatura set status='CANCELADA',gateway_assinatura_id=null,plano_pendente_id=null,periodicidade_pendente=null where id=?",id);
-				else jdbc.update("update assinatura set gateway_assinatura_id=null,plano_pendente_id=null,periodicidade_pendente=null where id=?",id);
+					jdbc.update("update assinatura set status='CANCELADA',gateway_assinatura_id=null,plano_pendente_id=null,periodicidade_pendente=null,troca_a_partir_de=null where id=?",id);
+				else jdbc.update("update assinatura set gateway_assinatura_id=null,plano_pendente_id=null,periodicidade_pendente=null,troca_a_partir_de=null where id=?",id);
 				if(status==StatusAssinatura.ATIVA||status==StatusAssinatura.EM_ATRASO)avisar(organizacao,e);
 				return true;
 			}

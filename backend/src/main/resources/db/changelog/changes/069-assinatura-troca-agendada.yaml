@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 069-assinatura-troca-agendada
+      author: dietamais
+      comment: "BE-81b (RN-ASS-10, D-11): descer de plano só vale no próximo vencimento; a data fica guardada com o plano pendente."
+      changes:
+        - addColumn:
+            tableName: assinatura
+            columns:
+              - column: { name: troca_a_partir_de, type: date }

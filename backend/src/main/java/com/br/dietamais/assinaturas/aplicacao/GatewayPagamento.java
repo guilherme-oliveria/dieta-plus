@@ -22,6 +22,8 @@ public interface GatewayPagamento {
 	/** Link da cobrança em aberto de uma assinatura já criada no gateway. */
 	Optional<String> urlCobranca(String assinaturaGatewayId);
 	void cancelar(String assinaturaGatewayId);
+	/** Muda valor e ciclo das próximas cobranças da assinatura, sem mexer na cobrança em aberto (troca agendada, RN-ASS-10). */
+	void alterar(String assinaturaGatewayId,java.math.BigDecimal valor,boolean anual,String descricao);
 	boolean tokenValido(String token);
 	/** Traduz o corpo bruto do webhook; lança {@link IllegalArgumentException} se não for do formato do gateway. */
 	Evento interpretar(String corpo);
