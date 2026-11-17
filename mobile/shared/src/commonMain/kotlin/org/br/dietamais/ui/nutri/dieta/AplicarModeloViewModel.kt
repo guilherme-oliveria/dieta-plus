@@ -92,6 +92,7 @@ class AplicarModeloViewModel(private val modelos: PortaModelosDieta, private val
     private fun apresentar(falha: Throwable) {
         val mensagem = when (falha) {
             is FalhaComunicacao -> MensagemModelos.SEM_CONEXAO
+            is org.br.dietamais.data.repositorio.ModeloPendente -> MensagemModelos.PENDENTE_DE_ENVIO
             is ErroApi -> when (falha.codigo) {
                 "ASSINATURA_INATIVA" -> MensagemModelos.ASSINATURA_INATIVA
                 "RECURSO_NAO_ENCONTRADO" -> MensagemModelos.NAO_ENCONTRADA
