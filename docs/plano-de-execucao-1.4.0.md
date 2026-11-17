@@ -2,7 +2,7 @@
 
 > Criado em 16/11/2026 pelo PO, a pedido do Guilherme. Documento comum aos dois projetos, por isso fica na raiz (`docs/`).
 > Origem: [`benchmark-anutri/backlog-1.4.0.md`](benchmark-anutri/backlog-1.4.0.md) (histórias `H-xx`) e [`benchmark-anutri/analise-de-lacunas.md`](benchmark-anutri/analise-de-lacunas.md) (lacunas `L-xx`), cruzados com o código da `develop` em 16/11/2026 (versão 1.3.1, backend até BE-67 e changeset 056, app até MOB-79).
-> **Status: plano para aprovação. Nenhuma tarefa começa antes do "ok" do Guilherme.** Este PR não tem código.
+> **Status: aprovado e liberado pelo Guilherme em 16/11/2026.** As decisões D-03 a D-12 foram aprovadas como recomendadas (seção 7.2). Nos valores dos planos (G-21), a direção é usar os do concorrente como base; a combinação exata está em confirmação (seção 7.1). As tarefas estão nos `plano-de-acao.md` de `backend/` (Fase 9) e de `mobile/` (Fase 10).
 > Continua o [`backend/docs/arquitetura/plano-de-execucao.md`](../backend/docs/arquitetura/plano-de-execucao.md) (ondas 0 a 23). Aqui estão as **ondas 24 a 27** e o **marco M11 = 1.4.0**.
 
 O benchmark é referência de funcionalidade e de fluxo. Textos, nomes de plano, marca, cores, ícones e layout do concorrente não são copiados: telas novas seguem o canvas e `mobile/docs/design/`.
@@ -397,7 +397,9 @@ Pedido do Guilherme: apontar o conflito em vez de decidir sozinho. Cada item tra
 
 Situação de hoje, na tabela `plano`: **Teste**, grátis, 30 dias, 5 pacientes; **Básico**, R$ 29,90 por mês, 20 pacientes. Não há anual nem segundo nível. Os números do concorrente estão em `analise-de-lacunas.md`, seção 4.1, só como referência de mercado.
 
-Preciso de quatro respostas. As opções abaixo são formas possíveis, sem recomendação de valor.
+**Resposta do Guilherme em 16/11/2026: "pode copiar os planos".** Os valores passam a ter como base a tabela do concorrente (seção 4.1 de `analise-de-lacunas.md`): nível com 80 pacientes e anual igual a 10 vezes o mensal. Falta confirmar se o Básico atual continua como porta de entrada e quantos níveis novos entram; a resposta será registrada aqui. Os **nomes** dos planos continuam próprios do Dieta+. Nada disso vira changeset: os valores entram pelo admin (C-05).
+
+As perguntas originais ficam abaixo, como registro.
 
 **a) Segundo nível: quantos pacientes?**
 
@@ -445,7 +447,9 @@ E dois detalhes ligados a isso: o **nome** do segundo nível (precisa ser própr
 | **D-11** | Como funciona a troca de plano com assinatura ativa? | (a) Só no próximo vencimento; (b) na hora, com o limite novo valendo já e cobrança cheia do plano novo, sem crédito proporcional; (c) na hora, com crédito proporcional calculado | (b) para subir de plano e (a) para descer; crédito proporcional fica como ajuste manual do admin | BE-81 |
 | **D-12** | Aprovar os conflitos C-02, C-03, C-05, C-08, C-09 e C-10 como recomendados | Sim, ou dizer qual muda | Sim | BE-C9 |
 
-Nenhuma decisão trava a onda 24, exceto a D-12 (o BE-C9 escreve as regras). As outras podem chegar até o começo da tarefa que elas travam. Sem resposta, a tarefa segue a recomendação, marca `[SUPOSIÇÃO]` e deixa o valor configurável, como o `AGENTS.md` já manda. **A G-21 é a exceção: sem os valores, nada é ativado.**
+**Decidido em 16/11/2026: o Guilherme aprovou todas as recomendações desta tabela** (D-03 a D-12, o que inclui os conflitos da seção 6). O texto das tarefas nos planos de ação já reflete isso.
+
+Registro do que valia antes da resposta: nenhuma decisão travava a onda 24, exceto a D-12 (o BE-C9 escreve as regras). As outras podem chegar até o começo da tarefa que elas travam. Sem resposta, a tarefa segue a recomendação, marca `[SUPOSIÇÃO]` e deixa o valor configurável, como o `AGENTS.md` já manda. **A G-21 é a exceção: sem os valores, nada é ativado.**
 
 ### 7.3 Tarefas do Guilherme
 
@@ -456,7 +460,7 @@ Nenhuma decisão trava a onda 24, exceto a D-12 (o BE-C9 escreve as regras). As 
 | **G-23** | Fotos de evolução e do prato entram no roadmap? | Depois da 1.4.0 | L-10 |
 | **G-24** | Assistente de IA vira plano próprio? | Depois da 1.4.0 | L-21 |
 | **G-25** | Finalizar e aprovar os termos de uso e a política de privacidade | Antes de qualquer landing | Landing e abertura do cadastro (BE-36) |
-| **G-26** | Responder D-03 a D-12 | Conforme a coluna "Trava" | Tarefas indicadas |
+| **G-26** | Responder D-03 a D-12 | **Feito em 16/11/2026**: todas como recomendado | — |
 | **G-27** | Testar no Android e, com o Mac do amigo, no iPhone o roteiro da seção 9.3 | Na `release/1.4.0` | Corte da release |
 | **G-28** | Aprovar o PR `release/1.4.0 → main` e autorizar a tag `v1.4.0` | Fim da onda 27 | Publicação |
 
@@ -523,6 +527,6 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 
 ## 10. Depois da aprovação deste plano
 
-1. O PO abre um PR por projeto copiando as tarefas das seções 4.2 e 4.3 para `backend/docs/arquitetura/plano-de-acao.md` e `mobile/docs/arquitetura/plano-de-acao.md` (fase "1.4.0"), e as tarefas `DES` para `mobile/docs/design/telas.md`, com as decisões D-xx já respondidas refletidas no texto.
+1. **Feito em 16/11/2026.** O PO abre um PR por projeto copiando as tarefas das seções 4.2 e 4.3 para `backend/docs/arquitetura/plano-de-acao.md` e `mobile/docs/arquitetura/plano-de-acao.md` (fase "1.4.0"), e as tarefas `DES` para `mobile/docs/design/telas.md`, com as decisões D-xx já respondidas refletidas no texto.
 2. O agente de design começa por DES-16 e DES-17; o backend, por BE-C9 e BE-83; o app, por MOB-29b.
 3. Ao fim da onda 24, o PO mede o ritmo e atualiza este documento com a projeção das ondas seguintes.
