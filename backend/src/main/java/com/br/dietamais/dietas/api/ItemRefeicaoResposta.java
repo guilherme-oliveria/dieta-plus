@@ -39,7 +39,7 @@ public record ItemRefeicaoResposta(
 	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) UUID produtoId,
 	/** Alertas calculados pelo servidor ao ler a dieta (RN-DIE-14); só na visão da nutri, nunca no snapshot do paciente. */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) java.util.List<@Valid com.br.dietamais.dietas.api.AlertaRestricao> alertas,
+	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) java.util.List<@Valid AlertaRestricao> alertas,
 	/** Confirmação da nutri para item com alergia (RN-DIE-14); só na visão da nutri. */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) Boolean alergiaConfirmada) {
