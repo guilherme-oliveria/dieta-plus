@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -20,6 +21,9 @@ public record CriarPacienteRequisicao(
 		@Schema(nullable = true) @DecimalMin("0.5") @DecimalMax("2.5") @jakarta.validation.constraints.Digits(integer=1,fraction=3) BigDecimal estaturaReferencia,
 		@Schema(nullable = true) @jakarta.validation.constraints.Size(max=2000) String objetivo,
 		@Schema(nullable = true) @jakarta.validation.constraints.Size(max=10000) String observacoes,
-		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.Valid CadastroAmpliado cadastroAmpliado) {
-	public CriarPacienteRequisicao(UUID id,String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes){this(id,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,null);}
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.Valid CadastroAmpliado cadastroAmpliado,
+		/** Itens de saúde da ficha (BE-68, RN-SAU-01); ausente = sem itens. */
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable = true) @jakarta.validation.constraints.Size(max=50) List<@jakarta.validation.Valid RestricaoSaude> restricoesSaude) {
+	public CriarPacienteRequisicao(UUID id,String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes,CadastroAmpliado cadastroAmpliado){this(id,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,cadastroAmpliado,null);}
+	public CriarPacienteRequisicao(UUID id,String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes){this(id,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,null,null);}
 }

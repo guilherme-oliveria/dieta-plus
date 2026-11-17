@@ -34,15 +34,15 @@ public class FichaPacienteStore {
 		if(inseridos==0)throw new ExcecaoNegocio(CodigoErro.VINCULO_JA_EXISTE,"RN-VIN-07");
 		jdbc.update("insert into vinculo(id,nutricionista_id,paciente_id,status,criado_em,atualizado_em) values(?,?,?,'CONVIDADO',?,?)",vinculo,nutri,paciente,Timestamp.from(agora),Timestamp.from(agora));
 		jdbc.update("""
-			insert into ficha_paciente(id,vinculo_id,nutricionista_id,paciente_id,nome,email,data_nascimento,sexo,telefone,estatura_referencia,objetivo,observacoes,cadastro_ampliado,criado_em,atualizado_em)
-			values(?,?,?,?,?,?,?,?,?,?,?,?,?::jsonb,?,?)
-			""",vinculo,vinculo,nutri,paciente,d.nome(),d.email(),d.dataNascimento(),sexo(d),d.telefone(),d.estaturaReferencia(),d.objetivo(),d.observacoes(),cadastro(d),Timestamp.from(agora),Timestamp.from(agora));
+			insert into ficha_paciente(id,vinculo_id,nutricionista_id,paciente_id,nome,email,data_nascimento,sexo,telefone,estatura_referencia,objetivo,observacoes,cadastro_ampliado,restricoes_saude,criado_em,atualizado_em)
+			values(?,?,?,?,?,?,?,?,?,?,?,?,?::jsonb,?::jsonb,?,?)
+			""",vinculo,vinculo,nutri,paciente,d.nome(),d.email(),d.dataNascimento(),sexo(d),d.telefone(),d.estaturaReferencia(),d.objetivo(),d.observacoes(),cadastro(d),restricoes(d),Timestamp.from(agora),Timestamp.from(agora));
 	}
 	public void atualizar(UUID vinculo,UUID nutri,DadosFicha d,Instant agora) {
 		jdbc.update("""
-			update ficha_paciente set nome=?,email=?,data_nascimento=?,sexo=?,telefone=?,estatura_referencia=?,objetivo=?,observacoes=?,cadastro_ampliado=coalesce(?::jsonb,cadastro_ampliado),
+			update ficha_paciente set nome=?,email=?,data_nascimento=?,sexo=?,telefone=?,estatura_referencia=?,objetivo=?,observacoes=?,cadastro_ampliado=coalesce(?::jsonb,cadastro_ampliado),restricoes_saude=coalesce(?::jsonb,restricoes_saude),
 			versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where vinculo_id=? and nutricionista_id=? and excluido_em is null
-			""",d.nome(),d.email(),d.dataNascimento(),sexo(d),d.telefone(),d.estaturaReferencia(),d.objetivo(),d.observacoes(),cadastro(d),Timestamp.from(agora),vinculo,nutri);
+			""",d.nome(),d.email(),d.dataNascimento(),sexo(d),d.telefone(),d.estaturaReferencia(),d.objetivo(),d.observacoes(),cadastro(d),restricoes(d),Timestamp.from(agora),vinculo,nutri);
 	}
 	/** RN-LGPD-04: exclusão lógica; o registro continua no banco para a retenção legal. */
 	public void excluir(UUID vinculo,UUID nutri,Instant agora) {
@@ -63,10 +63,15 @@ public class FichaPacienteStore {
 		var sexo=rs.getString("sexo");var nascimento=rs.getDate("data_nascimento");
 		return new PacienteResposta(rs.getObject("paciente_id",UUID.class),rs.getObject("vinculo_id",UUID.class),rs.getString("nome"),rs.getString("email"),
 			nascimento==null?null:nascimento.toLocalDate(),sexo==null?null:Sexo.valueOf(sexo),rs.getString("telefone"),rs.getBigDecimal("estatura_referencia"),
-			rs.getString("objetivo"),rs.getString("observacoes"),StatusVinculo.valueOf(rs.getString("status")),rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant(),null,lerCadastro(rs.getString("cadastro_ampliado")));
+			rs.getString("objetivo"),rs.getString("observacoes"),StatusVinculo.valueOf(rs.getString("status")),rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant(),null,lerCadastro(rs.getString("cadastro_ampliado")),null,null,lerRestricoes(rs.getString("restricoes_saude")));
 	}
 	/** Cadastro ampliado como JSON; ausente fica nulo (na edição mantém o que já existe), objeto vazio grava {} e limpa. */
 	private String cadastro(DadosFicha d){return d.cadastro()==null?null:mapper.writeValueAsString(d.cadastro());}
+	/** Itens de saúde como JSON; ausente fica nulo (na edição mantém), lista vazia grava [] e limpa. */
+	private String restricoes(DadosFicha d){return d.restricoes()==null?null:mapper.writeValueAsString(d.restricoes());}
+	private List<RestricaoSaude> lerRestricoes(String json){
+		if(json==null)return null;var itens=mapper.readValue(json,new tools.jackson.core.type.TypeReference<List<RestricaoSaude>>(){});return itens.isEmpty()?null:itens;
+	}
 	private CadastroAmpliado lerCadastro(String json){
 		if(json==null)return null;var c=mapper.readValue(json,CadastroAmpliado.class);return c.vazio()?null:c;
 	}
