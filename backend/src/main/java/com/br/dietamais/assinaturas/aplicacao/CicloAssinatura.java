@@ -22,6 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CicloAssinatura {
 	public record Resultado(int expiradas,int atrasadas,int avisos) { }
+	private int diasAvisoRenovacaoAnual=7;private int diasAvisoRenovacaoMensal=0;
+	/** RN-ASS-10: no PIX e no boleto a renovação depende de a nutri pagar a cobrança nova; avisa no painel N dias antes do vencimento (0 desliga). */
+	@org.springframework.beans.factory.annotation.Autowired(required=false)
+	void avisosRenovacao(@Value("${dieta.assinatura.aviso-renovacao-dias.anual:7}") int anual,@Value("${dieta.assinatura.aviso-renovacao-dias.mensal:0}") int mensal){
+		this.diasAvisoRenovacaoAnual=anual;this.diasAvisoRenovacaoMensal=mensal;
+	}
 	private final JdbcTemplate jdbc;private final Clock relogio;private final ConsultaNutricionistas nutris;private final RegistrarAviso avisos;
 	private final Duration carencia;private final Duration tolerancia;private final List<Integer> diasAvisoTeste;private final EnfileirarEmail emails;
 	public CicloAssinatura(JdbcTemplate jdbc,Clock relogio,ConsultaNutricionistas nutris,RegistrarAviso avisos,EnfileirarEmail emails,
@@ -54,6 +60,13 @@ public class CicloAssinatura {
 				int janela=janelas.stream().filter(d->restantes<=d).findFirst().orElse(janelas.getLast());
 				avisados+=avisar((UUID)e[1],"TESTE_FIM_"+janela+":"+e[0],new EmailFimTeste((int)restantes,fim));
 			}
+		// RN-ASS-10: a renovação está chegando (uma vez por vencimento); o ciclo anual avisa com mais antecedência
+		for(var r:jdbc.query("select id,organizacao_id,fim_periodo_em from assinatura where status='ATIVA' and fim_periodo_em>? and "
+				+"((periodicidade='ANUAL' and ?>0 and fim_periodo_em<=?) or (periodicidade='MENSAL' and ?>0 and fim_periodo_em<=?))",
+				(rs,n)->new Object[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getTimestamp(3).toInstant()},Timestamp.from(agora),
+				diasAvisoRenovacaoAnual,Timestamp.from(agora.plus(Duration.ofDays(Math.max(0,diasAvisoRenovacaoAnual)))),
+				diasAvisoRenovacaoMensal,Timestamp.from(agora.plus(Duration.ofDays(Math.max(0,diasAvisoRenovacaoMensal))))))
+			avisados+=avisar((UUID)r[1],"RENOVACAO:"+r[0]+":"+((Instant)r[2]).getEpochSecond());
 		// o gateway não avisou do atraso (webhook perdido): depois da tolerância, entra em atraso
 		var atrasadas=jdbc.query("update assinatura set status='EM_ATRASO' where status='ATIVA' and fim_periodo_em<=? returning id,organizacao_id,fim_periodo_em",
 			(rs,n)->new Object[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getTimestamp(3).toInstant()},Timestamp.from(agora.minus(tolerancia)));

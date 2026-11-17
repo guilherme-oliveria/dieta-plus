@@ -16,7 +16,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Asaas API v3: cliente + assinatura mensal com forma de pagamento à escolha do pagador (checkout hospedado, a cobrança traz o link).
+ * Asaas API v3: cliente + assinatura mensal ou anual ({@code cycle}) com forma de pagamento à escolha do pagador (PIX, cartão ou boleto, {@code UNDEFINED}, RN-ASS-10);
+ * checkout hospedado, a cobrança traz o link.
  * A chave só existe em variável de ambiente ({@code ASAAS_API_KEY}); nunca é registrada, nem o corpo das respostas.
  */
 public class GatewayAsaas implements GatewayPagamento {
@@ -35,8 +36,8 @@ public class GatewayAsaas implements GatewayPagamento {
 				cliente=http.post().uri("/v3/customers").body(corpo).retrieve().body(JsonNode.class).get("id").asString();
 			}
 			var assinatura=new LinkedHashMap<String,Object>();
-			assinatura.put("customer",cliente);assinatura.put("billingType","UNDEFINED");assinatura.put("value",d.valorMensal());
-			assinatura.put("nextDueDate",LocalDate.now(relogio.withZone(ZoneOffset.UTC)).plusDays(1).toString());assinatura.put("cycle","MONTHLY");
+			assinatura.put("customer",cliente);assinatura.put("billingType","UNDEFINED");assinatura.put("value",d.valor());
+			assinatura.put("nextDueDate",LocalDate.now(relogio.withZone(ZoneOffset.UTC)).plusDays(1).toString());assinatura.put("cycle",d.anual()?"YEARLY":"MONTHLY");
 			assinatura.put("description","Dieta+ "+d.planoNome());assinatura.put("externalReference",d.assinaturaId().toString());
 			var id=http.post().uri("/v3/subscriptions").body(assinatura).retrieve().body(JsonNode.class).get("id").asString();
 			var url=urlCobranca(id).orElseThrow(()->new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06"));

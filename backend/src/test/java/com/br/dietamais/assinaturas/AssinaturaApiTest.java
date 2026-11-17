@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
 class AssinaturaApiTest extends TesteIsolamento {
 	@Autowired GatewayTesteConfig.GatewayFalso gateway;
 
-	@BeforeEach void ligar(){gateway.ligado=true;gateway.criados=0;gateway.cancelados.clear();}
+	@BeforeEach void ligar(){gateway.ligado=true;gateway.criados=0;gateway.cancelados.clear();gateway.ultimo=null;}
 
 	String gatewayId(ContaTeste c){return jdbc.queryForObject("select gateway_assinatura_id from assinatura where organizacao_id=?",String.class,c.organizacao());}
 	String status(ContaTeste c){return jdbc.queryForObject("select status from assinatura where organizacao_id=?",String.class,c.organizacao());}
@@ -106,5 +106,46 @@ class AssinaturaApiTest extends TesteIsolamento {
 		String gw=gatewayId(a);
 		webhook("c2|ASSINATURA_CANCELADA|"+gw+"|","segredo-de-teste",200);
 		assertThat(status(a)).isEqualTo("TESTE");assertThat(gatewayId(a)).isNull();
+	}
+
+	/** BE-81a (RN-ASS-06, 09 e 10): checkout anual com planoCodigo, renovação de 1 ano no webhook e plano fora de venda. */
+	@Test void checkoutAnualRenovaPorUmAnoEPlanoForaDeVendaEhIndisponivel() throws Exception {
+		var a=cadastrarNutri();
+		var r=requisitar("POST","/assinatura/checkout",a.token(),Map.of("planoCodigo","BASICO_20","periodicidade","ANUAL"));
+		assertThat(r.statusCode()).as(r.body()).isEqualTo(200);
+		assertThat(gateway.ultimo.anual()).isTrue();assertThat(gateway.ultimo.valor()).isEqualByComparingTo("299.00");assertThat(gateway.ultimo.planoCodigo()).isEqualTo("BASICO_20");
+		// mesmo plano e mesma periodicidade: reaproveita a cobrança; trocar para mensal cancela a anual e cria outra
+		requisitar("POST","/assinatura/checkout",a.token(),Map.of("planoCodigo","BASICO_20","periodicidade","ANUAL"));
+		assertThat(gateway.criados).isEqualTo(1);
+		String anual=gatewayId(a);
+		requisitar("POST","/assinatura/checkout",a.token(),Map.of("planoCodigo","BASICO_20","periodicidade","MENSAL"));
+		assertThat(gateway.criados).isEqualTo(2);assertThat(gateway.cancelados).contains(anual);
+		assertThat(gateway.ultimo.anual()).isFalse();assertThat(gateway.ultimo.valor()).isEqualByComparingTo("29.90");
+		// volta para o anual e o pagamento confirma: período de 1 ano a partir do vencimento
+		requisitar("POST","/assinatura/checkout",a.token(),Map.of("planoCodigo","BASICO_20","periodicidade","ANUAL"));
+		String gw=gatewayId(a);
+		webhook("an1|PAGAMENTO_CONFIRMADO|"+gw+"|2026-11-10","segredo-de-teste",200);
+		var d=json(requisitar("GET","/assinatura",a.token(),null));
+		assertThat(d.path("status").asString()).isEqualTo("ATIVA");assertThat(d.path("periodicidade").asString()).isEqualTo("ANUAL");
+		assertThat(d.path("fimPeriodoEm").asString()).startsWith("2027-11-10");
+		assertThat(jdbc.queryForObject("select periodicidade_pendente from assinatura where organizacao_id=?",String.class,a.organizacao())).isNull();
+		// renovação do ano seguinte pelo webhook
+		webhook("an2|PAGAMENTO_CONFIRMADO|"+gw+"|2027-11-10","segredo-de-teste",200);
+		assertThat(json(requisitar("GET","/assinatura",a.token(),null)).path("fimPeriodoEm").asString()).startsWith("2028-11-10");
+		// plano ativo com preço, mas fora de venda, ou sem preço anual: PLANO_INDISPONIVEL
+		var b=cadastrarNutri();
+		jdbc.update("update plano set ativo=true,preco_mensal=79.90,preco_anual=null,a_venda=false where codigo='CONSULTORIO'");
+		try {
+			erro(requisitar("POST","/assinatura/checkout",b.token(),Map.of("planoCodigo","CONSULTORIO")),422,"PLANO_INDISPONIVEL");
+			jdbc.update("update plano set a_venda=true where codigo='CONSULTORIO'");
+			erro(requisitar("POST","/assinatura/checkout",b.token(),Map.of("planoCodigo","CONSULTORIO","periodicidade","ANUAL")),422,"PLANO_INDISPONIVEL");
+			assertThat(requisitar("POST","/assinatura/checkout",b.token(),Map.of("planoCodigo","CONSULTORIO")).statusCode()).isEqualTo(200);
+			assertThat(gateway.ultimo.valor()).isEqualByComparingTo("79.90");
+		} finally {
+			jdbc.update("update plano set ativo=false,preco_mensal=0,a_venda=false where codigo='CONSULTORIO'");
+		}
+		// sem plano em nenhum dos campos
+		erro(requisitar("POST","/assinatura/checkout",b.token(),Map.of("periodicidade","ANUAL")),400,"OBRIGATORIO");
+		erro(requisitar("POST","/assinatura/checkout",b.token(),Map.of("planoCodigo","BASICO_20","periodicidade","SEMESTRAL")),400,"FORMATO_INVALIDO");
 	}
 }

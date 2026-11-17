@@ -66,4 +66,17 @@ class CicloAssinaturaTest extends TesteComPaciente {
 		assertThat(jdbc.queryForObject("select count(*) from vinculo where nutricionista_id=? and status='ATIVO'",Integer.class,a.nutri())).isEqualTo(2);
 		jdbc.update("update plano set ativo=false where codigo='MINI_1'");
 	}
+
+	/** BE-81a (RN-ASS-10): renovação anual avisa no painel 7 dias antes do vencimento, uma vez por vencimento; a mensal não avisa (padrão). */
+	@Test void avisaAntesDaRenovacaoAnual() throws Exception {
+		var a=cadastrarNutri();fim(a,"ATIVA","20 days");
+		jdbc.update("update assinatura set periodicidade='ANUAL' where organizacao_id=?",a.organizacao());
+		ciclo.executar();assertThat(avisos(a)).isZero();
+		fim(a,"ATIVA","5 days");
+		ciclo.executar();ciclo.executar();
+		assertThat(status(a)).isEqualTo("ATIVA");assertThat(avisos(a)).isEqualTo(1);
+		// o vencimento seguinte avisa de novo
+		fim(a,"ATIVA","3 days");ciclo.executar();assertThat(avisos(a)).isEqualTo(2);
+		var mensal=cadastrarNutri();fim(mensal,"ATIVA","2 days");ciclo.executar();assertThat(avisos(mensal)).isZero();
+	}
 }
