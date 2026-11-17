@@ -2,7 +2,7 @@
 
 > Criado em 16/11/2026 pelo PO, a pedido do Guilherme. Documento comum aos dois projetos, por isso fica na raiz (`docs/`).
 > Origem: [`benchmark-anutri/backlog-1.4.0.md`](benchmark-anutri/backlog-1.4.0.md) (histórias `H-xx`) e [`benchmark-anutri/analise-de-lacunas.md`](benchmark-anutri/analise-de-lacunas.md) (lacunas `L-xx`), cruzados com o código da `develop` em 16/11/2026 (versão 1.3.1, backend até BE-67 e changeset 056, app até MOB-79).
-> **Status: plano para aprovação. Nenhuma tarefa começa antes do "ok" do Guilherme.** Este PR não tem código.
+> **Status: aprovado e liberado pelo Guilherme em 16/11/2026.** As decisões D-03 a D-12 foram aprovadas como recomendadas, com duas mudanças: a água vira um tipo de meta (D-07) e a assinatura digitalizada fica marcada para a 1.5.0 (D-05). Ver a seção 7.2. Os valores dos planos (G-21) também foram decididos: o Básico continua e entram dois níveis novos, todos com anual (seção 7.1). As tarefas estão nos `plano-de-acao.md` de `backend/` (Fase 9) e de `mobile/` (Fase 10).
 > Continua o [`backend/docs/arquitetura/plano-de-execucao.md`](../backend/docs/arquitetura/plano-de-execucao.md) (ondas 0 a 23). Aqui estão as **ondas 24 a 27** e o **marco M11 = 1.4.0**.
 
 O benchmark é referência de funcionalidade e de fluxo. Textos, nomes de plano, marca, cores, ícones e layout do concorrente não são copiados: telas novas seguem o canvas e `mobile/docs/design/`.
@@ -47,7 +47,7 @@ Vale tudo que já está no `AGENTS.md` da raiz e nos de `backend/` e `mobile/`. 
 | Docs comuns | `regras-de-negocio.md`, `integracao.md` e `funcionalidades-mvp.md` mudam em `backend/docs/arquitetura/` e na cópia de `mobile/docs/arquitetura/` **no mesmo PR** (exceção de raiz já prevista no `AGENTS.md`). |
 | Release | `develop` → `release/1.4.0` → `main`. O merge na `main` e a tag `v1.4.0` são só do Guilherme. O back-merge é da pipeline. |
 
-Numeração usada neste plano (continua a última de cada série): backend `BE-68` a `BE-85` e contratos `BE-C9` e `BE-C10`; app `MOB-81` a `MOB-98`, mais `MOB-29b`, `MOB-29c` e `MOB-29d`; design `DES-16` a `DES-22`; tarefas do Guilherme `G-21` a `G-28`. O `MOB-80` foi pulado de propósito, porque já foi usado num PR de estabilização de teste. Os IDs de regra (`RN-…`) são propostos; o número final é dado no PR do BE-C9.
+Numeração usada neste plano (continua a última de cada série): backend `BE-68` a `BE-86` e contratos `BE-C9` e `BE-C10`; app `MOB-81` a `MOB-99`, mais `MOB-29b`, `MOB-29c` e `MOB-29d`; design `DES-16` a `DES-22`; tarefas do Guilherme `G-21` a `G-28`. O `MOB-80` foi pulado de propósito, porque já foi usado num PR de estabilização de teste. Os IDs de regra (`RN-…`) são propostos; o número final é dado no PR do BE-C9.
 
 ## 3. Histórias em detalhe
 
@@ -133,7 +133,8 @@ Cada história traz objetivo, critérios de aceite, impacto no backend e no app,
 **Objetivo.** Dar ao paciente um motivo para abrir o app todo dia, e à nutri uma leitura de hábitos além da dieta: metas com alvo, progresso e sequência de dias.
 
 **Critérios de aceite.**
-- [ ] Tipos de meta: minutos de atividade ou passos (digitados), horas de sono, porções de frutas e verduras, sim/não livre e contador livre com unidade. A **água** continua como está e aparece na mesma lista (ver C-04).
+- [ ] Tipos de meta: água, minutos de atividade ou passos (digitados), horas de sono, porções de frutas e verduras, sim/não livre e contador livre com unidade.
+- [ ] **A água vira um tipo de meta** (decisão do Guilherme, D-07): todo paciente tem a meta de água, com o alvo padrão de 35 ml por kg, que a nutri pode ajustar na própria meta; ela ganha frequência, sequência, cumprimento e modelo como as outras. Os registros de água que já existem são migrados, e o app 1.3.x continua registrando água pelo caminho antigo, que o backend lê como registro da meta (ver C-04). "Desfazer último" e "Outro valor" (MOB-UX-05) continuam.
 - [ ] Cada meta tem alvo, frequência (diária ou N vezes por semana) e início e fim opcionais.
 - [ ] Modelos de metas da nutri, aplicáveis a mais de um paciente.
 - [ ] O paciente marca no Hoje e vê a sequência de dias e o progresso da semana. Funciona offline (registro só de inclusão).
@@ -142,14 +143,14 @@ Cada história traz objetivo, critérios de aceite, impacto no backend e no app,
 - [ ] Sem pontos nem níveis. Sequência e progresso bastam nesta release.
 - [ ] Sequência e progresso são calculados por função pura no app, com vetores de teste compartilhados com o backend.
 
-**Regras.** `RN-MET-01` (tipos, alvo e frequência), `RN-MET-02` (registro só de inclusão, janelas de data do check-in), `RN-MET-03` (cálculo de cumprimento e sequência), `RN-MET-04` (modelos da nutri, isolados por nutri). RN-ROT-03 não muda.
+**Regras.** `RN-MET-01` (tipos, alvo e frequência), `RN-MET-02` (registro só de inclusão, janelas de data do check-in), `RN-MET-03` (cálculo de cumprimento e sequência), `RN-MET-04` (modelos da nutri, isolados por nutri), `RN-MET-05` (água como meta: alvo padrão, precedência do alvo e compatibilidade com o registro antigo). RN-ROT-03 é atualizada: a meta de água passa a ser uma meta de hábito, com o mesmo padrão de 35 ml por kg.
 
 | | Mudança |
 | --- | --- |
 | Backend | Módulo novo `metas` (`api/`, `aplicacao/`, `dominio/`, `infra/`): metas, modelos, registros, fontes de sync, cumprimento. |
 | App | `ui/paciente/hoje` (cartões de meta), tela de metas do paciente, `ui/nutri/paciente` (cadastro, modelos, cumprimento), `dominio/metas`, `AgendadorLembretes`. |
-| Dados | Tabelas `meta_habito`, `modelo_meta` e `registro_meta`, no padrão das tabelas sincronizáveis. |
-| API | `GET/POST /pacientes/{id}/metas`, `PATCH /metas/{id}`, `GET/POST/PUT/DELETE /eu/nutri/modelos-meta`, `POST /pacientes/{id}/metas/de-modelo/{modeloId}`, `POST /eu/registros-meta`, `GET /pacientes/{id}/metas/cumprimento`. Coleções de sync `metas` (nutri escreve online; paciente só lê) e `registrosMeta` (paciente envia com `CRIAR`). |
+| Dados | Tabelas `meta_habito`, `modelo_meta` e `registro_meta`, no padrão das tabelas sincronizáveis. Migração dos registros de `registro_agua` para registros da meta de água, sem apagar a tabela antiga. |
+| API | `GET/POST /pacientes/{id}/metas`, `PATCH /metas/{id}`, `GET/POST/PUT/DELETE /eu/nutri/modelos-meta`, `POST /pacientes/{id}/metas/de-modelo/{modeloId}`, `POST /eu/registros-meta`, `GET /pacientes/{id}/metas/cumprimento`. Coleções de sync `metas` (nutri escreve online; paciente só lê) e `registrosMeta` (paciente envia com `CRIAR`). `POST /eu/agua` e a coleção `agua` continuam aceitos, como caminho antigo, por pelo menos 6 meses (regra de versionamento do contrato). |
 | Dependências | Nenhuma de outra história. O cartão no Hoje mexe na mesma tela que H-03: no app, H-03 entra antes. |
 
 ### 3.5 H-05 Suplementos e orientações no app do paciente
@@ -196,16 +197,16 @@ Cada história traz objetivo, critérios de aceite, impacto no backend e no app,
 | App | `ui/nutri/paciente` (emitir, lista, anular, compartilhar), conta da nutri (modelos), `ui/paciente` (Documentos). |
 | Dados | Tabelas `modelo_documento` e `documento_emitido` (código de conferência único, texto final, chave do PDF, anulado em, motivo). Changeset com os dois modelos do sistema. |
 | API | `GET/POST/PUT/DELETE /eu/nutri/modelos-documento`, `GET/POST /pacientes/{id}/documentos`, `POST /documentos/{id}/anular`, `GET /documentos/{id}/pdf`, `GET /eu/documentos`, `GET /eu/documentos/{id}/pdf`, `GET /api/v1/documentos/conferir/{codigo}` (pública). Coleção de sync `documentos` (metadados). "Gerar PDF" já está na lista de ações que exigem internet. |
-| Dependências | H-02 (status Realizada) para a declaração a partir da consulta. A logo já sai no PDF quando existe. A assinatura digitalizada depende de decisão (D-05). |
+| Dependências | H-02 (status Realizada) para a declaração a partir da consulta. A logo já sai no PDF quando existe. A assinatura digitalizada fica para a release 1.5.0 (D-05). |
 
 **Pontos de atenção.** D-06: o texto dos dois modelos do sistema precisa ser validado por uma nutricionista antes de ir para produção.
 
 ### 3.7 H-07 Plano anual e segundo nível de plano
 
-**Objetivo.** Dar à nutri para onde crescer (mais pacientes) e uma opção anual, e mostrar isso com clareza na tela de assinatura. **Os valores são decisão do Guilherme (G-21, seção 7.1).** A engenharia não depende deles: tudo é entregue com o plano novo **inativo**, e os valores entram depois pelo admin, sem deploy (RN-ASS-01).
+**Objetivo.** Dar à nutri para onde crescer (mais pacientes) e uma opção anual, e mostrar isso com clareza na tela de assinatura. **Os valores foram decididos pelo Guilherme (G-21, seção 7.1): o Básico continua e entram dois níveis novos, todos com anual.** A engenharia não depende deles: tudo é entregue com os níveis novos **inativos**, e os valores entram pelo admin, sem deploy (RN-ASS-01).
 
 **Critérios de aceite.**
-- [ ] A tabela `plano` aceita preço anual e a marcação "à venda". Um segundo nível pago existe, inativo até o Guilherme definir os valores.
+- [ ] A tabela `plano` aceita preço anual, a marcação "à venda" e limite de pacientes "sem limite". Dois níveis novos existem, inativos até a ativação pelo admin com os valores da seção 7.1.
 - [ ] `GET /api/v1/planos`, público, devolve só os planos à venda, sem dado de usuário, com limite de requisições.
 - [ ] O checkout aceita a periodicidade (mensal ou anual) e continua fora do app (RN-ASS-06). O webhook trata a renovação anual (RN-ASS-07).
 - [ ] A nutri com assinatura ativa consegue **trocar de plano** (hoje o checkout responde `ASSINATURA_JA_ATIVA`). O comportamento da troca segue a decisão D-11.
@@ -220,9 +221,9 @@ Cada história traz objetivo, critérios de aceite, impacto no backend e no app,
 | --- | --- |
 | Backend | Módulo `assinaturas`: modelo do plano, endpoint público, admin, gateway (hoje `cycle` fixo em `MONTHLY` e só `valorMensal`), webhook, job do ciclo, troca de plano. `notificacoes`: avisos do fim do teste. |
 | App | `ui/nutri/assinatura` (comparar planos, uso, contagem do teste). |
-| Dados | `plano`: `preco_anual` e `a_venda`. `assinatura`: `periodicidade`. Linha do segundo nível inativa. Nenhum valor de preço neste plano. |
+| Dados | `plano`: `preco_anual`, `a_venda` e `limite_pacientes` aceitando nulo (sem limite). `assinatura`: `periodicidade`. Linhas dos dois níveis novos inativas, sem valor de preço no changeset. |
 | API | `GET /api/v1/planos` (pública). `POST /assinatura/checkout` ganha `planoCodigo` e `periodicidade`, opcionais. `GET /assinatura` ganha `periodicidade`, `diasRestantesTeste` e `planosDisponiveis`, opcionais. Contrato próprio: BE-C10. |
-| Dependências | BE-26, BE-27 e BE-30, já entregues. **G-21** para ativar o plano. **G-08** (conta do Asaas) para validar no sandbox. Independente das outras histórias. |
+| Dependências | BE-26, BE-27 e BE-30, já entregues. Valores decididos na **G-21** (seção 7.1). **G-08** (conta do Asaas) para validar no sandbox. Independente das outras histórias. |
 
 **Pontos de atenção.** C-05 (preço por changeset contra RN-ASS-01), C-07 (troca de plano não existe hoje), D-09 (preço e botão de assinar no iOS) e D-11.
 
@@ -262,7 +263,7 @@ Esforço: **P** = 1 PR pequeno (1 ponto), **M** = 1 PR médio com contrato, test
 | DES-16 Saúde e restrições | H-01 | Seção da ficha, selo no cabeçalho, alerta de intolerância e confirmação de alergia no montador | MOB-82, MOB-83 | M |
 | DES-17 Consulta e agenda | H-02 | Formulário da consulta (tipo, modalidade, link, orientação, observação), ações de status, visão do mês, preferência de lembrete, próxima consulta do paciente com "Entrar na consulta" | MOB-84 a MOB-87 | M |
 | DES-18 Diário da refeição | H-03 | Escalas no registro, "comi fora do plano", cartão de humor e de registros na adesão da nutri | MOB-88, MOB-89 | P |
-| DES-19 Metas de hábito | H-04 | Hoje com metas e água juntas, registro, sequência, cadastro e modelos da nutri, cumprimento na ficha | MOB-90, MOB-91 | M |
+| DES-19 Metas de hábito | H-04 | Hoje com as metas (a água é uma delas, mantendo desfazer e valor livre), registro, sequência, cadastro e modelos da nutri, cumprimento na ficha | MOB-90, MOB-91 | M |
 | DES-20 Suplementos e orientações | H-05 | Prescrever e orientar (nutri), modelos, "Suplementos" e "Orientações" (paciente) | MOB-92, MOB-93 | M |
 | DES-21 Documentos | H-06 | Modelos, emitir e anular, lista na ficha, "Documentos" do paciente, layout do PDF e da página de conferência | MOB-94, MOB-95, BE-78, BE-79 | M |
 | DES-22 Assinatura | H-07 | Comparar planos com mensal/anual, uso dos limites, contagem do teste, aviso de fim do teste no painel | MOB-96 | M |
@@ -281,13 +282,14 @@ A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOff
 | **BE-72** Lembretes configuráveis e confirmação | H-02 | Preferência da nutri, job por antecedência, lembrete extra, e-mail de confirmação | BE-71 | M | 25 |
 | **BE-73** Diário: humor e fora do plano | H-03 | Colunas no check-in, `registro_fora_do_plano`, sync, `GET /eu/rotina`, resumo na adesão | BE-C9 | M | 25 |
 | **BE-74** Metas de hábito | H-04 | Módulo `metas`: metas, modelos, registros, sync, cumprimento | BE-C9 | G | 25 |
+| **BE-86** Água como tipo de meta | H-04 | Meta de água para todo paciente (alvo padrão de 35 ml por kg, ajustável pela nutri), migração dos registros, caminho antigo `agua` lido como registro da meta, adesão e evolução sem regressão | BE-74 | M | 25 |
 | **BE-75** Suplementos prescritos | H-05 | Prescrição com cópia congelada, vigência, sync | BE-C9 | M | 26 |
 | **BE-76** Orientações avulsas | H-05 | Orientações, modelos, sync, evento de push "nova orientação" | BE-C9 | M | 26 |
 | **BE-77** Suplementos no PDF da dieta | H-05 | Bloco opcional de suplementos ativos no PDF | BE-75 | P | 26 |
 | **BE-78** Documentos: modelos, emissão e PDF | H-06 | Módulo `documentos`, modelos do sistema, emissão imutável, anulação, PDF | BE-C9, BE-71, DES-21 | M | 26 |
 | **BE-79** Documentos: conferência e lista do paciente | H-06 | Rota pública com limite e auditoria, `GET /eu/documentos`, sync | BE-78 | M | 26 |
 | **BE-C10** Contrato dos planos | H-07 | `contrato-fase-10.md`, records, `501`, JSONs, RN-ASS novas | — | P | 25 |
-| **BE-80** Planos: anual, à venda, endpoint público e admin | H-07 | Colunas, segundo nível **inativo**, `GET /api/v1/planos`, campos no admin, `GET /assinatura` ampliado | BE-C10 | M | 26 |
+| **BE-80** Planos: anual, à venda, endpoint público e admin | H-07 | Colunas, limite "sem limite", dois níveis novos **inativos**, `GET /api/v1/planos`, campos no admin, `GET /assinatura` ampliado | BE-C10 | M | 26 |
 | **BE-81** Gateway anual, troca de plano e webhook | H-07 | Periodicidade no checkout, renovação anual, troca de plano (D-11), job do ciclo | BE-80, D-11 | G | 27 |
 | **BE-82** Avisos do fim do teste | H-07 | Aviso e e-mail 7 dias e 1 dia antes, com relógio controlado | BE-80 | P | 27 |
 | **BE-83** `modelosDieta` na escrita do sync | MOB-29b | `CRIAR`, `ATUALIZAR` e `EXCLUIR` de modelo de dieta pelo `POST /sync` | — | M | 24 |
@@ -312,6 +314,7 @@ A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOff
 | **MOB-89** Nutri: humor e fora do plano na adesão | H-03 | Cartão na adesão do paciente | DES-18, BE-73 | P | 26 |
 | **MOB-90** Paciente: metas de hábito | H-04 | Hoje com metas, registro, sequência (`dominio/metas`), lembrete local | DES-19, MOB-88, BE-74 | M | 26 |
 | **MOB-91** Nutri: metas, modelos e cumprimento | H-04 | Cadastro, modelos, aplicar, cumprimento na ficha | DES-19, BE-74 | M | 26 |
+| **MOB-99** Água como meta no app | H-04 | Cartão de água do Hoje passa a ler e registrar pela meta, com desfazer e valor livre; migração do banco local; alvo ajustado pela nutri | DES-19, MOB-90, BE-86 | M | 26 |
 | **MOB-92** Nutri: prescrever e orientar | H-05 | Suplementos, orientações e modelos | DES-20, BE-75, BE-76 | M | 26 |
 | **MOB-93** Paciente: suplementos e orientações | H-05 | Duas telas offline, lembrete local, push "nova orientação" | DES-20, BE-75, BE-76 | M | 26 |
 | **MOB-94** Nutri: documentos | H-06 | Modelos, emitir, anular, compartilhar o PDF | DES-21, BE-78 | M | 27 |
@@ -325,13 +328,13 @@ A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOff
 | Projeto | Tarefas | P | M | G | Pontos |
 | --- | --- | --- | --- | --- | --- |
 | Design | 7 | 1 | 6 | 0 | 19 |
-| Backend | 20 | 5 | 12 | 3 | 56 |
-| App | 21 | 5 | 15 | 1 | 55 |
-| **Total** | **48** | 11 | 33 | 4 | **130** |
+| Backend | 21 | 5 | 13 | 3 | 59 |
+| App | 22 | 5 | 16 | 1 | 58 |
+| **Total** | **50** | 11 | 35 | 4 | **136** |
 
-Por história (backend + app + design): H-01 16 · H-02 19 · H-03 8 · H-04 14 · H-05 16 · H-06 13 · H-07 16 · MOB-29b 14 · transversais (contratos, LGPD, ponta a ponta, fechamento) 14.
+Por história (backend + app + design): H-01 16 · H-02 19 · H-03 8 · H-04 20 · H-05 16 · H-06 13 · H-07 16 · MOB-29b 14 · transversais (contratos, LGPD, ponta a ponta, fechamento) 14.
 
-São cerca de 48 PRs de tarefa, mais os PRs da release. Não há histórico de velocidade medido em dias para converter pontos em prazo com segurança. A proposta é medir a onda 24 e projetar o resto a partir dela.
+São cerca de 50 PRs de tarefa, mais os PRs da release. Não há histórico de velocidade medido em dias para converter pontos em prazo com segurança. A proposta é medir a onda 24 e projetar o resto a partir dela.
 
 ## 5. Ordem de execução
 
@@ -340,8 +343,8 @@ São cerca de 48 PRs de tarefa, mais os PRs da release. Não há histórico de v
 | Onda | Backend | App | Design | Integração ao fim da onda |
 | --- | --- | --- | --- | --- |
 | **24** Contrato, segurança e offline | BE-C9 · BE-68 · BE-69 · BE-71 · BE-83 | MOB-81 · MOB-29b · MOB-82 | DES-16 · DES-17 · DES-18 | Ficha com restrições sincroniza; rascunho de dieta offline no desktop |
-| **25** Alerta, agenda e diário | BE-70 · BE-72 · BE-73 · BE-74 · BE-C10 | MOB-83 · MOB-84 · MOB-85 · MOB-87 · MOB-88 · MOB-29c · MOB-29d | DES-19 · DES-20 · DES-21 | Alerta de alergia no montador; consulta online com link; paciente registra humor |
-| **26** Hábitos e prescrição | BE-75 · BE-76 · BE-77 · BE-78 · BE-79 · BE-80 | MOB-86 · MOB-89 · MOB-90 · MOB-91 · MOB-92 · MOB-93 | DES-22 | Paciente marca meta e vê suplemento e orientação offline |
+| **25** Alerta, agenda e diário | BE-70 · BE-72 · BE-73 · BE-74 · BE-86 · BE-C10 | MOB-83 · MOB-84 · MOB-85 · MOB-87 · MOB-88 · MOB-29c · MOB-29d | DES-19 · DES-20 · DES-21 | Alerta de alergia no montador; consulta online com link; paciente registra humor |
+| **26** Hábitos e prescrição | BE-75 · BE-76 · BE-77 · BE-78 · BE-79 · BE-80 | MOB-86 · MOB-89 · MOB-90 · MOB-99 · MOB-91 · MOB-92 · MOB-93 | DES-22 | Paciente marca meta e vê suplemento e orientação offline |
 | **27** Documentos, planos e fechamento | BE-81 · BE-82 · BE-84 · BE-85 | MOB-94 · MOB-95 · MOB-96 · MOB-97 · MOB-98 | — | **Marco M11 = 1.4.0** (`release/1.4.0`) |
 
 Uma onda começa quando as tarefas de backend da anterior estão na `develop`. O app pode atrasar meia onda sem travar ninguém, e o design fica uma onda à frente do app.
@@ -352,10 +355,10 @@ O backend e o app têm duas pistas cada, que mexem em módulos diferentes. Com d
 
 | Pista | Sequência |
 | --- | --- |
-| Backend A (clínica) | BE-C9 → BE-68 → BE-69 → BE-70 → BE-73 → BE-74 → BE-75 → BE-76 → BE-77 → BE-84 |
+| Backend A (clínica) | BE-C9 → BE-68 → BE-69 → BE-70 → BE-73 → BE-74 → BE-86 → BE-75 → BE-76 → BE-77 → BE-84 |
 | Backend B (agenda, documentos e comercial) | BE-83 → BE-71 → BE-72 → BE-C10 → BE-80 → BE-78 → BE-79 → BE-81 → BE-82 → BE-85 |
 | App A (nutri) | MOB-81 → MOB-29b → MOB-82 → MOB-83 → MOB-29c → MOB-29d → MOB-91 → MOB-92 → MOB-94 → MOB-96 |
-| App B (paciente e agenda) | MOB-84 → MOB-85 → MOB-87 → MOB-88 → MOB-86 → MOB-89 → MOB-90 → MOB-93 → MOB-95 → MOB-97 → MOB-98 |
+| App B (paciente e agenda) | MOB-84 → MOB-85 → MOB-87 → MOB-88 → MOB-86 → MOB-89 → MOB-90 → MOB-99 → MOB-93 → MOB-95 → MOB-97 → MOB-98 |
 | Design | DES-16 → DES-17 → DES-18 → DES-19 → DES-20 → DES-21 → DES-22 |
 
 - **Independentes entre si:** H-03, H-05 e H-07 não dependem de outra história. H-07 pode ser adiantada inteira se uma pista ficar livre, porque os valores entram depois.
@@ -363,7 +366,7 @@ O backend e o app têm duas pistas cada, que mexem em módulos diferentes. Com d
 - **Em paralelo dentro do app:** MOB-29b com MOB-82; MOB-83 com MOB-84 e MOB-88; MOB-92 com MOB-93.
 - **Não paralelizar:**
   - MOB-29b, MOB-83 e MOB-29d mexem no repositório e nas telas de dieta: uma de cada vez, nessa ordem.
-  - MOB-88 e MOB-90 mexem no Hoje do paciente: MOB-88 primeiro.
+  - MOB-88, MOB-90 e MOB-99 mexem no Hoje do paciente: uma de cada vez, nessa ordem.
   - MOB-81 mexe em muitos DTOs do `shared`: sozinha, logo no começo.
   - PRs abertos ao mesmo tempo que editam `regras-de-negocio.md`, `integracao.md` ou a mesma linha do `plano-de-acao.md` precisam mesclar a `develop` antes do QA. Para reduzir isso, o BE-C9 já escreve todas as regras novas de uma vez.
 
@@ -372,7 +375,7 @@ O backend e o app têm duas pistas cada, que mexem em módulos diferentes. Com d
 1. BE-C9 → BE-68 → BE-70 → MOB-83, que ainda espera a MOB-29b: é a cadeia mais longa e a que entrega o item de segurança.
 2. BE-71 → BE-78 → BE-79 → MOB-94 e MOB-95: os documentos dependem do status da consulta.
 3. DES-16 e DES-17 precisam sair na primeira metade da onda 24. O design é uma pista só e atende sete conjuntos de telas.
-4. G-21 (valores) não trava a engenharia, mas trava a ativação do plano novo. Sem resposta até o corte, a 1.4.0 sai com o segundo nível e o anual inativos.
+4. Os valores (G-21) já estão decididos. A ativação dos planos novos depende da conta do Asaas validada no sandbox (G-08) e dos nomes; sem isso até o corte, a 1.4.0 sai com os níveis novos e o anual inativos.
 
 ## 6. Conflitos entre o benchmark e a arquitetura atual
 
@@ -383,7 +386,7 @@ Pedido do Guilherme: apontar o conflito em vez de decidir sozinho. Cada item tra
 | **C-01** | H-02 | Status Realizada e Falta na consulta, com "observação interna" e comparecimento em uma fonte só | A consulta sincronizada é **a mesma projeção** para a nutri e para o paciente (`FontesConsultasSync`). O comparecimento vive em `consulta_financeiro`, fora do sync de propósito ("dinheiro é só da nutri", RN-FIN-01). O `PATCH` só aceita mudar o status para `CANCELADA` | Separar a projeção do paciente (sem observação interna e sem "Falta") e tornar o status da consulta a fonte, com `comparecimento` derivado. Decisão D-03 |
 | **C-02** | H-02 | Trocar `ONLINE` de tipo para modalidade "sem quebrar o app antigo" | `TipoConsulta` é `PRIMEIRA`, `RETORNO`, `ONLINE`. Remover valor de enum é mudança incompatível (só em `/api/v2`) | Não remover: `ONLINE` continua aceito na entrada, é gravado como Retorno + Online e some das respostas novas. O app 1.3.x vai mostrar essas consultas como "Retorno", sem erro. Confirmar se essa perda de rótulo no app antigo é aceitável |
 | **C-03** | H-01 | Alergias estruturadas na ficha | A anamnese padrão já tem o bloco "alergias" em texto livre (RN-ANA-01) | Manter os dois na 1.4.0, sem migração automática de texto livre para item estruturado. "Sugerir a partir da anamnese" fica para depois |
-| **C-04** | H-04 | "Água vira um tipo de meta" (RN-ROT-03) | Água é uma coleção própria do sync (`agua`), com meta de 35 ml/kg, cartão no Hoje, desfazer e valor livre (MOB-UX-05). Apps antigos enviam `agua` | **Não migrar.** A água continua como é e aparece junto das metas na tela. Decisão D-07 |
+| **C-04** | H-04 | "Água vira um tipo de meta" (RN-ROT-03) | Água é uma coleção própria do sync (`agua`), com meta de 35 ml/kg, cartão no Hoje, desfazer e valor livre (MOB-UX-05). Apps antigos enviam `agua` | A recomendação do PO era não migrar. **O Guilherme decidiu migrar (D-07).** Para não quebrar o app 1.3.x, o caminho antigo (`POST /eu/agua` e a coleção `agua`) continua aceito por pelo menos 6 meses e é lido como registro da meta de água (BE-86, MOB-99) |
 | **C-05** | H-07 | Segundo nível "cadastrado por changeset com os valores aprovados" | RN-ASS-01: mudar preço não exige deploy; o admin tem CRUD de planos (BE-30) | Changeset só para as colunas e para a linha inativa, sem valor de preço. Os valores entram pelo admin, com log |
 | **C-06** | H-06 | A rota pública de conferência mostra as **iniciais do paciente** | Regra do projeto: dado de saúde não sai sem autenticação. Iniciais + nutri + data permitem inferir que a pessoa é paciente de uma nutricionista | Rota pública sem dado do paciente (tipo, emissor, CRN, data, situação). Decisão D-04 |
 | **C-07** | H-07 | Segundo nível de plano | O checkout recusa quem já tem assinatura ativa (`ASSINATURA_JA_ATIVA`), o gateway cria cobrança só mensal e o backlog não descreve a troca de plano | Tratar a troca de plano como parte da história (BE-81). Decisão D-11 |
@@ -393,11 +396,25 @@ Pedido do Guilherme: apontar o conflito em vez de decidir sozinho. Cada item tra
 
 ## 7. Decisões do Guilherme
 
-### 7.1 G-21 Valores dos planos (decisão sua; este plano não define preço)
+### 7.1 G-21 Valores dos planos (decididos pelo Guilherme em 16/11/2026)
 
 Situação de hoje, na tabela `plano`: **Teste**, grátis, 30 dias, 5 pacientes; **Básico**, R$ 29,90 por mês, 20 pacientes. Não há anual nem segundo nível. Os números do concorrente estão em `analise-de-lacunas.md`, seção 4.1, só como referência de mercado.
 
-Preciso de quatro respostas. As opções abaixo são formas possíveis, sem recomendação de valor.
+**Decidido pelo Guilherme em 16/11/2026** ("pode copiar os planos", na forma "manter o Básico e somar dois níveis"):
+
+| Plano | Mensal | Anual (10 × o mensal) | Pacientes | Situação |
+| --- | --- | --- | --- | --- |
+| Teste | grátis | — | 5, por 30 dias | Não muda |
+| Básico | R$ 29,90 | R$ 299,00 | 20 | Já existe; ganha o anual |
+| Nível novo 1 | R$ 79,90 | R$ 799,00 | 80 | Novo |
+| Nível novo 2 | R$ 179,90 | R$ 1.799,00 | Ilimitado | Novo |
+
+- Os valores dos dois níveis novos são os do concorrente (seção 4.1 de `analise-de-lacunas.md`). Os **nomes** são próprios do Dieta+ e ainda precisam ser escolhidos; até lá ficam provisórios e editáveis no admin.
+- Nada disso vira changeset de preço: os níveis nascem inativos e os valores entram pelo admin (C-05). A ativação depende da conta do Asaas validada no sandbox (G-08).
+- "Ilimitado" exige que o limite de pacientes do plano aceite "sem limite" (hoje a coluna é obrigatória e numérica). Entrou na BE-80.
+- Continua em aberto, sem travar nada: se o anual aceita PIX e boleto além de cartão (sem cartão a renovação não é automática).
+
+As perguntas originais ficam abaixo, como registro.
 
 **a) Segundo nível: quantos pacientes?**
 
@@ -436,27 +453,29 @@ E dois detalhes ligados a isso: o **nome** do segundo nível (precisa ser própr
 | --- | --- | --- | --- | --- |
 | **D-03** | O paciente vê que a consulta ficou como "Falta"? | (a) Não: o paciente só vê Agendada, Cancelada e "encerrada"; (b) Sim, vê o status real | (a) | BE-71 |
 | **D-04** | A conferência pública do documento mostra as iniciais do paciente? | (a) Não mostra nada do paciente; (b) mostra as iniciais, como no backlog | (a) | BE-79 |
-| **D-05** | Assinatura digitalizada da nutri no documento entra na 1.4.0? | (a) Não: nome, CRN, logo e código de conferência; (b) Sim: exige envio de imagem (mesmo caminho da MOB-33b, que ainda falta na web e no iOS) | (a) | BE-78 |
+| **D-05** | Assinatura digitalizada da nutri no documento entra na 1.4.0? | (a) Não: nome, CRN, logo e código de conferência; (b) Sim: exige envio de imagem (mesmo caminho da MOB-33b, que ainda falta na web e no iOS) | (a). **Decidido: fica para a release 1.5.0** | BE-78 |
 | **D-06** | Quem valida o texto dos modelos de atestado e de declaração? | (a) A nutri parceira revisa antes da release; (b) sai marcado como suposição, para revisar depois | (a) | BE-78 |
-| **D-07** | Água vira um tipo de meta? | (a) Não migra, só aparece junto; (b) migra para o modelo de metas | (a) | BE-74 |
+| **D-07** | Água vira um tipo de meta? | (a) Não migra, só aparece junto; (b) migra para o modelo de metas | (a). **Decidido diferente: (b), a água vira um tipo de meta** | BE-74, BE-86 |
 | **D-08** | A antecedência do lembrete escolhida pela nutri vale para quem? | (a) Para a nutri e para os pacientes dela; (b) só para o lembrete do paciente; a nutri mantém 24 h | (a) | BE-72 |
 | **D-09** | No iOS, a tela de assinatura mostra preço e o botão que abre o navegador? | (a) Igual em todas as plataformas; (b) no iOS mostra o plano e o uso, sem preço nem botão, até conferir as regras da App Store (S4); (c) controlado por uma chave do backend | (c) | MOB-96 |
 | **D-10** | Quem valida os marcadores novos sugeridos por nome (amendoim, frutos do mar e outros)? | (a) A nutri parceira; (b) saem como suposição (como a G-15), editáveis por nutri | (b), com o texto do alerta dizendo que é sugestão | BE-69 |
 | **D-11** | Como funciona a troca de plano com assinatura ativa? | (a) Só no próximo vencimento; (b) na hora, com o limite novo valendo já e cobrança cheia do plano novo, sem crédito proporcional; (c) na hora, com crédito proporcional calculado | (b) para subir de plano e (a) para descer; crédito proporcional fica como ajuste manual do admin | BE-81 |
 | **D-12** | Aprovar os conflitos C-02, C-03, C-05, C-08, C-09 e C-10 como recomendados | Sim, ou dizer qual muda | Sim | BE-C9 |
 
-Nenhuma decisão trava a onda 24, exceto a D-12 (o BE-C9 escreve as regras). As outras podem chegar até o começo da tarefa que elas travam. Sem resposta, a tarefa segue a recomendação, marca `[SUPOSIÇÃO]` e deixa o valor configurável, como o `AGENTS.md` já manda. **A G-21 é a exceção: sem os valores, nada é ativado.**
+**Decidido em 16/11/2026 pelo Guilherme:** valem as recomendações desta tabela (D-03 a D-12, o que inclui os conflitos da seção 6), com duas mudanças marcadas nas linhas: na **D-07** a água vira um tipo de meta, e na **D-05** a assinatura digitalizada fica marcada para a release 1.5.0. O texto das tarefas nos planos de ação já reflete isso.
+
+Registro do que valia antes da resposta: nenhuma decisão travava a onda 24, exceto a D-12 (o BE-C9 escreve as regras). As outras podem chegar até o começo da tarefa que elas travam. Sem resposta, a tarefa segue a recomendação, marca `[SUPOSIÇÃO]` e deixa o valor configurável, como o `AGENTS.md` já manda. **A G-21 é a exceção: sem os valores, nada é ativado.**
 
 ### 7.3 Tarefas do Guilherme
 
 | ID | O quê | Quando | Trava |
 | --- | --- | --- | --- |
-| **G-21** | Valores e limites do segundo nível, do anual e do Teste (seção 7.1) | Até a onda 27 | Ativar os planos |
+| **G-21** | Valores e limites dos planos (seção 7.1) | **Feito em 16/11/2026.** Falta só escolher os nomes dos dois níveis novos | Ativar os planos |
 | **G-22** | Landing em `site/` no monorepo: **decidido**, só registro | — | `SITE-01` (futura) |
 | **G-23** | Fotos de evolução e do prato entram no roadmap? | Depois da 1.4.0 | L-10 |
 | **G-24** | Assistente de IA vira plano próprio? | Depois da 1.4.0 | L-21 |
 | **G-25** | Finalizar e aprovar os termos de uso e a política de privacidade | Antes de qualquer landing | Landing e abertura do cadastro (BE-36) |
-| **G-26** | Responder D-03 a D-12 | Conforme a coluna "Trava" | Tarefas indicadas |
+| **G-26** | Responder D-03 a D-12 | **Feito em 16/11/2026**: como recomendado, menos a D-07 (água vira meta); D-05 marcada para a 1.5.0 | — |
 | **G-27** | Testar no Android e, com o Mac do amigo, no iPhone o roteiro da seção 9.3 | Na `release/1.4.0` | Corte da release |
 | **G-28** | Aprovar o PR `release/1.4.0 → main` e autorizar a tag `v1.4.0` | Fim da onda 27 | Publicação |
 
@@ -479,6 +498,7 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 | R-11 | **Ambiente da nuvem**: sem Docker (Testcontainers) e sem compilar Android e iOS | Erro só aparece no CI | CI verde é obrigatório; `ops/validar-wsl.sh` quando precisar reproduzir; erros de import do alvo web aparecem só no job Web |
 | R-12 | **Colisão de PRs paralelos** nos docs comuns e na numeração dos changesets | Retrabalho e fila no QA | Regras da seção 2 e da 5.2; BE-C9 escreve as regras de uma vez |
 | R-13 | **Volume**: metas, registros e humor crescem por paciente e por dia | Sync inicial lento para nutri com 1.000 pacientes | A nutri recebe resumo de cumprimento pelo REST, e não cada registro; índices por paciente e data; medir no BE-74 |
+| R-15 | **Água como meta** muda um registro que o app 1.3.x já usa todo dia | Água registrada no app antigo some da meta, ou a adesão e a evolução mudam de número | Caminho antigo aceito por 6 meses e lido como registro da meta; migração conferida por teste sobre base da 1.3.1; mesmos totais antes e depois |
 | R-14 | **Escopo**: oito frentes numa release | A release atrasa inteira por causa de uma história | Histórias independentes; no corte, o que não estiver completo fica desligado ou vai para a 1.4.1 (ordem de corte: H-07 ativação, H-06, MOB-29d) |
 
 ## 9. Critérios para considerar a release pronta
@@ -491,7 +511,7 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 
 ### 9.2 Da release
 
-- [ ] As 48 tarefas da seção 4 estão `[x]` na `develop`, ou a exceção está escrita no PR da release com o motivo e o destino (1.4.1 ou 1.5.0).
+- [ ] As 50 tarefas da seção 4 estão `[x]` na `develop`, ou a exceção está escrita no PR da release com o motivo e o destino (1.4.1 ou 1.5.0).
 - [ ] Todos os critérios de aceite da seção 3 conferidos pelo QA, história por história, com o resultado no PR da release.
 - [ ] `funcionalidades-mvp.md` com F-22 a F-28 (uma por história) e `regras-de-negocio.md` e `integracao.md` iguais nas duas cópias.
 - [ ] **Isolamento:** teste entre duas nutris para cada entidade nova (restrições, consulta ampliada, humor e fora do plano, metas, suplementos, orientações, documentos). De outra nutri é sempre `404`.
@@ -506,7 +526,7 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 - [ ] **CI completo no PR da release**, incluindo **iOS**, que só roda em `release/*`.
 - [ ] **Acessibilidade:** a verificação com axe-core do e2e continua sem regressão nas telas novas.
 - [ ] `CHANGELOG.md` dos dois projetos com a seção 1.4.0; versão 1.4.0 no backend e no app.
-- [ ] Planos novos **inativos** se a G-21 não estiver respondida; ativos e conferidos no sandbox se estiver.
+- [ ] Planos novos cadastrados com os valores da seção 7.1 e conferidos no sandbox do Asaas; ficam **inativos** se a conta do gateway (G-08) ou os nomes ainda não estiverem definidos.
 
 ### 9.3 QA e teste manual
 
@@ -523,6 +543,6 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 
 ## 10. Depois da aprovação deste plano
 
-1. O PO abre um PR por projeto copiando as tarefas das seções 4.2 e 4.3 para `backend/docs/arquitetura/plano-de-acao.md` e `mobile/docs/arquitetura/plano-de-acao.md` (fase "1.4.0"), e as tarefas `DES` para `mobile/docs/design/telas.md`, com as decisões D-xx já respondidas refletidas no texto.
+1. **Feito em 16/11/2026.** O PO abre um PR por projeto copiando as tarefas das seções 4.2 e 4.3 para `backend/docs/arquitetura/plano-de-acao.md` e `mobile/docs/arquitetura/plano-de-acao.md` (fase "1.4.0"), e as tarefas `DES` para `mobile/docs/design/telas.md`, com as decisões D-xx já respondidas refletidas no texto.
 2. O agente de design começa por DES-16 e DES-17; o backend, por BE-C9 e BE-83; o app, por MOB-29b.
 3. Ao fim da onda 24, o PO mede o ritmo e atualiza este documento com a projeção das ondas seguintes.
