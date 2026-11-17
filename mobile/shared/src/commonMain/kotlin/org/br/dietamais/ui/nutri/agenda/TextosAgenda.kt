@@ -28,6 +28,7 @@ fun rotuloTipoConsulta(tipo: TipoConsulta): String = stringResource(when (tipo) 
     TipoConsulta.PRIMEIRA -> Res.string.agenda_tipo_primeira
     TipoConsulta.RETORNO -> Res.string.agenda_tipo_retorno
     TipoConsulta.ONLINE -> Res.string.agenda_tipo_online
+    TipoConsulta.AVALIACAO -> Res.string.agenda_tipo_avaliacao
     TipoConsulta.OUTRO -> Res.string.agenda_tipo_outro
 })
 

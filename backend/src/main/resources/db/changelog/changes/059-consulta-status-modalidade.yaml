@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 059-consulta-status-modalidade
+      author: dietamais
+      comment: >-
+        BE-71 (H-02): modalidade, link online, orientação ao paciente e observação interna na consulta; status REALIZADA e FALTA; tipo AVALIACAO.
+        O tipo ONLINE vira RETORNO + modalidade ONLINE (C-02) e o comparecimento lançado no financeiro passa a ser o status da consulta (C-01, RN-FIN-01).
+        As linhas mexidas sobem versão e seq para o sync levar a mudança.
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE consulta ADD COLUMN modalidade text NOT NULL DEFAULT 'PRESENCIAL';
+              ALTER TABLE consulta ADD COLUMN link_online text;
+              ALTER TABLE consulta ADD COLUMN orientacao_paciente text;
+              ALTER TABLE consulta ADD COLUMN observacao_interna text;
+              ALTER TABLE consulta DROP CONSTRAINT ck_consulta_tipo;
+              ALTER TABLE consulta DROP CONSTRAINT ck_consulta_status;
+              UPDATE consulta SET modalidade = 'ONLINE', tipo = 'RETORNO', versao = versao + 1, seq = nextval('seq_sync'), atualizado_em = now() WHERE tipo = 'ONLINE';
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_tipo CHECK (tipo IN ('PRIMEIRA','RETORNO','AVALIACAO'));
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_status CHECK (status IN ('AGENDADA','REALIZADA','FALTA','CANCELADA'));
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_modalidade CHECK (modalidade IN ('PRESENCIAL','ONLINE'));
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_link_online CHECK (link_online IS NULL OR (modalidade = 'ONLINE' AND length(link_online) <= 300 AND link_online LIKE 'https://%'));
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_orientacao CHECK (orientacao_paciente IS NULL OR length(orientacao_paciente) <= 2000);
+              ALTER TABLE consulta ADD CONSTRAINT ck_consulta_observacao CHECK (observacao_interna IS NULL OR length(observacao_interna) <= 2000);
+              UPDATE consulta c SET status = CASE f.comparecimento WHEN 'COMPARECEU' THEN 'REALIZADA' ELSE 'FALTA' END, versao = c.versao + 1, seq = nextval('seq_sync'), atualizado_em = now()
+                FROM consulta_financeiro f WHERE f.consulta_id = c.id AND f.comparecimento IN ('COMPARECEU','FALTOU') AND c.status = 'AGENDADA';

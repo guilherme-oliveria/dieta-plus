@@ -51,7 +51,8 @@ public class GerenciarCalendario {
 	}
 	/** Título genérico: o tipo da consulta não é dado clínico, mas o feed sai do app e vai para calendários de terceiros (RN-NOT-02). */
 	private static GeradorIcs.Consulta evento(ConsultaResposta c){
-		var titulo=switch(c.tipo()){case PRIMEIRA->"Dieta+: Primeira consulta";case RETORNO->"Dieta+: Consulta de retorno";case ONLINE->"Dieta+: Consulta online";};
+		var base=switch(c.tipo()){case PRIMEIRA->"Dieta+: Primeira consulta";case AVALIACAO->"Dieta+: Avaliação";case RETORNO,ONLINE->"Dieta+: Consulta de retorno";};
+		var titulo=c.modalidade()==ModalidadeConsulta.ONLINE?base+" (online)":base; // RN-AGE-04: modalidade no título genérico, nunca o link nem a orientação
 		return new GeradorIcs.Consulta(c.id(),c.inicio(),c.inicio().plus(Duration.ofMinutes(c.duracaoMin())),titulo,c.lugar(),c.status()==StatusConsulta.CANCELADA,c.versao()-1,c.atualizadoEm());
 	}
 	static String hash(String token){

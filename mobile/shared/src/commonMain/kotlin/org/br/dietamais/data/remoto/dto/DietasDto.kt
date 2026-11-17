@@ -44,7 +44,9 @@ data class ItemRefeicaoResposta(val id: Uuid, val alimentoId: Uuid? = null, val 
     val porcoes: Double? = null, val medidaCaseira: String? = null, val gramas: Double? = null, val observacao: String? = null, val totais: TotaisNutricionaisResposta,
     val grupoNome: String? = null, val opcao: Int? = null, val aVontade: Boolean? = null, val textoLivre: String? = null,
     /** Item por produto da nutri (BE-48c): `gramas` é a quantidade e `porcoes` fica nulo. */
-    val produtoId: Uuid? = null)
+    val produtoId: Uuid? = null,
+    /** BE-70 (RN-DIE-14): alertas de restrição calculados pelo servidor e a confirmação de alergia; o paciente não recebe. */
+    val alertas: List<AlertaRestricaoDto>? = null, val alergiaConfirmada: Boolean? = null)
 @Serializable
 data class RefeicaoResposta(val id: Uuid, val nome: String, val horario: LocalTime, val ordem: Int,
     val itens: List<ItemRefeicaoResposta>, val totais: TotaisNutricionaisResposta,
@@ -63,7 +65,7 @@ data class DietasResposta(val itens: List<DietaResposta>)
 @Serializable
 data class ItemRefeicaoRequisicao(val id: Uuid? = null, val alimentoId: Uuid? = null, val porcoes: Double? = null, val observacao: String? = null,
     val grupoId: Uuid? = null, val aVontade: Boolean? = null, val textoLivre: String? = null,
-    val produtoId: Uuid? = null, val gramas: Double? = null)
+    val produtoId: Uuid? = null, val gramas: Double? = null, val alergiaConfirmada: Boolean? = null)
 @Serializable
 data class RefeicaoRequisicao(val id: Uuid? = null, val nome: String, val horario: LocalTime, val ordem: Int, val itens: List<ItemRefeicaoRequisicao>,
     val tipo: String? = null, val alternativaDe: Uuid? = null)

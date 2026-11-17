@@ -40,6 +40,8 @@ object ModeloComoDieta {
 /** Faz o planejador gravar modelos. [base] é o modelo aberto (quem abre o editor define); `null` = modelo novo. */
 class DietasDeModelo(private val modelos: PortaModelosDieta) : PortaDietas {
     var base: ModeloDietaResposta? = null
+    /** MOB-29d: o editor salva sem rede quando os modelos gravam no aparelho. */
+    override val escritaOffline: Boolean get() = modelos.escritaOffline
 
     override suspend fun listar(pacienteId: Uuid): List<DietaResposta> = emptyList()
     override suspend fun criar(pacienteId: Uuid, requisicao: SalvarDietaRequisicao, chave: Uuid): DietaResposta {
