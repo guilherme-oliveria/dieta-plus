@@ -125,8 +125,8 @@ Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4
 | Paciente: próxima consulta com "Entrar na consulta" e orientação | `ui/paciente/hoje` | DES-17 | desenhada: `P-Proxima-Consulta.dc.html` | 87 |
 | Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano"; preferência no perfil | `ui/paciente/hoje`, `ui/paciente/perfil` | DES-18 | desenhada: `P-Refeicao-Humor.dc.html`, `P-Fora-Plano.dc.html`, `P-Perfil-Preferencias.dc.html` | 88 |
 | Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | desenhada: `A-Adesao-Humor.dc.html` | 89 |
-| Hoje com as metas (a água é uma delas, com desfazer e valor livre); registro, sequência e progresso | `ui/paciente/hoje` | DES-19 | faltando | 90, 99 |
-| Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | faltando | 91 |
+| Hoje com as metas (a água é uma delas, com desfazer e valor livre); registro, sequência e progresso | `ui/paciente/hoje` | DES-19 | desenhada: `P-Hoje-Metas.dc.html`, `P-Metas-Semana.dc.html` | 90, 99 |
+| Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | desenhada: `A-Metas-Paciente.dc.html`, `A-Meta-Nova.dc.html`, `A-Modelos-Meta.dc.html` | 91 |
 | Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | faltando | 92 |
 | "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | faltando | 93 |
 | Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | faltando | 94 |
