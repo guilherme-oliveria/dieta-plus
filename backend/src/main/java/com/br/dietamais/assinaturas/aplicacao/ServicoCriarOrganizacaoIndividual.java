@@ -34,7 +34,7 @@ public class ServicoCriarOrganizacaoIndividual implements CriarOrganizacaoIndivi
 	public AssinaturaResumoResposta criar(String nome, Instant agora) {
 		var plano = planos.findByCodigoAndAtivoTrue("TESTE")
 				.orElseThrow(() -> new IllegalStateException("Plano de teste não configurado"));
-		if (plano.getDuracaoDias() == null || plano.getDuracaoDias() <= 0 || plano.getLimitePacientes() < 0) {
+		if (plano.getDuracaoDias() == null || plano.getDuracaoDias() <= 0 || (plano.getLimitePacientes() != null && plano.getLimitePacientes() < 0)) {
 			throw new IllegalStateException("Plano de teste inválido");
 		}
 		var organizacao = organizacoes.saveAndFlush(new Organizacao(ids.novo(), nome, agora));

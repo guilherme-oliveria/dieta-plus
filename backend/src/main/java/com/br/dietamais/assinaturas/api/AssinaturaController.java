@@ -29,8 +29,8 @@ public class AssinaturaController {
 	@GetMapping
 	@Operation(operationId="consultarAssinatura",summary="Assinatura da nutri",description="Plano, status, uso x limite, fim do período e carência (RN-ASS-04). Só leitura: funciona com a assinatura inativa. BE-26.")
 	@ApiResponse(responseCode="200",description="Detalhe da assinatura",content=@Content(mediaType="application/json",schema=@Schema(implementation=AssinaturaDetalheResposta.class)))
-	public ResponseEntity<AssinaturaDetalheResposta> consultarAssinatura(){
-		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.detalhe());
+	public ResponseEntity<AssinaturaDetalheResposta> consultarAssinatura(@RequestHeader(value="X-Plataforma",required=false) String plataforma){
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.detalhe(plataforma));
 	}
 
 	@PostMapping("/checkout")

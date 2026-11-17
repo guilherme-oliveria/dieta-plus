@@ -27,7 +27,7 @@ public class AssinaturaAtual implements ConsultarAssinatura {
 				var fim=rs.getTimestamp("fim_periodo_em");var prazo=fim==null?null:fim.toInstant();
 				var status=StatusAssinatura.valueOf(rs.getString("status"));
 				if(status==StatusAssinatura.TESTE&&(prazo==null||!relogio.instant().isBefore(prazo)))status=StatusAssinatura.EXPIRADA;
-				return new AssinaturaResumoResposta(contexto.organizacaoId(),rs.getString("codigo"),status,rs.getInt("limite_pacientes"),0,prazo);
+				return new AssinaturaResumoResposta(contexto.organizacaoId(),rs.getString("codigo"),status,rs.getObject("limite_pacientes",Integer.class),0,prazo);
 			},contexto.organizacaoId());
 		if(assinaturas.isEmpty())return null;
 		var dados=assinaturas.getFirst();
