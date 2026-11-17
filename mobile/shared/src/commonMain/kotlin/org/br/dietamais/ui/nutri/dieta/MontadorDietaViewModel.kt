@@ -9,6 +9,8 @@ import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.repositorio.*
 import org.br.dietamais.data.sync.novoIdLocal
+import org.br.dietamais.dominio.dieta.AlertaItem
+import org.br.dietamais.dominio.dieta.AlertasRestricao
 import org.br.dietamais.dominio.dieta.CalculadoraTotais
 import org.br.dietamais.dominio.dieta.MacrosPorcao
 import org.br.dietamais.dominio.dieta.TotaisCent
@@ -20,16 +22,19 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     val estado = atual.asStateFlow()
     private var catalogo = CatalogoAlimentos()
     private var operacao: Job? = null
+    /** Alertas que o servidor calculou na dieta aberta, por alimento: valem quando a ficha não trouxe as restrições. */
+    private var alertasServidor: Map<Uuid, List<AlertaItem>> = emptyMap()
     init {
         viewModelScope.launch(dispatcher) { alimentos.observar().catch { }.collect { catalogo = it; recalcular() } }
         conectividade?.let { fluxo -> viewModelScope.launch(dispatcher) { fluxo.collect { online -> atual.update { it.copy(semConexao = !online) } } } }
     }
 
     // ---- lista de dietas do paciente
-    fun abrirPaciente(pacienteId: Uuid) {
-        if (atual.value.pacienteId == pacienteId) return
-        operacao?.cancel()
-        atual.value = EstadoDieta(pacienteId = pacienteId, semConexao = atual.value.semConexao, escritaOffline = dietas.escritaOffline); recalcular()
+    /** [restricoes]: itens de saúde da ficha (MOB-83); nulo quando a ficha não os trouxe. */
+    fun abrirPaciente(pacienteId: Uuid, restricoes: List<RestricaoSaudeDto>? = null) {
+        if (atual.value.pacienteId == pacienteId) { if (atual.value.restricoes != restricoes) { atual.update { it.copy(restricoes = restricoes) }; recalcular() }; return }
+        operacao?.cancel(); alertasServidor = emptyMap()
+        atual.value = EstadoDieta(pacienteId = pacienteId, semConexao = atual.value.semConexao, escritaOffline = dietas.escritaOffline, restricoes = restricoes); recalcular()
         recarregar()
     }
     fun recarregar() {
@@ -39,7 +44,8 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     }
     fun nova() {
         if (atual.value.pacienteId == null) return
-        atual.update { it.copy(rascunho = RascunhoDieta(), erro = null, aviso = null, errosCampos = emptyMap()) }; recalcular()
+        alertasServidor = emptyMap()
+        atual.update { it.copy(rascunho = RascunhoDieta(), erro = null, aviso = null, errosCampos = emptyMap(), revisarAlergia = null) }; recalcular()
     }
     fun abrir(dieta: DietaResposta) {
         // Dieta por porções do grupo, à vontade ou texto livre só se edita no planejador por porções (MOB-54); aqui salvar apagaria esses itens.
@@ -48,10 +54,12 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
         }
         val rascunho = RascunhoDieta(dieta.id, dieta.versao, dieta.status, dieta.titulo, dieta.orientacao.orEmpty(),
             dieta.refeicoes.sortedBy { it.ordem }.map { r -> RefeicaoEdicao(nome = r.nome, horario = r.horario.paraTexto(),
-                itens = r.itens.map { ItemEdicao(alimentoId = it.alimentoId!!, porcoes = it.porcoes!!.paraTexto()) }) })
-        atual.update { it.copy(rascunho = rascunho, erro = null, aviso = null, errosCampos = emptyMap(), seletorRefeicao = null) }; recalcular()
+                itens = r.itens.map { ItemEdicao(alimentoId = it.alimentoId!!, porcoes = it.porcoes!!.paraTexto(), alergiaConfirmada = it.alergiaConfirmada == true) }) })
+        alertasServidor = dieta.refeicoes.flatMap { it.itens }.filter { !it.alertas.isNullOrEmpty() }
+            .associate { i -> i.alimentoId!! to i.alertas!!.map { AlertaItem(it.restricaoId, it.tipo, it.nome, it.marcador) } }
+        atual.update { it.copy(rascunho = rascunho, erro = null, aviso = null, errosCampos = emptyMap(), seletorRefeicao = null, revisarAlergia = null) }; recalcular()
     }
-    fun fechar() { atual.update { it.copy(rascunho = null, seletorRefeicao = null, confirmarPublicar = false, erro = null, errosCampos = emptyMap()) }; if (atual.value.pacienteId != null) recarregar() }
+    fun fechar() { atual.update { it.copy(rascunho = null, seletorRefeicao = null, confirmarPublicar = false, erro = null, errosCampos = emptyMap(), revisarAlergia = null) }; if (atual.value.pacienteId != null) recarregar() }
 
     // ---- edição do rascunho
     fun mudarTitulo(v: String) = editar { it.copy(titulo = v.take(150)) }
@@ -73,6 +81,31 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     fun removerItem(chaveRefeicao: Uuid, item: Uuid) = refeicao(chaveRefeicao) { r -> r.copy(itens = r.itens.filter { it.chave != item }) }
     fun mudarPorcoes(chaveRefeicao: Uuid, item: Uuid, v: String) = refeicao(chaveRefeicao) { r ->
         r.copy(itens = r.itens.map { if (it.chave == item) it.copy(porcoes = v.take(12)) else it })
+    }
+
+    // ---- alergia e intolerância (MOB-83, RN-DIE-14): o marcador é sugestão, a conduta é da nutri
+    fun revisarAlergia(chaveRefeicao: Uuid, item: Uuid) {
+        val r = atual.value.rascunho ?: return
+        if (!r.editavel || atual.value.alertas[item].orEmpty().none { it.exigeConfirmacao }) return
+        atual.update { it.copy(revisarAlergia = chaveRefeicao to item) }
+    }
+    fun cancelarRevisaoAlergia() { atual.update { it.copy(revisarAlergia = null) } }
+    /** "Manter e confirmar": a confirmação fica no item e vai ao servidor ao salvar. */
+    fun confirmarAlergia() {
+        val (ref, item) = atual.value.revisarAlergia ?: return
+        atual.update { it.copy(revisarAlergia = null) }
+        marcarConfirmacao(ref, item, true)
+    }
+    /** Enquanto a dieta é rascunho, a confirmação pode ser desfeita. */
+    fun desfazerConfirmacao(chaveRefeicao: Uuid, item: Uuid) = marcarConfirmacao(chaveRefeicao, item, false)
+    /** "Trocar alimento": tira o item e abre a busca na mesma refeição. */
+    fun trocarAlimento(chaveRefeicao: Uuid, item: Uuid) {
+        if (atual.value.rascunho?.editavel != true) return
+        atual.update { it.copy(revisarAlergia = null) }
+        removerItem(chaveRefeicao, item); abrirSeletor(chaveRefeicao)
+    }
+    private fun marcarConfirmacao(chaveRefeicao: Uuid, item: Uuid, confirmada: Boolean) = refeicao(chaveRefeicao) { r ->
+        r.copy(itens = r.itens.map { if (it.chave == item) it.copy(alergiaConfirmada = confirmada) else it })
     }
 
     // ---- salvar, publicar, duplicar
@@ -107,6 +140,7 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
         val r = atual.value.rascunho ?: return
         if (!r.editavel || r.versao == null || r.alterado || !podeEnviar()) return
         if (atual.value.pendente(r.dietaId)) { atual.update { it.copy(erro = MensagemDieta.PENDENTE_DE_ENVIO) }; return }
+        if (atual.value.alergiasSemConfirmacao > 0) { atual.update { it.copy(erro = MensagemDieta.ALERGIA_NAO_CONFIRMADA) }; return }
         atual.update { it.copy(confirmarPublicar = true, erro = null) }
     }
     fun cancelarPublicacao() { atual.update { it.copy(confirmarPublicar = false) } }
@@ -125,6 +159,10 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     fun pedirPublicacaoDaLista(dieta: DietaResposta) {
         if (dieta.status != StatusDieta.RASCUNHO || !podeEnviar()) return
         if (atual.value.pendente(dieta.id)) { atual.update { it.copy(erro = MensagemDieta.PENDENTE_DE_ENVIO) }; return }
+        // o cartão da lista não tem a folha de confirmação: a alergia sem confirmação se resolve abrindo a dieta
+        if (dieta.refeicoes.any { r -> r.itens.any { i -> i.alergiaConfirmada != true && i.alertas.orEmpty().any { it.exigeConfirmacao } } }) {
+            atual.update { it.copy(erro = MensagemDieta.ALERGIA_NAO_CONFIRMADA) }; return
+        }
         atual.update { it.copy(publicarDaLista = dieta, erro = null) }
     }
     fun cancelarPublicacaoDaLista() { atual.update { it.copy(publicarDaLista = null) } }
@@ -166,7 +204,15 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
         val porRefeicao = estado.rascunho?.refeicoes.orEmpty().associate { r ->
             r.chave to CalculadoraTotais.somar(r.itens.mapNotNull { i -> porcoesValidas(i.porcoes)?.let { p -> macros(i.alimentoId)?.let { m -> CalculadoraTotais.item(m, p) } } })
         }
-        estado.copy(grupos = catalogo.grupos, alimentos = catalogo.alimentos, totaisRefeicao = porRefeicao, totais = CalculadoraTotais.somar(porRefeicao.values))
+        val alertas = estado.rascunho?.refeicoes.orEmpty().flatMap { it.itens }.associate { i -> i.chave to alertasDo(estado.restricoes, i.alimentoId) }.filterValues { it.isNotEmpty() }
+        estado.copy(grupos = catalogo.grupos, alimentos = catalogo.alimentos, totaisRefeicao = porRefeicao, totais = CalculadoraTotais.somar(porRefeicao.values), alertas = alertas)
+    }
+    /** Com a ficha em mãos, a regra roda no aparelho (funciona offline); sem ela, vale o que o servidor calculou. */
+    private fun alertasDo(restricoes: List<RestricaoSaudeDto>?, alimentoId: Uuid): List<AlertaItem> {
+        if (restricoes == null) return alertasServidor[alimentoId].orEmpty()
+        val alimento = catalogo.alimentos.firstOrNull { it.id == alimentoId }
+        val restricaoPorId = restricoes.associateBy { it.id }
+        return AlertasRestricao.alertasItem(restricoes, alimento?.marcadores.orEmpty()).map { it.copy(gravidade = restricaoPorId[it.restricaoId]?.gravidade) }
     }
     private fun montar(r: RascunhoDieta): SalvarDietaRequisicao? {
         val erros = mutableMapOf<String, MensagemDieta>()
@@ -178,7 +224,7 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
             val itens = ref.itens.map { i ->
                 val p = porcoesValidas(i.porcoes)
                 if (p == null) erros["porcoes:${i.chave}"] = MensagemDieta.PORCOES_INVALIDAS
-                ItemRefeicaoRequisicao(alimentoId = i.alimentoId, porcoes = p ?: 1.0)
+                ItemRefeicaoRequisicao(alimentoId = i.alimentoId, porcoes = p ?: 1.0, alergiaConfirmada = i.alergiaConfirmada.takeIf { it })
             }
             RefeicaoRequisicao(nome = ref.nome.trim(), horario = horario ?: LocalTime(0, 0), ordem = indice, itens = itens)
         }
@@ -206,12 +252,13 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
                 "DIETA_VAZIA" -> MensagemDieta.DIETA_VAZIA
                 "DIETA_NAO_EDITAVEL" -> MensagemDieta.NAO_EDITAVEL
                 "TAXA_EXCEDIDA" -> MensagemDieta.TAXA_EXCEDIDA
+                "ALERGIA_NAO_CONFIRMADA" -> MensagemDieta.ALERGIA_NAO_CONFIRMADA
                 "FORMATO_INVALIDO", "VALOR_FORA_DO_INTERVALO" -> MensagemDieta.LIMITE_EXCEDIDO
                 else -> MensagemDieta.ERRO
             }
             else -> MensagemDieta.ERRO
         }
-        atual.update { it.copy(erro = mensagem, confirmarPublicar = false, publicarDaLista = null, semConexao = it.semConexao || falha is FalhaComunicacao) }
+        atual.update { it.copy(erro = mensagem, confirmarPublicar = false, publicarDaLista = null, revisarAlergia = null, semConexao = it.semConexao || falha is FalhaComunicacao) }
     }
 
     companion object {

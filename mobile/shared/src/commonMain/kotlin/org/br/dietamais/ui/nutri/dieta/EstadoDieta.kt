@@ -2,6 +2,7 @@ package org.br.dietamais.ui.nutri.dieta
 
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.sync.novoIdLocal
+import org.br.dietamais.dominio.dieta.AlertaItem
 import org.br.dietamais.dominio.dieta.TotaisCent
 import kotlin.uuid.Uuid
 
@@ -10,9 +11,12 @@ enum class MensagemDieta {
     NAO_ENCONTRADA, DIETA_VAZIA, NAO_EDITAVEL, ALIMENTO_INATIVO, TAXA_EXCEDIDA, ERRO, SALVA, PUBLICADA, DUPLICADA, EDITAR_NO_PLANEJADOR,
     /** MOB-29b: gravada no aparelho; vai ao servidor quando houver conexão. */
     SALVA_NO_APARELHO, PENDENTE_DE_ENVIO, DESCARTADA,
+    /** MOB-83 (RN-DIE-14): item com alergia da ficha ainda sem a confirmação da nutri. */
+    ALERGIA_NAO_CONFIRMADA,
 }
 
-data class ItemEdicao(val chave: Uuid = novoIdLocal(), val alimentoId: Uuid, val porcoes: String = "1")
+/** [alergiaConfirmada]: a nutri confirmou manter o alimento apesar da alergia da ficha (RN-DIE-14); vai no item ao salvar. */
+data class ItemEdicao(val chave: Uuid = novoIdLocal(), val alimentoId: Uuid, val porcoes: String = "1", val alergiaConfirmada: Boolean = false)
 data class RefeicaoEdicao(val chave: Uuid = novoIdLocal(), val nome: String = "", val horario: String = "08:00", val itens: List<ItemEdicao> = emptyList())
 
 /** Dieta em edição. [versao] nula = ainda não existe no servidor; [chave] mantém a idempotência da criação. */
@@ -31,7 +35,12 @@ data class EstadoDieta(
     val semConexao: Boolean = false, val confirmarPublicar: Boolean = false, val publicarDaLista: DietaResposta? = null, val erro: MensagemDieta? = null, val aviso: MensagemDieta? = null,
     /** MOB-29b: [escritaOffline] = salvar rascunho funciona sem rede; [pendentes] ainda não confirmadas pelo servidor; [soLocais] nunca saíram do aparelho. */
     val escritaOffline: Boolean = false, val pendentes: Set<Uuid> = emptySet(), val soLocais: Set<Uuid> = emptySet(),
+    /** MOB-83: restrições da ficha (nulo = ficha sem a informação); [alertas] por chave do item; [revisarAlergia] = (refeição, item) na folha de confirmação. */
+    val restricoes: List<RestricaoSaudeDto>? = null, val alertas: Map<Uuid, List<AlertaItem>> = emptyMap(), val revisarAlergia: Pair<Uuid, Uuid>? = null,
 ) {
+    /** Itens com alergia ainda sem confirmação: enquanto houver, publicar fica bloqueado (o servidor também recusa). */
+    val alergiasSemConfirmacao get() = rascunho?.refeicoes.orEmpty().flatMap { it.itens }
+        .count { i -> !i.alergiaConfirmada && alertas[i.chave].orEmpty().any { it.exigeConfirmacao } }
     /** Ações que só existem no servidor (publicar, duplicar, PDF, modelos). */
     val online get() = !semConexao && !enviando && !carregando
     /** Salvar o rascunho: offline também, se o aparelho guarda a escrita. */
