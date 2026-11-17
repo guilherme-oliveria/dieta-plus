@@ -8,16 +8,18 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * {@code POST /sync} da nutri (BE-25): aplica a mesma regra do endpoint REST da entidade. {@code dados} é o corpo do REST
  * ({@code CRIAR}: o {@code id} da mutação vira o id da entidade; {@code ATUALIZAR}: {@code versaoBase} faz o papel do If-Match).
- * Conflito, limite de plano e demais regras voltam por item (RN-SYN-02, RN-SYN-04). Não há {@code EXCLUIR}: nenhuma dessas entidades se exclui.
+ * Conflito, limite de plano e demais regras voltam por item (RN-SYN-02, RN-SYN-04). {@code EXCLUIR} só nas entidades que declaram {@link #comExclusao}; nas demais é recusado.
  */
 public final class ManipuladorEscritaNutri<C,A> implements ManipuladorMutacao {
 	/** De onde sai a ficha do paciente na criação. */
 	public enum Paciente { NENHUM, NO_DTO, FORA_DO_DTO }
 	@FunctionalInterface public interface Criar<C> { long criar(UUID ficha,C requisicao); }
 	@FunctionalInterface public interface Atualizar<A> { long atualizar(UUID id,String ifMatch,A requisicao); }
+	/** Exclusão lógica com a mesma regra do REST; o servidor sobe a versão em 1 (a mutação devolve {@code versaoBase+1}). */
+	@FunctionalInterface public interface Excluir { void excluir(UUID id,String ifMatch); }
 
 	private final String entidade;private final JsonMapper mapper;private final Validator validador;private final UsuarioAtual usuario;
-	private final Class<C> classeCriar;private final Criar<C> criar;private final Paciente paciente;private final Class<A> classeAtualizar;private final Atualizar<A> atualizar;
+	private Excluir excluir;private final Class<C> classeCriar;private final Criar<C> criar;private final Paciente paciente;private final Class<A> classeAtualizar;private final Atualizar<A> atualizar;
 
 	private ManipuladorEscritaNutri(String entidade,JsonMapper mapper,Validator validador,UsuarioAtual usuario,Class<C> classeCriar,Criar<C> criar,Paciente paciente,Class<A> classeAtualizar,Atualizar<A> atualizar){
 		this.entidade=entidade;this.mapper=mapper;this.validador=validador;this.usuario=usuario;this.classeCriar=classeCriar;this.criar=criar;this.paciente=paciente;this.classeAtualizar=classeAtualizar;this.atualizar=atualizar;
@@ -30,6 +32,9 @@ public final class ManipuladorEscritaNutri<C,A> implements ManipuladorMutacao {
 		return new ManipuladorEscritaNutri<>(entidade,mapper,validador,usuario,null,null,Paciente.NENHUM,classeAtualizar,atualizar);
 	}
 
+	/** Habilita {@code EXCLUIR} na entidade (ex.: modelos de dieta, BE-83). */
+	public ManipuladorEscritaNutri<C,A> comExclusao(Excluir exclusao){this.excluir=exclusao;return this;}
+
 	@Override public String entidade(){return entidade;}
 
 	@Override public ResultadoMutacao aplicar(MutacaoSync m,ContextoUsuario contexto){
@@ -38,7 +43,7 @@ public final class ManipuladorEscritaNutri<C,A> implements ManipuladorMutacao {
 		long versao=switch(m.operacao()){
 			case CRIAR->{if(criar==null)throw naoSuportada();yield aplicarCriar(m);}
 			case ATUALIZAR->aplicarAtualizar(m);
-			case EXCLUIR->throw naoSuportada();
+			case EXCLUIR->{if(excluir==null)throw naoSuportada();yield aplicarExcluir(m);}
 		};
 		return ResultadoMutacao.aplicada(m.idMutacao(),versao);
 	}
@@ -57,6 +62,10 @@ public final class ManipuladorEscritaNutri<C,A> implements ManipuladorMutacao {
 		if(m.versaoBase()==null)throw formato();
 		var corpo=(ObjectNode)m.dados().deepCopy();
 		return atualizar.atualizar(m.id(),"\""+m.versaoBase()+"\"",ler(corpo,classeAtualizar));
+	}
+	private long aplicarExcluir(MutacaoSync m){
+		if(m.versaoBase()==null)throw formato();
+		excluir.excluir(m.id(),"\""+m.versaoBase()+"\"");return m.versaoBase()+1;
 	}
 	private <T> T ler(ObjectNode corpo,Class<T> classe){
 		T valor;
