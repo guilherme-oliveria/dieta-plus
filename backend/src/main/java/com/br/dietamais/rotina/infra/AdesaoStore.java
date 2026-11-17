@@ -34,6 +34,14 @@ public class AdesaoStore {
 			where vinculo_id=any(?::uuid[]) and data between ? and ? order by vinculo_id,refeicao_id,data,registrado_em desc,criado_em desc
 			""",(rs,i)->new Marca(rs.getObject(1,UUID.class),rs.getString(2)),(Object)vinculos.toArray(UUID[]::new),Date.valueOf(de),Date.valueOf(ate));
 	}
+	/** Médias de fome antes e sensação depois dos check-ins do vínculo no período, com o total de check-ins que trazem algum dos dois (RN-ROT-06). */
+	public Humor humor(UUID vinculo,LocalDate de,LocalDate ate){
+		return jdbc.query("""
+			select avg(fome_antes), avg(sensacao_depois), count(*) filter (where fome_antes is not null or sensacao_depois is not null) from checkin
+			where vinculo_id=? and data between ? and ?
+			""",(rs,i)->new Humor(rs.getBigDecimal(1),rs.getBigDecimal(2),rs.getInt(3)),vinculo,Date.valueOf(de),Date.valueOf(ate)).get(0);
+	}
+	public record Humor(java.math.BigDecimal mediaFome,java.math.BigDecimal mediaSensacao,int registros) {}
 	public Map<UUID,List<Marca>> agrupar(List<Marca> marcas){
 		var m=new HashMap<UUID,List<Marca>>();marcas.forEach(x->m.computeIfAbsent(x.vinculoId(),k->new java.util.ArrayList<>()).add(x));return m;
 	}

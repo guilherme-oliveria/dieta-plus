@@ -28,7 +28,7 @@ public final class ManipuladoresRotina {
 		private final RegistrarRotina rotina;
 		Checkins(JsonMapper mapper,Validator validador,RegistrarRotina rotina){super(mapper,validador,CheckinRequisicao.class);this.rotina=rotina;}
 		@Override public String entidade(){return "checkins";}
-		@Override CheckinRequisicao comId(CheckinRequisicao r,java.util.UUID id){return new CheckinRequisicao(id,r.dietaId(),r.refeicaoId(),r.data(),r.status(),r.trocas(),r.registradoEm());}
+		@Override CheckinRequisicao comId(CheckinRequisicao r,java.util.UUID id){return new CheckinRequisicao(id,r.dietaId(),r.refeicaoId(),r.data(),r.status(),r.trocas(),r.registradoEm(),r.fomeAntes(),r.sensacaoDepois());}
 		@Override long gravar(CheckinRequisicao r){rotina.checkin(r);return 1L;}
 	}
 	@Component static class Agua extends Base<AguaRequisicao> {
@@ -44,5 +44,12 @@ public final class ManipuladoresRotina {
 		@Override public String entidade(){return "pesos";}
 		@Override PesoRequisicao comId(PesoRequisicao r,java.util.UUID id){return new PesoRequisicao(id,r.pesoKg(),r.registradoEm());}
 		@Override long gravar(PesoRequisicao r){rotina.peso(r);return 1L;}
+	}
+	@Component static class ForaDoPlano extends Base<RegistroForaDoPlanoRequisicao> {
+		private final RegistrarRotina rotina;
+		ForaDoPlano(JsonMapper mapper,Validator validador,RegistrarRotina rotina){super(mapper,validador,RegistroForaDoPlanoRequisicao.class);this.rotina=rotina;}
+		@Override public String entidade(){return "registrosForaDoPlano";}
+		@Override RegistroForaDoPlanoRequisicao comId(RegistroForaDoPlanoRequisicao r,java.util.UUID id){return new RegistroForaDoPlanoRequisicao(id,r.data(),r.texto(),r.refeicaoId(),r.registradoEm());}
+		@Override long gravar(RegistroForaDoPlanoRequisicao r){rotina.foraDoPlano(r);return 1L;}
 	}
 }
