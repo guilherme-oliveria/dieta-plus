@@ -77,8 +77,10 @@ class FinanceiroApiTest extends TesteComPaciente {
 		assertThat(requisitar("GET","/eu/nutri/financeiro",p.token(),null).statusCode()).isEqualTo(403);
 	}
 
-	String status(String token,String consulta) throws Exception {
-		return json(requisitar("GET","/consultas/"+consulta,token,null)).path("status").asString();
+	/** Não há GET de uma consulta só: o status vem do banco (o token fica para ler como a nutri leria). */
+	String status(String token,String consulta) {
+		assertThat(token).isNotBlank();
+		return jdbc.queryForObject("select status from consulta where id=?",String.class,UUID.fromString(consulta));
 	}
 
 	/** BE-71 (C-01): o comparecimento é o status da consulta, nos dois sentidos; RN-AGE-03 vale também pelo financeiro. */
