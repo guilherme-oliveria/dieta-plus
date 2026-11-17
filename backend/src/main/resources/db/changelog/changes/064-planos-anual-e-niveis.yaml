@@ -2,7 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 064-planos-anual-e-niveis
       author: dietamais
-      comment: BE-80 (H-07). Preço dos níveis novos não entra aqui (decisão G-21): o admin informa e ativa.
+      comment: "BE-80 (H-07). O preço dos níveis novos não entra aqui (decisão G-21); o admin informa e ativa."
       changes:
         - addColumn:
             tableName: plano
