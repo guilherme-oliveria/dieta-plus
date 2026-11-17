@@ -12,6 +12,9 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | --- | --- | --- |
 | **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
 | **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+| **MOB-94** Nutri: documentos | `A-Documentos-Paciente` (lista com válido/anulado e motivo), `A-Documento-Emitir` (modelo, consulta realizada, prévia), `A-Documento-Anular` (motivo obrigatório), `A-Modelos-Documento` (modelos do sistema só leitura, copiar para editar) | Emissão imutável (RN-DOC-02). Texto dos modelos do sistema validado por nutricionista (D-06) |
+| **MOB-95** Paciente: Documentos | `P-Documentos` (lista offline, "Abrir PDF" exige internet) | Anulado aparece marcado |
+| **BE-78** e **BE-79** PDF e conferência | `PDF-Declaracao` (A4: logo, nutri e CRN, texto, assinatura em linha, código de conferência), `W-Conferir-Documento` (página pública) | Sem assinatura digitalizada (D-05, 1.5.0). Conferência sem dado do paciente (D-04) |
 
 ## Mobile pendente
 
