@@ -28,11 +28,11 @@ public class FinanceiroStore {
 	public ResumoFinanceiroResposta resumo(UUID nutri,Instant de,Instant ate){
 		return jdbc.query("""
 			select count(*) as consultas,
-			  count(*) filter (where f.comparecimento='COMPARECEU') as compareceram,
-			  count(*) filter (where f.comparecimento='FALTOU') as faltaram,
-			  count(*) filter (where f.consulta_id is null or f.comparecimento='PENDENTE') as pendentes,
+			  count(*) filter (where c.status='REALIZADA') as compareceram,
+			  count(*) filter (where c.status='FALTA') as faltaram,
+			  count(*) filter (where c.status='AGENDADA') as pendentes,
 			  coalesce(sum(f.valor) filter (where f.pago),0) as recebido,
-			  coalesce(sum(f.valor) filter (where not f.pago and f.comparecimento='COMPARECEU'),0) as a_receber
+			  coalesce(sum(f.valor) filter (where not f.pago and c.status='REALIZADA'),0) as a_receber
 			from consulta c left join consulta_financeiro f on f.consulta_id=c.id
 			where c.nutricionista_id=? and c.excluido_em is null and c.status<>'CANCELADA' and c.inicio>=? and c.inicio<?
 			""",rs->{

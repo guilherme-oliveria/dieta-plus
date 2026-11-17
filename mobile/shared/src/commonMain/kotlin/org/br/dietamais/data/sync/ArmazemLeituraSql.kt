@@ -46,6 +46,13 @@ class ArmazemLeituraSql(private val banco: BancoDieta, private val contextoAtual
         pagina.mudancas.consultas.forEach { registrar(contexto, "consultas", it, ConsultaResposta::id) }
         pagina.mudancas.avisos.forEach { registrar(contexto, "avisos", it, AvisoResposta::id) }
         pagina.mudancas.modelosDieta.forEach { registrar(contexto, "modelosDieta", it, ModeloDietaResposta::id) }
+        // 1.4.0 (MOB-81): guardadas em registro_sync pelo nome da coleção, como as demais; as telas da fase leem daqui
+        pagina.mudancas.registrosForaDoPlano.forEach { registrar(contexto, "registrosForaDoPlano", it, RegistroForaDoPlanoResposta::id) }
+        pagina.mudancas.metas.forEach { registrar(contexto, "metas", it, MetaResposta::id) }
+        pagina.mudancas.registrosMeta.forEach { registrar(contexto, "registrosMeta", it, RegistroMetaResposta::id) }
+        pagina.mudancas.prescricoesSuplemento.forEach { registrar(contexto, "prescricoesSuplemento", it, SuplementoResposta::id) }
+        pagina.mudancas.orientacoes.forEach { registrar(contexto, "orientacoes", it, OrientacaoResposta::id) }
+        pagina.mudancas.documentos.forEach { registrar(contexto, "documentos", it, DocumentoPacienteResposta::id) }
         if (!pagina.temMais) banco.pacienteCacheQueries.concluirBootstrap(contexto.usuarioId.toString(), contexto.perfil.name)
         conferir(contexto)
         banco.cursorSyncQueries.salvar(contexto.usuarioId.toString(), contexto.perfil.name, pagina.cursor)

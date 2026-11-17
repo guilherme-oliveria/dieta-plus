@@ -23,9 +23,17 @@ data class MudancasFase1Resposta(val pacientes: List<MudancaSyncResposta<Pacient
     val questionarios: List<MudancaSyncResposta<QuestionarioResposta>> = emptyList(),
     val consultas: List<MudancaSyncResposta<ConsultaResposta>> = emptyList(),
     val avisos: List<MudancaSyncResposta<AvisoResposta>> = emptyList(),
-    val modelosDieta: List<MudancaSyncResposta<ModeloDietaResposta>> = emptyList()) {
+    val modelosDieta: List<MudancaSyncResposta<ModeloDietaResposta>> = emptyList(),
+    /** 1.4.0 (BE-C9): coleções novas, todas opcionais; o backend 1.3.x não manda. */
+    val registrosForaDoPlano: List<MudancaSyncResposta<RegistroForaDoPlanoResposta>> = emptyList(),
+    val metas: List<MudancaSyncResposta<MetaResposta>> = emptyList(),
+    val registrosMeta: List<MudancaSyncResposta<RegistroMetaResposta>> = emptyList(),
+    val prescricoesSuplemento: List<MudancaSyncResposta<SuplementoResposta>> = emptyList(),
+    val orientacoes: List<MudancaSyncResposta<OrientacaoResposta>> = emptyList(),
+    val documentos: List<MudancaSyncResposta<DocumentoPacienteResposta>> = emptyList()) {
     val total get() = pacientes.size + vinculos.size + nutris.size + grupos.size + alimentos.size + listas.size + dietas.size +
-        snapshots.size + dietaEmUso.size + checkins.size + agua.size + pesos.size + avaliacoes.size + modelos.size + questionarios.size + consultas.size + avisos.size + modelosDieta.size
+        snapshots.size + dietaEmUso.size + checkins.size + agua.size + pesos.size + avaliacoes.size + modelos.size + questionarios.size + consultas.size + avisos.size + modelosDieta.size +
+        registrosForaDoPlano.size + metas.size + registrosMeta.size + prescricoesSuplemento.size + orientacoes.size + documentos.size
 }
 
 @Serializable

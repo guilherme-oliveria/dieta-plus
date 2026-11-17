@@ -10,18 +10,21 @@ import org.br.dietamais.data.repositorio.PortaModelosDieta
 
 /**
  * Biblioteca de modelos de dieta (MOB-56, RN-MOD-01): os do sistema só se leem e se duplicam; a nutri apaga as cópias dela e salva dietas como
- * modelo. Tudo online; quem decide permissão e limite é o backend.
+ * modelo. MOB-29d: criar, editar, duplicar os dela e apagar gravam no aparelho quando o repositório escreve offline; quem decide permissão
+ * e limite continua sendo o backend.
  */
 class ModelosDietaViewModel(private val modelos: PortaModelosDieta, private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     conectividade: Flow<Boolean>? = null) : ViewModel() {
-    private val atual = MutableStateFlow(EstadoModelos())
+    private val atual = MutableStateFlow(EstadoModelos(escritaOffline = modelos.escritaOffline))
+    /** Com o sinal de conectividade, só ele diz se há rede: sem rede a lista pode vir do aparelho sem erro (MOB-56c). */
+    private val temConectividade = conectividade != null
     val estado = atual.asStateFlow()
     init {
         conectividade?.let { fluxo -> viewModelScope.launch(dispatcher) { fluxo.collect { online -> atual.update { it.copy(semConexao = !online) } } } }
     }
 
     fun carregar() { if (!atual.value.carregado) recarregar() }
-    fun recarregar() = executar(carregar = true) { val lista = modelos.listar(); atual.update { it.copy(modelos = lista, carregado = true, semConexao = false) } }
+    fun recarregar() = executar(carregar = true) { val lista = modelos.listar(); atual.update { it.copy(modelos = lista, carregado = true, semConexao = temConectividade && it.semConexao) } }
     fun escolherAba(aba: AbaModelos) = atual.update { it.copy(aba = aba, apagar = null, erro = null, aviso = null) }
 
     /** RN-MOD-01: a cópia nasce na lista dela, então a tela passa para "Meus". */
@@ -51,7 +54,7 @@ class ModelosDietaViewModel(private val modelos: PortaModelosDieta, private val 
     private fun executar(carregar: Boolean = false, bloco: suspend () -> Unit) {
         atual.update { it.copy(carregando = carregar, enviando = !carregar, erro = null, aviso = null) }
         viewModelScope.launch(dispatcher) {
-            try { bloco() }
+            try { bloco(); atual.update { it.copy(pendentes = modelos.pendentesDeEnvio()) } }
             catch (c: CancellationException) { throw c }
             catch (falha: Exception) { apresentar(falha) }
             finally { atual.update { it.copy(carregando = false, enviando = false) } }
@@ -60,6 +63,7 @@ class ModelosDietaViewModel(private val modelos: PortaModelosDieta, private val 
     private fun apresentar(falha: Throwable) {
         val mensagem = when (falha) {
             is FalhaComunicacao -> MensagemModelos.SEM_CONEXAO
+            is org.br.dietamais.data.repositorio.ModeloPendente -> MensagemModelos.PENDENTE_DE_ENVIO
             is ErroApi -> when (falha.codigo) {
                 "CONFLITO_VERSAO" -> MensagemModelos.CONFLITO
                 "ASSINATURA_INATIVA" -> MensagemModelos.ASSINATURA_INATIVA

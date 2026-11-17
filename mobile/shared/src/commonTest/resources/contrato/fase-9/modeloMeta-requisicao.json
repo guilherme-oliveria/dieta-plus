@@ -1,0 +1,13 @@
+{
+  "nome": "Rotina básica",
+  "itens": [
+    {
+      "tipo": "SONO_HORAS",
+      "alvo": 8.0,
+      "frequencia": "DIARIA",
+      "nome": null,
+      "unidade": null,
+      "vezesPorSemana": null
+    }
+  ]
+}

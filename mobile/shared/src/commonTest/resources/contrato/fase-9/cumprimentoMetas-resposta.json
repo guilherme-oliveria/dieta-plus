@@ -1,0 +1,16 @@
+{
+  "de": "2026-11-14",
+  "ate": "2026-11-20",
+  "metas": [
+    {
+      "metaId": "019b0000-0000-7000-8000-000000000005",
+      "tipo": "AGUA",
+      "nome": null,
+      "diasPrevistos": 7,
+      "diasCumpridos": 5,
+      "percentual": 71.4,
+      "sequenciaAtual": 3,
+      "melhorSequencia": 4
+    }
+  ]
+}
