@@ -35,7 +35,7 @@ class AguaComoMetaApiTest extends TesteComPaciente {
 		m=metaAgua(a,p);assertThat(m.path("alvo").decimalValue()).isEqualByComparingTo("2450");assertThat(m.path("versao").asLong()).isEqualTo(2);
 		// o paciente recebe a meta pelo sync
 		var doPaciente=json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("mudancas").path("metas");
-		assertThat(doPaciente).hasSize(1);assertThat(doPaciente.get(0).path("alvo").decimalValue()).isEqualByComparingTo("2450");
+		assertThat(doPaciente).hasSize(1);assertThat(doPaciente.get(0).path("dados").path("alvo").decimalValue()).isEqualByComparingTo("2450");
 		// a nutri ajusta: o alvo dela vale e o peso não muda mais o alvo
 		var ajuste=requisitar("PATCH","/metas/"+id,a.token(),Map.of("alvo",3000),Map.of("If-Match","\"2\""));
 		assertThat(ajuste.statusCode()).as(ajuste.body()).isEqualTo(200);assertThat(json(ajuste).path("alvoPadrao").asBoolean()).isFalse();
