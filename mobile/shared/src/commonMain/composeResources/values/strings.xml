@@ -738,6 +738,7 @@
     <string name="agenda_tipo_primeira">Primeira consulta</string>
     <string name="agenda_tipo_retorno">Retorno</string>
     <string name="agenda_tipo_online">Online</string>
+    <string name="agenda_tipo_avaliacao">Avaliação</string>
     <string name="agenda_tipo_outro">Consulta</string>
     <string name="agenda_paciente_desconhecido">Paciente</string>
     <string name="agenda_form_titulo_nova">Nova consulta</string>
