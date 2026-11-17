@@ -65,7 +65,7 @@ public class ServicoSyncLeitura {
 				case CONSULTAS->consultas.add(mudanca(referencia,dados,ConsultaResposta.class));
 				case AVISOS->avisos.add(mudanca(referencia,dados,AvisoResposta.class));
 				case MODELOS_DIETA->modelosDieta.add(mudanca(referencia,dados,ModeloDietaResposta.class));
-				case REGISTROS_FORA_DO_PLANO->foraDoPlano.add(mudanca(referencia,dados,RegistroForaDoPlanoResposta.class));
+				case FORA_DO_PLANO->foraDoPlano.add(mudanca(referencia,dados,RegistroForaDoPlanoResposta.class));
 				case PRODUTOS->produtos.add(mudanca(referencia,dados,ProdutoResposta.class));
 				case PROTOCOLOS->protocolos.add(mudanca(referencia,dados,ProtocolosNutriResposta.class));
 			}

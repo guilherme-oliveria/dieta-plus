@@ -51,7 +51,7 @@ public final class FontesRotinaSync {
 	public static class ForaDoPlano implements FonteSync<RegistroForaDoPlanoResposta> {
 		private final DiarioSync diario;private final RotinaStore rotina;private final AuditoriaClinica auditoria;
 		public ForaDoPlano(DiarioSync diario,RotinaStore rotina,AuditoriaClinica auditoria){this.diario=diario;this.rotina=rotina;this.auditoria=auditoria;}
-		@Override public ColecaoSync colecao(){return ColecaoSync.REGISTROS_FORA_DO_PLANO;}
+		@Override public ColecaoSync colecao(){return ColecaoSync.FORA_DO_PLANO;}
 		@Override public List<ReferenciaSync> mudancasDesde(long seq,ContextoUsuario usuario,int limite){return diario.mudancasDesde(colecao(),seq,usuario,limite);}
 		@Override public RegistroForaDoPlanoResposta carregar(ReferenciaSync referencia,ContextoUsuario usuario){
 			boolean nutri=usuario.perfil()==Perfil.NUTRICIONISTA;

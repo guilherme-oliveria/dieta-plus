@@ -17,7 +17,7 @@ public class RotinaStore {
 	public RotinaStore(JdbcTemplate jdbc,JsonMapper mapper){this.jdbc=jdbc;this.mapper=mapper;}
 	public boolean inserirCheckin(UUID id,UUID paciente,UUID vinculo,UUID nutri,CheckinRequisicao r,List<TrocaCheckin> trocas){
 		return jdbc.update("""
-			insert into checkin(id,paciente_id,vinculo_id,nutricionista_id,dieta_id,refeicao_id,data,status,trocas,registrado_em,fome_antes,sensacao_depois) values(?,?,?,?,?,?,?,?,?::jsonb,?,?,?) on conflict(id) do nothing
+			insert into checkin(id,paciente_id,vinculo_id,nutricionista_id,dieta_id,refeicao_id,data,status,trocas,registrado_em,fome_antes,sensacao_depois) values(?,?,?,?,?,?,?,?,?::jsonb,?,?::smallint,?::smallint) on conflict(id) do nothing
 			""",id,paciente,vinculo,nutri,r.dietaId(),r.refeicaoId(),java.sql.Date.valueOf(r.data()),r.status().name(),mapper.writeValueAsString(trocas),Timestamp.from(r.registradoEm()),r.fomeAntes(),r.sensacaoDepois())==1;
 	}
 	public CheckinResposta checkin(UUID id,UUID paciente){
@@ -73,7 +73,7 @@ public class RotinaStore {
 
 	// RN-ROT-06: registros "comi fora do plano" (só inclusão)
 	public boolean inserirForaDoPlano(UUID id,UUID paciente,RegistroForaDoPlanoRequisicao r,String texto){
-		return jdbc.update("insert into registro_fora_do_plano(id,paciente_id,data,texto,refeicao_id,registrado_em) values(?,?,?,?,?,?) on conflict(id) do nothing",
+		return jdbc.update("insert into registro_fora_do_plano(id,paciente_id,data,texto,refeicao_id,registrado_em) values(?,?,?,?,?::uuid,?) on conflict(id) do nothing",
 			id,paciente,java.sql.Date.valueOf(r.data()),texto,r.refeicaoId(),Timestamp.from(r.registradoEm()))==1;
 	}
 	private static RegistroForaDoPlanoResposta foraDoPlano(ResultSet rs) throws SQLException {

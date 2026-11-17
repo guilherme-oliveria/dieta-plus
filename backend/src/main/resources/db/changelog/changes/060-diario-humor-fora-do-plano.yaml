@@ -32,16 +32,16 @@ databaseChangeLog:
               ALTER TABLE registro_fora_do_plano ADD CONSTRAINT ck_fora_plano_texto CHECK (length(btrim(texto)) > 0);
               ALTER TABLE diario_sync DROP CONSTRAINT ck_diario_sync_colecao;
               ALTER TABLE diario_sync ADD CONSTRAINT ck_diario_sync_colecao CHECK (colecao IN
-              ('PACIENTES','VINCULOS','NUTRIS','GRUPOS','ALIMENTOS','LISTAS','DIETAS','SNAPSHOTS','DIETA_EM_USO','CHECKINS','AGUA','PESOS','AVALIACOES','MODELOS','QUESTIONARIOS','CONSULTAS','AVISOS','PROTOCOLOS','MODELOS_DIETA','PRODUTOS','REGISTROS_FORA_DO_PLANO'));
+              ('PACIENTES','VINCULOS','NUTRIS','GRUPOS','ALIMENTOS','LISTAS','DIETAS','SNAPSHOTS','DIETA_EM_USO','CHECKINS','AGUA','PESOS','AVALIACOES','MODELOS','QUESTIONARIOS','CONSULTAS','AVISOS','PROTOCOLOS','MODELOS_DIETA','PRODUTOS','FORA_DO_PLANO'));
         - sql:
             splitStatements: false
             sql: |
               CREATE FUNCTION fora_plano_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
               DECLARE nutri uuid;
               BEGIN
-                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'REGISTROS_FORA_DO_PLANO',NEW.id,NULL,NEW.paciente_id);
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'FORA_DO_PLANO',NEW.id,NULL,NEW.paciente_id);
                 FOR nutri IN SELECT nutricionista_id FROM vinculo WHERE paciente_id=NEW.paciente_id AND status='ATIVO' AND excluido_em IS NULL LOOP
-                  PERFORM registrar_mudanca_sync('NUTRICIONISTA',nutri,'REGISTROS_FORA_DO_PLANO',NEW.id,nutri,NEW.paciente_id);
+                  PERFORM registrar_mudanca_sync('NUTRICIONISTA',nutri,'FORA_DO_PLANO',NEW.id,nutri,NEW.paciente_id);
                 END LOOP;
                 RETURN NEW;
               END;
