@@ -33,7 +33,7 @@ class ModelosMetaApiTest extends TesteComPaciente {
 		erro(requisitar("POST","/eu/nutri/modelos-meta",a.token(),modelo("Com água",item("AGUA",2000,"DIARIA"))),422,"META_INVALIDA");
 		erro(requisitar("POST","/eu/nutri/modelos-meta",a.token(),modelo("Semanal sem N",item("PASSOS",8000,"SEMANAL"))),422,"META_INVALIDA");
 		erro(requisitar("POST","/eu/nutri/modelos-meta",a.token(),modelo("Sim ou não sem nome",item("SIM_NAO",1,"DIARIA"))),422,"META_INVALIDA");
-		erro(requisitar("POST","/eu/nutri/modelos-meta",a.token(),Map.of("nome","Vazio","itens",List.of())),400,"FORMATO_INVALIDO");
+		erro(requisitar("POST","/eu/nutri/modelos-meta",a.token(),Map.of("nome","Vazio","itens",List.of())),400,"OBRIGATORIO");
 	}
 
 	@Test void aplicaAoPacienteEIsolaPorNutri() throws Exception {
