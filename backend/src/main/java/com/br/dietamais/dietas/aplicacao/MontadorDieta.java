@@ -20,8 +20,8 @@ import tools.jackson.databind.json.JsonMapper;
 /** Monta a resposta da dieta com os dados atuais da lista da nutri e os totais calculados (RN-DIE-05, RN-CAL-07). */
 @Component
 public class MontadorDieta {
-	private final DietaStore dietas;private final ConsultarAlimentosParaDieta alimentos;private final ConsultarProdutosParaDieta produtos;private final ConsultaPorcoes porcoes;private final ConsultaDri dri;private final ConsultarFichaParaLista fichas;private final ConsultaAvaliacaoParaDieta avaliacoes;private final Clock relogio;private final JsonMapper mapper;
-	public MontadorDieta(DietaStore dietas,ConsultarAlimentosParaDieta alimentos,ConsultarProdutosParaDieta produtos,ConsultaPorcoes porcoes,ConsultaDri dri,ConsultarFichaParaLista fichas,ConsultaAvaliacaoParaDieta avaliacoes,Clock relogio,JsonMapper mapper){this.dietas=dietas;this.alimentos=alimentos;this.produtos=produtos;this.porcoes=porcoes;this.dri=dri;this.fichas=fichas;this.avaliacoes=avaliacoes;this.relogio=relogio;this.mapper=mapper;}
+	private final DietaStore dietas;private final ConsultarAlimentosParaDieta alimentos;private final ConsultarProdutosParaDieta produtos;private final ConsultaPorcoes porcoes;private final ConsultaDri dri;private final ConsultarFichaParaLista fichas;private final ConsultaAvaliacaoParaDieta avaliacoes;private final ConsultaRestricoesParaDieta restricoes;private final Clock relogio;private final JsonMapper mapper;
+	public MontadorDieta(DietaStore dietas,ConsultarAlimentosParaDieta alimentos,ConsultarProdutosParaDieta produtos,ConsultaPorcoes porcoes,ConsultaDri dri,ConsultarFichaParaLista fichas,ConsultaAvaliacaoParaDieta avaliacoes,ConsultaRestricoesParaDieta restricoes,Clock relogio,JsonMapper mapper){this.restricoes=restricoes;this.dietas=dietas;this.alimentos=alimentos;this.produtos=produtos;this.porcoes=porcoes;this.dri=dri;this.fichas=fichas;this.avaliacoes=avaliacoes;this.relogio=relogio;this.mapper=mapper;}
 	public List<DietaResposta> montar(List<Dieta> lista,UUID nutri){
 		var refeicoes=dietas.refeicoes(lista.stream().map(Dieta::id).toList());
 		var itens=dietas.itens(refeicoes.stream().map(Refeicao::id).toList());
@@ -31,7 +31,7 @@ public class MontadorDieta {
 		if(itens.stream().anyMatch(i->i.grupoId()!=null))porcoes.porcoes().grupos().forEach(g->grupos.put(g.grupoId(),g));
 		var itensPorRefeicao=itens.stream().collect(Collectors.groupingBy(Item::refeicaoId));
 		var refeicoesPorDieta=refeicoes.stream().collect(Collectors.groupingBy(Refeicao::dietaId));
-		var respostas=new ArrayList<DietaResposta>();var perfis=new HashMap<UUID,Perfil>();
+		var respostas=new ArrayList<DietaResposta>();var perfis=new HashMap<UUID,Perfil>();var fichasSaude=new HashMap<UUID,List<RestricaoSaude>>();
 		for(var dieta:lista){
 			var escolhidas=lerPorcoes(dieta.porcoesJson());var metas=dieta.metasJson()==null?null:mapper.readValue(dieta.metasJson(),MetasDieta.class);
 			var opcaoPorGrupo=new HashMap<UUID,Integer>();if(escolhidas!=null)escolhidas.forEach(p->opcaoPorGrupo.put(p.grupoId(),p.opcao()));
@@ -39,7 +39,15 @@ public class MontadorDieta {
 			for(var refeicao:refeicoesPorDieta.getOrDefault(dieta.id(),List.of())){
 				var is=new ArrayList<ItemRefeicaoResposta>();var exatos=new ArrayList<CalculadoraTotais.Parcela>();var contribs=new ArrayList<AdequacaoDri.Contribuicao>();
 				for(var item:itensPorRefeicao.getOrDefault(refeicao.id(),List.of())){
-					var par=item(item,base,baseProdutos,grupos,opcaoPorGrupo);is.add(par.item());exatos.add(par.exato());if(par.contribuicao()!=null)contribs.add(par.contribuicao());
+					var par=item(item,base,baseProdutos,grupos,opcaoPorGrupo);
+					// RN-DIE-14: alertas do alimento contra as restrições atuais da ficha; só na visão da nutri
+					var itemResposta=par.item();
+					if(item.alimentoId()!=null&&base.get(item.alimentoId())!=null){
+						var saude=fichasSaude.computeIfAbsent(dieta.pacienteId(),restricoes::restricoes);
+						var marcadores=new HashSet<String>();var ms=base.get(item.alimentoId()).marcadores();if(ms!=null)ms.forEach(m->marcadores.add(m.name()));
+						itemResposta=itemResposta.comAlertas(CalculoAlertas.alertasItem(saude,marcadores),item.alergiaConfirmada());
+					}
+					is.add(itemResposta);exatos.add(par.exato());if(par.contribuicao()!=null)contribs.add(par.contribuicao());
 				}
 				var exata=CalculadoraTotais.somarExato(exatos);exatas.put(refeicao.id(),exata);contribuicoes.put(refeicao.id(),contribs);var micros=AdequacaoDri.somar(contribs);
 				rs.add(new RefeicaoResposta(refeicao.id(),refeicao.nome(),refeicao.horario(),refeicao.ordem(),is,exata.totais().comMicronutrientes(micros.micronutrientes(),micros.incompleto()),"ALTERNATIVA".equals(refeicao.tipo())?refeicao.tipo():null,refeicao.alternativaDe(),null));

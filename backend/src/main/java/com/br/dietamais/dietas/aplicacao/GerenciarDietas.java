@@ -20,8 +20,8 @@ import tools.jackson.databind.json.JsonMapper;
 public class GerenciarDietas {
 	static final int MAX_REFEICOES=20,MAX_ITENS=60;
 	private final ConsultaPorcoes porcoes;private final ConsultaAvaliacaoParaDieta avaliacoes;private final MontadorDieta montador;private final DietaStore dietas;private final ConsultarAlimentosParaDieta alimentos;private final ConsultarProdutosParaDieta produtos;private final ConsultarFichaParaLista fichas;private final UsuarioAtual usuario;
-	private final GuardaEscritaNutri guarda;private final AuditoriaClinica auditoria;private final GeradorIds ids;private final Clock relogio;private final JsonMapper mapper;
-	public GerenciarDietas(ConsultaPorcoes porcoes,ConsultaAvaliacaoParaDieta avaliacoes,MontadorDieta montador,DietaStore dietas,ConsultarAlimentosParaDieta alimentos,ConsultarProdutosParaDieta produtos,ConsultarFichaParaLista fichas,UsuarioAtual usuario,GuardaEscritaNutri guarda,AuditoriaClinica auditoria,GeradorIds ids,Clock relogio,JsonMapper mapper){
+	private final GuardaEscritaNutri guarda;private final AuditoriaClinica auditoria;private final GeradorIds ids;private final Clock relogio;private final JsonMapper mapper;private final ConsultaRestricoesParaDieta saude;
+	public GerenciarDietas(ConsultaPorcoes porcoes,ConsultaAvaliacaoParaDieta avaliacoes,MontadorDieta montador,DietaStore dietas,ConsultarAlimentosParaDieta alimentos,ConsultarProdutosParaDieta produtos,ConsultarFichaParaLista fichas,UsuarioAtual usuario,GuardaEscritaNutri guarda,AuditoriaClinica auditoria,GeradorIds ids,Clock relogio,JsonMapper mapper,ConsultaRestricoesParaDieta saude){this.saude=saude;
 		this.porcoes=porcoes;this.avaliacoes=avaliacoes;this.montador=montador;this.dietas=dietas;this.alimentos=alimentos;this.produtos=produtos;this.fichas=fichas;this.usuario=usuario;this.guarda=guarda;this.auditoria=auditoria;this.ids=ids;this.relogio=relogio;this.mapper=mapper;
 	}
 	@Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -51,6 +51,8 @@ public class GerenciarDietas {
 		if(ficha.status()==StatusVinculo.ENCERRADO)throw new ExcecaoNegocio(CodigoErro.ACESSO_NEGADO,"RN-VIN-05");
 		UUID id=requisicao.id()==null?ids.novo():idV7(requisicao.id());var agora=relogio.instant();
 		var conteudo=validar(requisicao,nutri);
+		// RN-DIE-14 (reuso da RN-MOD-03): dieta nova nasce evitando os marcadores das alergias e intolerâncias da ficha, se a nutri não informou os dela
+		if(requisicao.restricoes()==null)conteudo=new Conteudo(new DietaStore.Extras(conteudo.extras().porcoesJson(),conteudo.extras().metasJson(),conteudo.extras().pesoReferenciaKg(),conteudo.extras().rodape(),restricoesDaFicha(ficha.pacienteId())));
 		if(!dietas.inserir(id,ficha.vinculoId(),nutri,ficha.pacienteId(),requisicao.titulo().strip(),texto(requisicao.orientacao()),conteudo.extras(),agora))throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
 		gravar(id,requisicao,conteudo);
 		var dieta=propria(id,nutri,false);var resposta=montador.montar(List.of(dieta),nutri).get(0);auditoria.escrita(referencia(dieta,contexto));return resposta;
@@ -119,6 +121,15 @@ public class GerenciarDietas {
 			r.restricoes()==null?null:r.restricoes().stream().distinct().sorted().map(Enum::name).toList());
 		return new Conteudo(extras);
 	}
+	/** Marcadores conhecidos (até 5, em ordem) das alergias e intolerâncias da ficha; marcador personalizado fora do catálogo não entra. */
+	private List<String> restricoesDaFicha(UUID paciente){
+		var r=new java.util.TreeSet<String>();
+		for(var item:saude.restricoes(paciente)){
+			if(item.tipo()!=TipoRestricaoSaude.ALERGIA&&item.tipo()!=TipoRestricaoSaude.INTOLERANCIA||item.marcadores()==null)continue;
+			for(var m:item.marcadores())try{r.add(MarcadorAlimento.valueOf(m).name());}catch(IllegalArgumentException ignorado){}
+		}
+		return r.stream().limit(5).toList();
+	}
 	private void unico(UUID id,Set<UUID> vistos){if(id!=null&&(id.version()!=7||!vistos.add(id)))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);}
 	private void gravar(UUID dieta,SalvarDietaRequisicao r,Conteudo conteudo){
 		for(var refeicao:r.refeicoes()){
@@ -128,7 +139,7 @@ public class GerenciarDietas {
 			int ordem=0;
 			for(var item:refeicao.itens()){
 				UUID iid=item.id()==null?ids.novo():item.id();
-				if(!dietas.inserirItem(new Item(iid,rid,item.alimentoId(),item.grupoId(),item.porcoes(),Boolean.TRUE.equals(item.aVontade()),texto(item.textoLivre()),texto(item.observacao()),ordem++,item.produtoId(),item.gramas()==null?null:item.gramas().setScale(2,java.math.RoundingMode.HALF_UP))))throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
+				if(!dietas.inserirItem(new Item(iid,rid,item.alimentoId(),item.grupoId(),item.porcoes(),Boolean.TRUE.equals(item.aVontade()),texto(item.textoLivre()),texto(item.observacao()),ordem++,item.produtoId(),item.gramas()==null?null:item.gramas().setScale(2,java.math.RoundingMode.HALF_UP),Boolean.TRUE.equals(item.alergiaConfirmada()))))throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
 			}
 		}
 	}

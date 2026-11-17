@@ -24,5 +24,6 @@ public record RefeicaoResposta(
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	@Valid @Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) DiferencaTotaisResposta diferencaParaPrincipal) {
 	public RefeicaoResposta(UUID id,String nome,LocalTime horario,int ordem,List<ItemRefeicaoResposta> itens,TotaisNutricionaisResposta totais){this(id,nome,horario,ordem,itens,totais,null,null,null);}
+	public RefeicaoResposta comItens(List<ItemRefeicaoResposta> novos){return new RefeicaoResposta(id,nome,horario,ordem,novos,totais,tipo,alternativaDe,diferencaParaPrincipal);}
 	public boolean alternativa(){return "ALTERNATIVA".equals(tipo);}
 }
