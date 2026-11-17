@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 063-modelo-meta
+      author: dietamais
+      changes:
+        - createTable:
+            tableName: modelo_meta
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_modelo_meta_nutri, references: nutricionista(id), deleteCascade: true } }
+              - column: { name: nome, type: varchar(80), constraints: { nullable: false } }
+              - column: { name: itens, type: jsonb, constraints: { nullable: false } }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - createIndex:
+            tableName: modelo_meta
+            indexName: ix_modelo_meta_nutri
+            columns:
+              - column: { name: nutricionista_id }
