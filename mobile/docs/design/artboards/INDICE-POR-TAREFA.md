@@ -4,6 +4,15 @@ Para quem vai implementar (Codex, Claude, pessoas). Cada `.dc.html` desta pasta 
 
 Estado conferido na `develop` em 01/11/2026 (plano de ação, linha de MOB-49 em diante).
 
+## Release 1.4.0 (DES-16 a DES-22)
+
+Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lima").
+
+| Tarefa | Artboards (nesta pasta) | Ver também |
+| --- | --- | --- |
+| **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
+| **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+
 ## Mobile pendente
 
 Plano de melhorias (05/11): as telas novas seguem os IDs `ART-P1-nn` a `ART-P4-nn` de [ART-IDS.md](ART-IDS.md). MOB-63 (4 gráficos): ART-P1-09 e ART-P1-10; MOB-64: ART-P1-02 a 08; MOB-65 e MOB-66: ART-P4-04 e ART-P4-05; MOB-67: ART-P1-01 e ART-P1-12; MOB-68 e MOB-69: ART-P2-01 a 05; MOB-56b e MOB-70 a 76: ART-P3-01 a 09; MOB-77 e 78: ART-P4-02 e ART-P4-03.

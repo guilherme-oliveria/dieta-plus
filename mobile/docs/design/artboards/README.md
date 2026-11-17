@@ -37,9 +37,13 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `A-Anamnese-Estruturada.dc.html` | Anamnese: álcool, sal e óleo |
 | `G-Graficos.dc.html` | Padrão · catálogo de gráficos |
 | `PDF-Avaliacao.dc.html` | PDF da avaliação (A4) |
+| `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | Nutri · Ficha, saúde e restrições (DES-16) |
+| `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | Nutri · Montador com alerta de restrição e confirmação de alergia (DES-16) |
 
 Fotos (PNG) dos artboards novos em [../evidencias/DES-08-10/](../evidencias/DES-08-10/). Os dados dos artboards novos são de exemplo (paciente Guilherme do PDF da nutri; criança fictícia).
 
 Rodada DES-11 (01/11/2026): `P-Dieta-Macros`, `P-Refeicao-Macros`, `P-Lista-Substituicao`, `P-Lista-Substituicao-Vazio`, `T-Lista-Substituicao` (MOB-55) e `PDF-Lista-Pequena`, `PDF-Lista-Media`, `PDF-Lista-Grande`, `PDF-Lista-Carboidratos` (BE-50b). Fotos em [../evidencias/DES-11/](../evidencias/DES-11/). Alimentos, medidas e gramas são ilustrativos; no PDF o desenho varia só as gramas, mas o backend deve escalar também a medida caseira (arredondando para ¼).
 
 **Índice por tarefa (qual artboard ler para cada MOB/BE): [INDICE-POR-TAREFA.md](INDICE-POR-TAREFA.md).**
+
+Rodada DES-16 (17/11/2026, release 1.4.0): saúde e restrições na ficha e alerta no montador. Fotos em [../evidencias/DES-16/](../evidencias/DES-16/). Paciente fictícia.

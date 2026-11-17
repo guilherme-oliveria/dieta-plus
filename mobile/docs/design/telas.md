@@ -117,8 +117,8 @@ Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4
 
 | Tela | Pacote | DES | Status | MOB |
 | --- | --- | --- | --- | --- |
-| Ficha: seção "Saúde e restrições" e selo no cabeçalho | `ui/nutri/paciente` | DES-16 | faltando | 82 |
-| Montador: alerta de intolerância e confirmação de alergia | `ui/nutri/dieta` | DES-16 | faltando | 83 |
+| Ficha: seção "Saúde e restrições" e selo no cabeçalho; folha de novo item | `ui/nutri/paciente` | DES-16 | desenhada: `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | 82 |
+| Montador: alerta de intolerância e confirmação de alergia | `ui/nutri/dieta` | DES-16 | desenhada: `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | 83 |
 | Consulta: formulário (tipo, modalidade, link, orientação, observação) e ações de status | `ui/nutri/agenda` | DES-17 | faltando | 84 |
 | Agenda: visão do mês | `ui/nutri/agenda` | DES-17 | faltando | 85 |
 | Conta da nutri: preferência de lembrete | `ui/nutri/assinatura` (conta) | DES-17 | faltando | 86 |
