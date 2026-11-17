@@ -60,7 +60,12 @@ fun moduloDietas(ambiente: AmbienteDieta?) = module {
 fun moduloPorcoes(ambiente: AmbienteDieta?) = module {
     single<org.br.dietamais.data.repositorio.PortaPorcoes> { org.br.dietamais.data.repositorio.PorcoesRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>()) }
     viewModel { org.br.dietamais.ui.nutri.dieta.PlanejadorPorcoesViewModel(get(), get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }, produtos = get()) }
-    single<org.br.dietamais.data.repositorio.PortaModelosDieta> { org.br.dietamais.data.repositorio.ModelosDietaRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), get<org.br.dietamais.data.local.BancoDieta>()) }
+    // MOB-29d: modelos dela gravam no banco local e na fila; duplicar do sistema, aplicar e salvar dieta como modelo seguem online
+    single<org.br.dietamais.data.repositorio.PortaModelosDieta> {
+        val banco = get<org.br.dietamais.data.local.BancoDieta>()
+        org.br.dietamais.data.repositorio.ModelosDietaOffline(org.br.dietamais.data.repositorio.ModelosDietaRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), banco), banco,
+            aoAlterar = { ambiente?.solicitarLeitura() })
+    }
     viewModel { org.br.dietamais.ui.nutri.dieta.ModelosDietaViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     viewModel { org.br.dietamais.ui.nutri.dieta.AplicarModeloViewModel(get(), get()) }
     // MOB-56b: editor de modelo = o planejador gravando em modelos-dieta

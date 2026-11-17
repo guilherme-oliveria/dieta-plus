@@ -16,6 +16,8 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | **MOB-85** Agenda: visão do mês | `A-Agenda-Mes` (Dia/Semana/Mês, pontos por consulta, horário livre abre a nova consulta) | Hoje com contorno, dia escolhido preenchido |
 | **MOB-86** Preferência de lembrete | `A-Conta-Lembrete` (2 h, 1 dia, 2 dias; extra 1 h antes; e-mail de confirmação) | Vale para a nutri e para os pacientes (D-08). Push sem dado clínico (RN-NOT-02) |
 | **MOB-87** Paciente: próxima consulta | `P-Proxima-Consulta` (cartão no Hoje com "Entrar na consulta" e a orientação) | O `.ics` não leva link nem orientação |
+| **MOB-88** Paciente: humor e fora do plano | `P-Refeicao-Humor` (folha após "Comi", duas escalas de 5 níveis, Pular/Salvar, Desfazer continua), `P-Fora-Plano` (texto até 280, refeição opcional, horário), `P-Perfil-Preferencias` (desligar a pergunta, só no aparelho) | Ícone de nível = barras crescentes do Dieta+, sem emoji. Só inclusão, nunca conflito (RN-ROT-06) |
+| **MOB-89** Nutri: humor e fora do plano na adesão | `A-Adesao-Humor` (médias da semana e lista fora do plano) | Média só das refeições com resposta |
 | **MOB-92** Nutri: prescrever e orientar | `A-Suplementos-Paciente` (em uso e encerrados), `A-Suplemento-Novo` (meus produtos ou texto livre, dose, forma, horário, frequência, fim), `A-Orientacao-Nova` (título, negrito e lista, usar e salvar modelo) | Cópia congelada de nome e dose (RN-SUP-01). Texto em Markdown restrito, nunca HTML |
 | **MOB-93** Paciente: suplementos e orientações | `P-Suplementos` (lembrete local por suplemento), `P-Orientacoes` (nova aberta e anteriores) | Offline. Push "Você tem uma nova orientação" sem nome do suplemento |
 

@@ -1,0 +1,15 @@
+{
+  "id": "019b0000-0000-7000-8000-000000000002",
+  "pacienteId": "019b0000-0000-7000-8000-000000000006",
+  "vinculoId": "019b0000-0000-7000-8000-000000000003",
+  "inicio": "2026-11-25T14:00:00Z",
+  "duracaoMin": 50,
+  "tipo": "RETORNO",
+  "lugar": "Consulta online",
+  "status": "ENCERRADA",
+  "versao": 1,
+  "criadoEm": "2026-11-20T12:00:00Z",
+  "atualizadoEm": "2026-11-20T12:00:00Z",
+  "modalidade": "ONLINE",
+  "orientacaoPaciente": "Traga o diário alimentar."
+}

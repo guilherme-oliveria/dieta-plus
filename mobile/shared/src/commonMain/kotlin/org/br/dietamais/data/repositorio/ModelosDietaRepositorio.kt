@@ -9,7 +9,7 @@ import kotlin.uuid.Uuid
 
 /**
  * Modelos de dieta da nutri (MOB-56, BE-52). Só online: a lista vem de `GET /eu/nutri/modelos-dieta` (sistema e dela) e as ações passam pela API.
- * MOB-56c: sem rede, a lista cai nos modelos dela já sincronizados (`modelosDieta` no sync); os do sistema vêm só pelo GET. Escrever offline é a MOB-29b.
+ * MOB-56c: sem rede, a lista cai nos modelos dela já sincronizados (`modelosDieta` no sync); os do sistema vêm só pelo GET. Escrever offline: [ModelosDietaOffline] (MOB-29d).
  */
 interface PortaModelosDieta {
     suspend fun listar(): List<ModeloDietaResposta>
@@ -24,6 +24,10 @@ interface PortaModelosDieta {
     suspend fun referenciaAvaliacao(pacienteId: Uuid): ReferenciaAvaliacaoDietaResposta?
     /** RN-MOD-02: cria o rascunho (nunca publica). A chave mantém o reenvio idempotente. */
     suspend fun aplicar(pacienteId: Uuid, modeloId: Uuid, requisicao: AplicarModeloRequisicao, chave: Uuid = novoIdLocal()): DietaDeModeloResposta
+    /** MOB-29d: criar, editar, duplicar e excluir os modelos dela gravam no aparelho e vão pela fila. */
+    val escritaOffline: Boolean get() = false
+    /** Modelos com mudança local ainda não aceita pelo servidor. */
+    fun pendentesDeEnvio(): Set<Uuid> = emptySet()
 }
 
 class ModelosDietaRepositorio(private val api: ApiDieta, private val conferirArmazem: (OperacaoSessao) -> Unit,

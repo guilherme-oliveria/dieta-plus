@@ -28,6 +28,34 @@ class ModelosDietaViewModelTest {
     }
     private fun TestScope.vm(m: Modelos) = ModelosDietaViewModel(m, StandardTestDispatcher(testScheduler))
 
+    /** MOB-29d: fonte que grava no aparelho; o que ainda não foi enviado fica em [pendentes]. */
+    private inner class NoAparelho(lista: List<ModeloDietaResposta>) : PortaModelosDieta by Modelos(lista) {
+        val pendentes = mutableSetOf<Uuid>()
+        override val escritaOffline: Boolean get() = true
+        override fun pendentesDeEnvio(): Set<Uuid> = pendentes
+    }
+
+    @Test fun semRedeOsDelaSeEditamEOsDoSistemaSoComInternet() = runTest {
+        val sistema = modelo("Do sistema", "SISTEMA"); val meu = modelo("Meu", "NUTRI")
+        val fonte = NoAparelho(listOf(sistema, meu)); fonte.pendentes += meu.id
+        val vm = ModelosDietaViewModel(fonte, StandardTestDispatcher(testScheduler), conectividade = kotlinx.coroutines.flow.flowOf(false))
+        vm.carregar(); runCurrent()
+        val e = vm.estado.value
+        assertTrue(e.semConexao); assertTrue(e.escritaOffline)
+        assertTrue(e.podeEscrever)
+        assertTrue(e.podeDuplicar(meu)); assertFalse(e.podeDuplicar(sistema))
+        // aplicar exige rede e o modelo já aceito pelo servidor
+        assertFalse(e.podeUsar(meu)); assertFalse(e.podeUsar(sistema))
+        assertEquals(setOf(meu.id), e.pendentes)
+    }
+    @Test fun semEscritaOfflineSemRedeNadaSeEscreve() = runTest {
+        val meu = modelo("Meu", "NUTRI")
+        val vm = ModelosDietaViewModel(Modelos(listOf(meu)), StandardTestDispatcher(testScheduler), conectividade = kotlinx.coroutines.flow.flowOf(false))
+        vm.carregar(); runCurrent()
+        val e = vm.estado.value
+        assertFalse(e.podeEscrever); assertFalse(e.podeDuplicar(meu)); assertFalse(e.podeUsar(meu))
+    }
+
     @Test fun listaSeparaOsDoSistemaDosDela() = runTest {
         val sistema = modelo("Hipertensão", "SISTEMA", restricoes = listOf("ALTO_SODIO")); val meu = modelo("Meu", "NUTRI")
         val vm = vm(Modelos(listOf(sistema, meu))); vm.carregar(); runCurrent()
