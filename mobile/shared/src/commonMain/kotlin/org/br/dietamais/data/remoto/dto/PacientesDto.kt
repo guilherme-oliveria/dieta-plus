@@ -14,7 +14,9 @@ data class PacienteResposta(val id: Uuid, val vinculoId: Uuid, val nome: String,
     val status: StatusVinculo, val versao: Long, val criadoEm: Instant, val atualizadoEm: Instant, val adesao7d: Double? = null,
     val cadastroAmpliado: CadastroAmpliadoDto? = null,
     /** BE-66: só na lista online (`GET /pacientes`); o sync não traz. */
-    val proximaConsulta: Instant? = null, val ultimaAvaliacao: UltimaAvaliacaoResumoDto? = null)
+    val proximaConsulta: Instant? = null, val ultimaAvaliacao: UltimaAvaliacaoResumoDto? = null,
+    /** BE-68 (RN-SAU-01): só a nutri dona recebe; nunca vem para o paciente. */
+    val restricoesSaude: List<RestricaoSaudeDto>? = null)
 
 @Serializable
 data class UltimaAvaliacaoResumoDto(val id: Uuid, val dataHora: Instant, val pesoKg: Double, val imc: Double, val classificacaoImc: String)
@@ -23,13 +25,15 @@ data class UltimaAvaliacaoResumoDto(val id: Uuid, val dataHora: Instant, val pes
 data class CriarPacienteRequisicao(val id: Uuid, val nome: String, val email: String? = null,
     val dataNascimento: LocalDate? = null, val sexo: Sexo? = null, val telefone: String? = null,
     val estaturaReferencia: Double? = null, val objetivo: String? = null, val observacoes: String? = null,
-    val cadastroAmpliado: CadastroAmpliadoDto? = null)
+    val cadastroAmpliado: CadastroAmpliadoDto? = null,
+    val restricoesSaude: List<RestricaoSaudeDto>? = null)
 
 @Serializable
 data class AtualizarPacienteRequisicao(val nome: String, val email: String? = null,
     val dataNascimento: LocalDate? = null, val sexo: Sexo? = null, val telefone: String? = null,
     val estaturaReferencia: Double? = null, val objetivo: String? = null, val observacoes: String? = null,
-    val cadastroAmpliado: CadastroAmpliadoDto? = null)
+    val cadastroAmpliado: CadastroAmpliadoDto? = null,
+    val restricoesSaude: List<RestricaoSaudeDto>? = null)
 
 /** Cadastro ampliado (BE-64, RN-VIN-08): tudo opcional e em texto livre curto; só a nutri dona da ficha lê. `toString` não mostra os dados (dado pessoal). */
 @Serializable

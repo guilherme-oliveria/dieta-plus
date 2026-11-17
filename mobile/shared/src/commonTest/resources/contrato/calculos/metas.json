@@ -1,0 +1,442 @@
+{
+ "versao": "1.4.0",
+ "regra": "RN-MET-03",
+ "descricao": "Cumprimento de metas; função pura compartilhada com o app (dominio/metas). Janela inclusiva; semana de segunda a domingo; percentual com 1 casa, meio para cima.",
+ "casos": [
+  {
+   "id": "M01-diaria-sete-dias",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: cumpre o dia com soma >= alvo; registros do mesmo dia somam",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-14",
+      "valor": 1200
+     },
+     {
+      "data": "2026-11-14",
+      "valor": 900
+     },
+     {
+      "data": "2026-11-15",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-16",
+      "valor": 1500
+     },
+     {
+      "data": "2026-11-17",
+      "valor": 2100
+     },
+     {
+      "data": "2026-11-18",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2500
+     },
+     {
+      "data": "2026-11-20",
+      "valor": 3000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 6,
+    "percentual": 85.7,
+    "sequenciaAtual": 4,
+    "melhorSequencia": 4
+   }
+  },
+  {
+   "id": "M02-hoje-aberto-nao-quebra",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: o dia de hoje ainda aberto não zera a sequência",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-20",
+    "registros": [
+     {
+      "data": "2026-11-17",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-18",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 3,
+    "percentual": 42.9,
+    "sequenciaAtual": 3,
+    "melhorSequencia": 3
+   }
+  },
+  {
+   "id": "M03-hoje-fechado-quebra",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: dia anterior sem cumprir zera a sequência atual",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-17",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-18",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 3,
+    "percentual": 42.9,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 3
+   }
+  },
+  {
+   "id": "M04-sem-registros",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: sem registro, 0%",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": []
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 0,
+    "percentual": 0.0,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 0
+   }
+  },
+  {
+   "id": "M05-inicio-no-meio",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: dias antes do início não contam",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000,
+     "inicio": "2026-11-18"
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-18",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 3,
+    "diasCumpridos": 2,
+    "percentual": 66.7,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 2
+   }
+  },
+  {
+   "id": "M06-fim-no-meio",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: dias depois do fim não contam",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000,
+     "fim": "2026-11-16"
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-14",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-15",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-16",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 3,
+    "diasCumpridos": 3,
+    "percentual": 100.0,
+    "sequenciaAtual": 3,
+    "melhorSequencia": 3
+   }
+  },
+  {
+   "id": "M07-sim-nao",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: SIM_NAO tem alvo 1; valor 1 cumpre",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 1
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-14",
+      "valor": 1
+     },
+     {
+      "data": "2026-11-15",
+      "valor": 1
+     },
+     {
+      "data": "2026-11-16",
+      "valor": 0
+     },
+     {
+      "data": "2026-11-17",
+      "valor": 1
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 3,
+    "percentual": 42.9,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 2
+   }
+  },
+  {
+   "id": "M08-semanal-cumprida",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: SEMANAL 3x; semana segunda a domingo cumprida com 4 dias",
+   "entrada": {
+    "meta": {
+     "frequencia": "SEMANAL",
+     "vezesPorSemana": 3,
+     "alvo": 30
+    },
+    "janela": {
+     "de": "2026-11-16",
+     "ate": "2026-11-22"
+    },
+    "hoje": "2026-11-23",
+    "registros": [
+     {
+      "data": "2026-11-16",
+      "valor": 30
+     },
+     {
+      "data": "2026-11-17",
+      "valor": 45
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 30
+     },
+     {
+      "data": "2026-11-21",
+      "valor": 30
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 3,
+    "diasCumpridos": 3,
+    "percentual": 100.0,
+    "sequenciaAtual": 1,
+    "melhorSequencia": 1
+   }
+  },
+  {
+   "id": "M09-semanal-parcial",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: SEMANAL 3x com 2 dias: previstos 3, cumpridos 2, semana não cumprida",
+   "entrada": {
+    "meta": {
+     "frequencia": "SEMANAL",
+     "vezesPorSemana": 3,
+     "alvo": 30
+    },
+    "janela": {
+     "de": "2026-11-16",
+     "ate": "2026-11-22"
+    },
+    "hoje": "2026-11-23",
+    "registros": [
+     {
+      "data": "2026-11-16",
+      "valor": 30
+     },
+     {
+      "data": "2026-11-18",
+      "valor": 30
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 3,
+    "diasCumpridos": 2,
+    "percentual": 66.7,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 0
+   }
+  },
+  {
+   "id": "M10-semanal-duas-semanas",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: duas semanas, só a 1ª cumprida; sequência atual 0, melhor 1",
+   "entrada": {
+    "meta": {
+     "frequencia": "SEMANAL",
+     "vezesPorSemana": 2,
+     "alvo": 1
+    },
+    "janela": {
+     "de": "2026-11-09",
+     "ate": "2026-11-22"
+    },
+    "hoje": "2026-11-23",
+    "registros": [
+     {
+      "data": "2026-11-09",
+      "valor": 1
+     },
+     {
+      "data": "2026-11-10",
+      "valor": 1
+     },
+     {
+      "data": "2026-11-17",
+      "valor": 1
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 4,
+    "diasCumpridos": 3,
+    "percentual": 75.0,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 1
+   }
+  },
+  {
+   "id": "M11-seis-de-sete",
+   "funcao": "cumprimento",
+   "origem": "RN-MET-03: 6 de 7 dias = 85,7%; ontem sem cumprir zera a sequência atual",
+   "entrada": {
+    "meta": {
+     "frequencia": "DIARIA",
+     "alvo": 2000
+    },
+    "janela": {
+     "de": "2026-11-14",
+     "ate": "2026-11-20"
+    },
+    "hoje": "2026-11-21",
+    "registros": [
+     {
+      "data": "2026-11-14",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-15",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-16",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-17",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-18",
+      "valor": 2000
+     },
+     {
+      "data": "2026-11-19",
+      "valor": 2000
+     }
+    ]
+   },
+   "esperado": {
+    "diasPrevistos": 7,
+    "diasCumpridos": 6,
+    "percentual": 85.7,
+    "sequenciaAtual": 0,
+    "melhorSequencia": 6
+   }
+  }
+ ]
+}

@@ -85,16 +85,43 @@ class ConsultasApiTest extends TesteComPaciente {
 		var cursor=json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("cursor").asString();
 		var c=json(requisitar("POST","/consultas",a.token(),corpo(p.fichaId(),amanha(),40,"ONLINE")));String id=c.path("id").asString();
 		var paraPaciente=json(requisitar("GET","/sync?limite=1000&cursor="+cursor,p.token(),null)).path("mudancas").path("consultas");
-		assertThat(paraPaciente).hasSize(1);assertThat(paraPaciente.get(0).path("id").asString()).isEqualTo(id);assertThat(paraPaciente.get(0).path("dados").path("tipo").asString()).isEqualTo("ONLINE");
+		assertThat(paraPaciente).hasSize(1);assertThat(paraPaciente.get(0).path("id").asString()).isEqualTo(id);assertThat(paraPaciente.get(0).path("dados").path("tipo").asString()).isEqualTo("RETORNO");assertThat(paraPaciente.get(0).path("dados").path("modalidade").asString()).isEqualTo("ONLINE");
 		assertThat(json(requisitar("GET","/sync?limite=1000",a.token(),null)).path("mudancas").path("consultas")).hasSize(1);
 		var token=json(requisitar("POST","/eu/calendario/token",p.token(),null)).path("url").asString();var caminho=token.substring(token.indexOf("/cal/"));
 		var feed=publico(caminho).body();
-		assertThat(feed).contains("BEGIN:VEVENT","UID:consulta-"+id+"@dietamais.com.br","SUMMARY:Dieta+: Consulta online","STATUS:CONFIRMED","SEQUENCE:0","DTSTART:").doesNotContain("RRULE");
+		assertThat(feed).contains("BEGIN:VEVENT","UID:consulta-"+id+"@dietamais.com.br","SUMMARY:Dieta+: Consulta de retorno (online)","STATUS:CONFIRMED","SEQUENCE:0","DTSTART:").doesNotContain("RRULE");
 		var depois=json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("cursor").asString();
 		assertThat(requisitar("PATCH","/consultas/"+id,a.token(),Map.of("lugar","https://meet.exemplo.invalid/sala"),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
 		assertThat(json(requisitar("GET","/sync?limite=1000&cursor="+depois,p.token(),null)).path("mudancas").path("consultas")).hasSize(1);
 		assertThat(publico(caminho).body()).contains("SEQUENCE:1","LOCATION:https://meet.exemplo.invalid/sala");
 		requisitar("PATCH","/consultas/"+id,a.token(),Map.of("status","CANCELADA"),Map.of("If-Match","\"2\""));
 		assertThat(publico(caminho).body()).contains("STATUS:CANCELLED","SEQUENCE:2").doesNotContain("STATUS:CONFIRMED");
+	}
+
+	@Test void modalidadeLinkStatusEProjecaoDoPaciente() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);
+		var m=corpo(p.fichaId(),amanha(),30,"AVALIACAO");m.put("modalidade","ONLINE");m.put("linkOnline","https://meet.exemplo.invalid/sala");
+		m.put("orientacaoPaciente","Jejum de 8h");m.put("observacaoInterna","Paciente ansioso");
+		var r=requisitar("POST","/consultas",a.token(),m);assertThat(r.statusCode()).as(r.body()).isEqualTo(201);var c=json(r);String id=c.path("id").asString();
+		assertThat(c.path("modalidade").asString()).isEqualTo("ONLINE");assertThat(c.path("observacaoInterna").asString()).isEqualTo("Paciente ansioso");
+		// RN-AGE-03: link só https e só em consulta online
+		var http=corpo(p.fichaId(),amanha(),30,"RETORNO");http.put("modalidade","ONLINE");http.put("linkOnline","http://inseguro.invalid");
+		erro(requisitar("POST","/consultas",a.token(),http),422,"LINK_INVALIDO");
+		var presencial=corpo(p.fichaId(),amanha(),30,"RETORNO");presencial.put("linkOnline","https://meet.exemplo.invalid/x");
+		erro(requisitar("POST","/consultas",a.token(),presencial),422,"LINK_INVALIDO");
+		// o paciente não vê a observação interna
+		var minha=json(requisitar("GET","/eu/consultas",p.token(),null)).path("itens").get(0);
+		assertThat(minha.path("orientacaoPaciente").asString()).isEqualTo("Jejum de 8h");assertThat(minha.has("observacaoInterna")).isFalse();
+		// transições: REALIZADA não vira CANCELADA
+		var ok=requisitar("PATCH","/consultas/"+id,a.token(),Map.of("status","REALIZADA"),Map.of("If-Match","\"1\""));
+		assertThat(ok.statusCode()).as(ok.body()).isEqualTo(200);assertThat(json(ok).path("status").asString()).isEqualTo("REALIZADA");
+		erro(requisitar("PATCH","/consultas/"+id,a.token(),Map.of("status","CANCELADA"),Map.of("If-Match","\"2\"")),422,"TRANSICAO_STATUS_INVALIDA");
+		assertThat(json(requisitar("GET","/eu/consultas",p.token(),null)).path("itens").get(0).path("status").asString()).isEqualTo("ENCERRADA");
+	}
+
+	@Test void tipoOnlineLegadoViraRetornoOnline() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);
+		var c=json(requisitar("POST","/consultas",a.token(),corpo(p.fichaId(),amanha(),30,"ONLINE")));
+		assertThat(c.path("tipo").asString()).isEqualTo("RETORNO");assertThat(c.path("modalidade").asString()).isEqualTo("ONLINE");
 	}
 }
