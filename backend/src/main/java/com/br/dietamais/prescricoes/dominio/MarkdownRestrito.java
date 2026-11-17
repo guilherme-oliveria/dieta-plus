@@ -10,8 +10,8 @@ public final class MarkdownRestrito {
 	private static final Pattern COMENTARIO=Pattern.compile("<!--.*?-->",Pattern.DOTALL);
 	private static final Pattern BLOCO=Pattern.compile("<(script|style)\\b.*?</\\1\\s*>",Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
 	private static final Pattern TAG=Pattern.compile("</?[A-Za-z!?][^>]*>");
-	private static final Pattern IMAGEM=Pattern.compile("!\\[([^\\]]*)\\]\\([^)]*\\)");
-	private static final Pattern LINK=Pattern.compile("\\[([^\\]]*)\\]\\([^)]*\\)");
+	private static final Pattern IMAGEM=Pattern.compile("!\\[([^\\]]*)\\]\\((?:[^()]|\\([^()]*\\))*\\)");
+	private static final Pattern LINK=Pattern.compile("\\[([^\\]]*)\\]\\((?:[^()]|\\([^()]*\\))*\\)");
 	private MarkdownRestrito(){}
 
 	public static String limpar(String texto){
