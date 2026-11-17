@@ -1,0 +1,5 @@
+{
+  "tipo": "DECLARACAO_COMPARECIMENTO",
+  "nome": "Declaração simples",
+  "texto": "Declaro que {{paciente}} compareceu a consulta em {{data}} às {{horario}}.\n{{nutri}} - {{crn}}"
+}

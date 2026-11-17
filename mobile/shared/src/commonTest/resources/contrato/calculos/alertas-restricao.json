@@ -1,0 +1,197 @@
+{
+ "versao": "1.4.0",
+ "regra": "RN-DIE-14",
+ "descricao": "Alertas por item: restrições ALERGIA e INTOLERANCIA da ficha cruzadas com os marcadores do alimento; um alerta por restrição e marcador em comum, na ordem da ficha e dos marcadores da restrição.",
+ "casos": [
+  {
+   "id": "A01-intolerancia-lactose",
+   "funcao": "alertasItem",
+   "origem": "RN-DIE-14: intolerância só avisa",
+   "entrada": {
+    "restricoes": [
+     {
+      "id": "019b0000-0000-7000-8000-000000000001",
+      "tipo": "INTOLERANCIA",
+      "nome": "x",
+      "marcadores": [
+       "CONTEM_LACTOSE"
+      ]
+     }
+    ],
+    "item": {
+     "marcadores": [
+      "CONTEM_LACTOSE"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": [
+     {
+      "restricaoId": "019b0000-0000-7000-8000-000000000001",
+      "tipo": "INTOLERANCIA",
+      "marcador": "CONTEM_LACTOSE",
+      "exigeConfirmacao": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "A02-alergia-exige-confirmacao",
+   "funcao": "alertasItem",
+   "origem": "RN-DIE-14: alergia exige confirmação",
+   "entrada": {
+    "restricoes": [
+     {
+      "id": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "nome": "x",
+      "marcadores": [
+       "AMENDOIM"
+      ]
+     }
+    ],
+    "item": {
+     "marcadores": [
+      "AMENDOIM",
+      "ALTO_SODIO"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": [
+     {
+      "restricaoId": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "marcador": "AMENDOIM",
+      "exigeConfirmacao": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "A03-sem-marcador-igual",
+   "funcao": "alertasItem",
+   "origem": "RN-SAU-02: sem marcador em comum, sem alerta",
+   "entrada": {
+    "restricoes": [
+     {
+      "id": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "nome": "x",
+      "marcadores": [
+       "AMENDOIM"
+      ]
+     }
+    ],
+    "item": {
+     "marcadores": [
+      "CONTEM_GLUTEN"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": []
+   }
+  },
+  {
+   "id": "A04-condicao-nao-alerta",
+   "funcao": "alertasItem",
+   "origem": "RN-SAU-02: condição e medicamento não ligam marcador",
+   "entrada": {
+    "restricoes": [
+     {
+      "id": "019b0000-0000-7000-8000-000000000003",
+      "tipo": "CONDICAO",
+      "nome": "x",
+      "marcadores": []
+     },
+     {
+      "id": "019b0000-0000-7000-8000-000000000004",
+      "tipo": "MEDICAMENTO",
+      "nome": "x",
+      "marcadores": []
+     }
+    ],
+    "item": {
+     "marcadores": [
+      "ALTO_SODIO"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": []
+   }
+  },
+  {
+   "id": "A05-duas-restricoes",
+   "funcao": "alertasItem",
+   "origem": "RN-DIE-14: um alerta por restrição e marcador, na ordem da ficha",
+   "entrada": {
+    "restricoes": [
+     {
+      "id": "019b0000-0000-7000-8000-000000000001",
+      "tipo": "INTOLERANCIA",
+      "nome": "x",
+      "marcadores": [
+       "CONTEM_LACTOSE"
+      ]
+     },
+     {
+      "id": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "nome": "x",
+      "marcadores": [
+       "OVO",
+       "AMENDOIM"
+      ]
+     }
+    ],
+    "item": {
+     "marcadores": [
+      "AMENDOIM",
+      "CONTEM_LACTOSE",
+      "OVO"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": [
+     {
+      "restricaoId": "019b0000-0000-7000-8000-000000000001",
+      "tipo": "INTOLERANCIA",
+      "marcador": "CONTEM_LACTOSE",
+      "exigeConfirmacao": false
+     },
+     {
+      "restricaoId": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "marcador": "OVO",
+      "exigeConfirmacao": true
+     },
+     {
+      "restricaoId": "019b0000-0000-7000-8000-000000000002",
+      "tipo": "ALERGIA",
+      "marcador": "AMENDOIM",
+      "exigeConfirmacao": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "A06-sem-restricoes",
+   "funcao": "alertasItem",
+   "origem": "RN-DIE-14: ficha sem restrições, sem alerta",
+   "entrada": {
+    "restricoes": [],
+    "item": {
+     "marcadores": [
+      "AMENDOIM"
+     ]
+    }
+   },
+   "esperado": {
+    "alertas": []
+   }
+  }
+ ]
+}
