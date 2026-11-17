@@ -52,7 +52,7 @@ class RestricoesSaudeApiTest extends TesteComPaciente {
 		erro(requisitar("POST","/pacientes",a.token(),repetido),400,"FORMATO_INVALIDO");
 		// nome em branco, nome longo e gravidade desconhecida: validação do corpo
 		var vazio=new HashMap<String,Object>(Map.of("nome","P"));vazio.put("restricoesSaude",List.of(item("ALERGIA"," ")));
-		erro(requisitar("POST","/pacientes",a.token(),vazio),400,"FORMATO_INVALIDO");
+		erro(requisitar("POST","/pacientes",a.token(),vazio),400,"OBRIGATORIO");
 		var grav=new HashMap<String,Object>(Map.of("nome","P"));grav.put("restricoesSaude",List.of(item("ALERGIA","Ovo","gravidade","ENORME")));
 		erro(requisitar("POST","/pacientes",a.token(),grav),400,"FORMATO_INVALIDO");
 	}
