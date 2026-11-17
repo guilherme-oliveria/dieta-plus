@@ -24,11 +24,22 @@ class CicloAssinaturaTest extends TesteComPaciente {
 		erro(requisitar("POST","/pacientes",a.token(),Map.of("nome","Fulano")),422,"ASSINATURA_INATIVA");
 	}
 
+	int emailsFimTeste(){return jdbc.queryForObject("select count(*) from notificacao_pendente where tipo='FIM_TESTE'",Integer.class);}
+
+	/** RN-ASS-11: aviso no painel e e-mail 7 dias e 1 dia antes do fim do teste, cada um uma vez. */
 	@Test void avisaQuandoOTesteEstaAcabando() throws Exception {
-		var a=cadastrarNutri();fim(a,"TESTE","2 days");
-		ciclo.executar();ciclo.executar();
-		assertThat(status(a)).isEqualTo("TESTE");assertThat(avisos(a)).isEqualTo(1);
 		var longe=cadastrarNutri();fim(longe,"TESTE","20 days");ciclo.executar();assertThat(avisos(longe)).isZero();
+		int antes=emailsFimTeste();
+		var a=cadastrarNutri();fim(a,"TESTE","5 days");
+		ciclo.executar();ciclo.executar();
+		assertThat(status(a)).isEqualTo("TESTE");assertThat(avisos(a)).isEqualTo(1);assertThat(emailsFimTeste()).isEqualTo(antes+1);
+		fim(a,"TESTE","20 hours");
+		ciclo.executar();ciclo.executar();
+		assertThat(avisos(a)).isEqualTo(2);assertThat(emailsFimTeste()).isEqualTo(antes+2);
+		// visto só a menos de 1 dia do fim: um aviso e um e-mail, não dois
+		var tarde=cadastrarNutri();fim(tarde,"TESTE","10 hours");
+		ciclo.executar();ciclo.executar();
+		assertThat(avisos(tarde)).isEqualTo(1);assertThat(emailsFimTeste()).isEqualTo(antes+3);
 	}
 
 	@Test void ativaSemRenovacaoVaiParaAtrasoDepoisDaToleranciaEBloqueiaDepoisDaCarencia() throws Exception {
