@@ -42,6 +42,11 @@ public class RenderizadorEmail {
 			contexto.setVariable("expiraEm",email.expiraEm().atZone(java.time.ZoneId.of("America/Sao_Paulo")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 			return new MensagemEmail(email.destinatario(),"Seus dados do Dieta+ estão prontos",engine.process("email/exportacao-pronta",contexto));
 		}
+		if(email.tipo()==TipoEmail.FIM_TESTE) { // RN-ASS-11: `token` leva só os dias que faltam, nunca dado de saúde
+			var contexto=new Context(Locale.forLanguageTag("pt-BR"));
+			contexto.setVariable("prazo",email.token().equals("1")?"1 dia":email.token()+" dias");
+			return new MensagemEmail(email.destinatario(),"Seu teste do Dieta+ está acabando",engine.process("email/fim-teste",contexto));
+		}
 		boolean confirma=email.tipo()==TipoEmail.CONFIRMAR_EMAIL;
 		String link=UriComponentsBuilder.fromUriString(confirma?confirmacao:redefinicao).queryParam("token",email.token()).build().encode().toUriString();
 		var contexto=new Context(Locale.forLanguageTag("pt-BR"));
