@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 057-ficha-restricoes-saude
+      author: dietamais
+      changes:
+        - addColumn:
+            tableName: ficha_paciente
+            columns:
+              - column: { name: restricoes_saude, type: jsonb, remarks: 'Itens de saúde da ficha (BE-68, RN-SAU-01): alergia, intolerância, condição e medicamento, com marcadores de alimento; dado clínico só da nutri dona' }

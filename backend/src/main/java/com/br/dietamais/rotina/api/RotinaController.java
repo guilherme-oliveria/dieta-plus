@@ -63,5 +63,13 @@ public class RotinaController {
 		return criado(rotina.peso(requisicao));
 	}
 
+	@PostMapping("/registros-fora-do-plano")
+	@Idempotente
+	@Operation(operationId="registrarForaDoPlano",summary="Registrar \"comi fora do plano\"",description="RN-ROT-06 (H-03); só inclusão, texto de até 280 caracteres, mesmas janelas de data do check-in. Repetir o id devolve o mesmo registro. BE-73.")
+	@ApiResponse(responseCode="201",description="Registro gravado",content=@Content(mediaType="application/json",schema=@Schema(implementation=RegistroForaDoPlanoResposta.class)))
+	public ResponseEntity<RegistroForaDoPlanoResposta> registrarForaDoPlano(@RequestHeader(value="Idempotency-Key",required=false) UUID chave,@Valid @RequestBody RegistroForaDoPlanoRequisicao requisicao){
+		return criado(rotina.foraDoPlano(requisicao));
+	}
+
 	private <T> ResponseEntity<T> criado(T corpo){return ResponseEntity.status(201).cacheControl(CacheControl.noStore()).body(corpo);}
 }
