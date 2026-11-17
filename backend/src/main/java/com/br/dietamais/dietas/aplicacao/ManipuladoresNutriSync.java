@@ -13,4 +13,9 @@ class ManipuladoresNutriSync {
 	@Bean ManipuladorMutacao dietasSync(GerenciarDietas s,JsonMapper m,Validator v,UsuarioAtual u){
 		return ManipuladorEscritaNutri.de("dietas",m,v,u,SalvarDietaRequisicao.class,ManipuladorEscritaNutri.Paciente.FORA_DO_DTO,(f,r)->s.criar(f,r).versao(),SalvarDietaRequisicao.class,(id,im,r)->s.atualizar(id,im,r).versao());
 	}
+	/** BE-83 (MOB-29b): modelos de dieta da nutri; o modelo do sistema responde 403 e o de outra nutri 404, como no REST (RN-MOD-01). */
+	@Bean ManipuladorMutacao modelosDietaSync(GerenciarModelosDieta s,JsonMapper m,Validator v,UsuarioAtual u){
+		return ManipuladorEscritaNutri.de("modelosDieta",m,v,u,SalvarModeloDietaRequisicao.class,ManipuladorEscritaNutri.Paciente.NENHUM,(f,r)->s.criar(r).versao(),SalvarModeloDietaRequisicao.class,(id,im,r)->s.atualizar(id,im,r).versao())
+			.comExclusao((id,im)->s.excluir(id,im));
+	}
 }

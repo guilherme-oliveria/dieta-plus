@@ -12,12 +12,13 @@ Cópia oficial no backend. Não há endpoint novo: a escrita offline usa o `POST
 | `dietas` (só rascunho) | sim | sim | `SalvarDietaRequisicao`; no `CRIAR`, `pacienteId` (ficha) vai dentro de `dados` | 1 |
 | `avaliacoes` | sim | sim | `SalvarAvaliacaoRequisicao`; no `CRIAR`, `pacienteId` (ficha) dentro de `dados`; `justificativa` se passou de 30 dias (RN-AVA-04) | 1 |
 | `modelos` (modelo de questionário) | sim | sim | `SalvarModeloRequisicao` | 1 |
+| `modelosDieta` (modelo de dieta da nutri, BE-83) | sim | sim | `SalvarModeloDietaRequisicao` (modelo do sistema: `REJEITADA` `ACESSO_NEGADO`; de outra nutri: `RECURSO_NAO_ENCONTRADO`) | 1 |
 | `consultas` | sim | sim (inclui cancelar: `{"status":"CANCELADA"}`) | `CriarConsultaRequisicao` / `AtualizarConsultaRequisicao` | 1 |
 
 ## Regras
 
 - `ATUALIZAR` exige `versaoBase` (sem ela: `REJEITADA` `FORMATO_INVALIDO`). Se a versão no servidor for outra, o resultado é `CONFLITO` com `atual` (o registro como o REST devolveria) e nada é gravado (RN-SYN-02). "Manter o meu" reenvia com `versaoBase` = `atual.versao`.
-- `EXCLUIR` não existe nestas entidades (desativar alimento é `ATUALIZAR` com `ativo=false`): `REJEITADA` `FORMATO_INVALIDO`, regra `RN-SYN-04`.
+- `EXCLUIR` só existe em `modelosDieta` (exclusão lógica, `versaoBase` obrigatória, resposta com a versão seguinte; vira tombstone no `GET /sync`). Nas demais entidades (desativar alimento é `ATUALIZAR` com `ativo=false`): `REJEITADA` `FORMATO_INVALIDO`, regra `RN-SYN-04`.
 - Corpo inválido, entidade desconhecida ou `pacienteId` ausente/ilegível: `REJEITADA` `FORMATO_INVALIDO`. Violação de regra (limite de plano, vínculo encerrado, dieta já publicada, data de consulta fora da janela etc.): `REJEITADA` com o código da regra, sem derrubar o resto do lote.
 - Isolamento: tudo é filtrado pela nutri da sessão. Entidade ou ficha de outra nutri: `REJEITADA` `RECURSO_NAO_ENCONTRADO`. Paciente enviando estas entidades: `REJEITADA` `PERFIL_INVALIDO`.
 - Exigem estar online e **não** passam pelo sync: publicar dieta, convidar paciente, enviar questionário, gerar PDF, ações de assinatura, concluir questionário.
