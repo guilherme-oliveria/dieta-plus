@@ -77,6 +77,8 @@ class ContratoFase9Test {
     fun pacienteVeConsultaEncerradaSemObservacaoInterna() {
         val c = JsonContrato.decodeFromString<ConsultaResposta>(recursoContrato("fase-9/consultaPaciente-resposta.json"))
         assertEquals(StatusConsulta.ENCERRADA, c.status); assertNull(c.observacaoInterna); assertEquals(ModalidadeConsulta.ONLINE, c.modalidade)
+        // BE-71: o link só sai em consulta ONLINE ainda AGENDADA
+        assertNull(c.linkOnline)
     }
 
     @Test
