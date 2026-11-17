@@ -20,6 +20,8 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | **MOB-89** Nutri: humor e fora do plano na adesão | `A-Adesao-Humor` (médias da semana e lista fora do plano) | Média só das refeições com resposta |
 | **MOB-90** e **MOB-99** Paciente: metas e água como meta | `P-Hoje-Metas` (cartões no Hoje; água com +250/+500, Outro valor e Desfazer último), `P-Metas-Semana` (dias da semana, sequência, lembrete local por meta) | Sem pontos nem níveis. Lembrete respeita o horário de silêncio (RN-NOT-03) |
 | **MOB-91** Nutri: metas, modelos e cumprimento | `A-Metas-Paciente` (cumprimento na semana, abaixo de 50% em laranja), `A-Meta-Nova` (tipo, alvo, frequência, início e fim), `A-Modelos-Meta` (aplicar modelo) | Água mostra o alvo padrão de 35 ml/kg, ajustável (RN-MET-05) |
+| **MOB-92** Nutri: prescrever e orientar | `A-Suplementos-Paciente` (em uso e encerrados), `A-Suplemento-Novo` (meus produtos ou texto livre, dose, forma, horário, frequência, fim), `A-Orientacao-Nova` (título, negrito e lista, usar e salvar modelo) | Cópia congelada de nome e dose (RN-SUP-01). Texto em Markdown restrito, nunca HTML |
+| **MOB-93** Paciente: suplementos e orientações | `P-Suplementos` (lembrete local por suplemento), `P-Orientacoes` (nova aberta e anteriores) | Offline. Push "Você tem uma nova orientação" sem nome do suplemento |
 
 ## Mobile pendente
 
