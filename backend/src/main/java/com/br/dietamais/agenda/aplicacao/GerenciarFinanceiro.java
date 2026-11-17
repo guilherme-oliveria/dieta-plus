@@ -45,6 +45,9 @@ public class GerenciarFinanceiro {
 		if(r.pago()&&r.comparecimento()==ComparecimentoConsulta.PENDENTE)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-FIN-01");
 		var agora=relogio.instant();
 		if(existente==null)financeiro.inserir(consulta,nutri,r,agora);else financeiro.atualizar(consulta,nutri,r,agora);
+		// RN-FIN-01 (C-01): o status da consulta é a fonte do comparecimento; quem lança comparecimento (app 1.3.x) muda o status
+		var destino=switch(r.comparecimento()){case COMPARECEU->StatusConsulta.REALIZADA;case FALTOU->StatusConsulta.FALTA;case PENDENTE->StatusConsulta.AGENDADA;};
+		if(destino!=c.status())consultas.mudarStatus(consulta,nutri,destino,agora);
 		var nova=atual(consulta,nutri,false);auditoria.escrita(referencia(c,contexto));return nova;
 	}
 
@@ -56,9 +59,11 @@ public class GerenciarFinanceiro {
 		return financeiro.resumo(nutri,inicio,fim);
 	}
 
+	/** Comparecimento derivado do status da consulta (RN-FIN-01): REALIZADA compareceu, FALTA faltou, o resto pendente. */
 	private FinanceiroConsultaResposta atual(UUID consulta,UUID nutri,boolean bloquear){
-		var f=financeiro.da(consulta,nutri,bloquear);
-		return f!=null?f:new FinanceiroConsultaResposta(consulta,ComparecimentoConsulta.PENDENTE,null,null,false,0L);
+		var f=financeiro.da(consulta,nutri,bloquear);var c=propria(consulta,nutri,false);
+		var comparecimento=switch(c.status()){case REALIZADA->ComparecimentoConsulta.COMPARECEU;case FALTA->ComparecimentoConsulta.FALTOU;default->ComparecimentoConsulta.PENDENTE;};
+		return f!=null?new FinanceiroConsultaResposta(consulta,comparecimento,f.valor(),f.formaPagamento(),f.pago(),f.versao()):new FinanceiroConsultaResposta(consulta,comparecimento,null,null,false,0L);
 	}
 	private ConsultaResposta propria(UUID id,UUID nutri,boolean bloquear){
 		var c=consultas.daNutri(id,nutri,bloquear);if(c==null)throw new ExcecaoNegocio(CodigoErro.RECURSO_NAO_ENCONTRADO,null);return c;

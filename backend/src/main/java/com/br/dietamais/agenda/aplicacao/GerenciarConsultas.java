@@ -51,7 +51,11 @@ public class GerenciarConsultas {
 		if(ficha.status()==StatusVinculo.ENCERRADO)throw new ExcecaoNegocio(CodigoErro.ACESSO_NEGADO,"RN-VIN-05");
 		var agora=relogio.instant();exigirDataValida(r.inicio(),agora);
 		UUID id=r.id()==null?ids.novo():idV7(r.id());
-		var dados=new Dados(r.inicio(),r.duracaoMin(),r.tipo(),limpar(r.lugar()),StatusConsulta.AGENDADA);
+		// C-02: o tipo legado ONLINE vira RETORNO + modalidade ONLINE
+		var tipo=r.tipo()==TipoConsulta.ONLINE?TipoConsulta.RETORNO:r.tipo();
+		var modalidade=r.modalidade()!=null?r.modalidade():r.tipo()==TipoConsulta.ONLINE?ModalidadeConsulta.ONLINE:ModalidadeConsulta.PRESENCIAL;
+		var link=link(limpar(r.linkOnline()),modalidade);
+		var dados=new Dados(r.inicio(),r.duracaoMin(),tipo,limpar(r.lugar()),StatusConsulta.AGENDADA,modalidade,link,limpar(r.orientacaoPaciente()),limpar(r.observacaoInterna()));
 		if(!consultas.inserir(id,ficha.vinculoId(),nutri,ficha.pacienteId(),dados,agora))throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
 		var criada=propria(id,nutri,false);auditoria.escrita(referencia(criada,contexto));return criada;
 	}
@@ -67,13 +71,22 @@ public class GerenciarConsultas {
 			throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02","A consulta foi atualizada. Revise os dados atuais.",List.of(),mapper.valueToTree(atual));
 		}
 		if(atual.status()==StatusConsulta.CANCELADA)throw new ExcecaoNegocio(CodigoErro.CONSULTA_CANCELADA,"RN-AGE-01");
-		boolean mudaCampos=r.inicio()!=null||r.duracaoMin()!=null||r.tipo()!=null||r.lugar()!=null;
-		if(r.status()!=null&&(r.status()!=StatusConsulta.CANCELADA||mudaCampos))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-01");
-		if(r.status()==null&&!mudaCampos)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-01");
+		boolean mudaAgenda=r.inicio()!=null||r.duracaoMin()!=null||r.tipo()!=null||r.lugar()!=null||r.modalidade()!=null||r.linkOnline()!=null;
+		boolean mudaTextos=r.orientacaoPaciente()!=null||r.observacaoInterna()!=null;
+		if(r.status()==null&&!mudaAgenda&&!mudaTextos)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-01");
+		var destino=r.status()==null?atual.status():r.status();
+		if(destino!=atual.status())exigirTransicao(atual.status(),destino);
+		// RN-AGE-03: remarcar só enquanto AGENDADA e sem mudar de status na mesma chamada
+		if(mudaAgenda&&(atual.status()!=StatusConsulta.AGENDADA||destino!=StatusConsulta.AGENDADA))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-03");
 		var agora=relogio.instant();
 		if(r.inicio()!=null)exigirDataValida(r.inicio(),agora);
-		var dados=new Dados(r.inicio()!=null?r.inicio():atual.inicio(),r.duracaoMin()!=null?r.duracaoMin():atual.duracaoMin(),r.tipo()!=null?r.tipo():atual.tipo(),
-			r.lugar()!=null?limpar(r.lugar()):atual.lugar(),r.status()!=null?r.status():atual.status());
+		var tipo=r.tipo()==TipoConsulta.ONLINE?TipoConsulta.RETORNO:r.tipo()!=null?r.tipo():atual.tipo();
+		var modalidade=r.modalidade()!=null?r.modalidade():r.tipo()==TipoConsulta.ONLINE?ModalidadeConsulta.ONLINE:atual.modalidade();
+		var linkAtual=modalidade==ModalidadeConsulta.ONLINE?atual.linkOnline():null;
+		var link=link(r.linkOnline()!=null?limpar(r.linkOnline()):linkAtual,modalidade);
+		var dados=new Dados(r.inicio()!=null?r.inicio():atual.inicio(),r.duracaoMin()!=null?r.duracaoMin():atual.duracaoMin(),tipo,
+			r.lugar()!=null?limpar(r.lugar()):atual.lugar(),destino,modalidade,link,
+			r.orientacaoPaciente()!=null?limpar(r.orientacaoPaciente()):atual.orientacaoPaciente(),r.observacaoInterna()!=null?limpar(r.observacaoInterna()):atual.observacaoInterna());
 		consultas.atualizar(id,nutri,dados,agora);
 		var nova=propria(id,nutri,false);auditoria.escrita(referencia(nova,contexto));return nova;
 	}
@@ -90,6 +103,24 @@ public class GerenciarConsultas {
 	}
 	private void exigirDataValida(Instant inicio,Instant agora){
 		if(inicio.isBefore(agora.minus(TOLERANCIA))||inicio.isAfter(agora.plus(HORIZONTE)))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-01");
+	}
+	/** RN-AGE-03: AGENDADA vai para REALIZADA, FALTA ou CANCELADA; REALIZADA e FALTA se corrigem entre si; CANCELADA é final; ENCERRADA nunca se grava. */
+	static void exigirTransicao(StatusConsulta de,StatusConsulta para){
+		boolean ok=switch(de){
+			case AGENDADA->para==StatusConsulta.REALIZADA||para==StatusConsulta.FALTA||para==StatusConsulta.CANCELADA;
+			case REALIZADA->para==StatusConsulta.FALTA;
+			case FALTA->para==StatusConsulta.REALIZADA;
+			case CANCELADA,ENCERRADA->false;
+		};
+		if(!ok)throw new ExcecaoNegocio(CodigoErro.TRANSICAO_STATUS_INVALIDA,"RN-AGE-03");
+	}
+	/** RN-AGE-04: só consulta ONLINE tem link, e só https com até 300 caracteres. */
+	private static String link(String valor,ModalidadeConsulta modalidade){
+		if(valor==null)return null;
+		if(modalidade!=ModalidadeConsulta.ONLINE||valor.length()>300)throw new ExcecaoNegocio(CodigoErro.LINK_INVALIDO,"RN-AGE-04");
+		try{var uri=java.net.URI.create(valor);if(!"https".equalsIgnoreCase(uri.getScheme())||uri.getHost()==null||uri.getHost().isBlank())throw new ExcecaoNegocio(CodigoErro.LINK_INVALIDO,"RN-AGE-04");}
+		catch(IllegalArgumentException e){throw new ExcecaoNegocio(CodigoErro.LINK_INVALIDO,"RN-AGE-04");}
+		return valor;
 	}
 	private static String limpar(String lugar){return lugar==null||lugar.isBlank()?null:lugar.strip();}
 	private UUID idV7(UUID id){if(id.version()!=7)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);return id;}
