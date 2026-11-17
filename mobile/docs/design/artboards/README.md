@@ -39,6 +39,8 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `PDF-Avaliacao.dc.html` | PDF da avaliação (A4) |
 | `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | Nutri · Ficha, saúde e restrições (DES-16) |
 | `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | Nutri · Montador com alerta de restrição e confirmação de alergia (DES-16) |
+| `P-Refeicao-Humor.dc.html`, `P-Fora-Plano.dc.html`, `P-Perfil-Preferencias.dc.html` | Paciente · Fome e sensação, fora do plano e preferência (DES-18) |
+| `A-Adesao-Humor.dc.html` | Nutri · Adesão com humor e fora do plano (DES-18) |
 
 Fotos (PNG) dos artboards novos em [../evidencias/DES-08-10/](../evidencias/DES-08-10/). Os dados dos artboards novos são de exemplo (paciente Guilherme do PDF da nutri; criança fictícia).
 
@@ -47,3 +49,5 @@ Rodada DES-11 (01/11/2026): `P-Dieta-Macros`, `P-Refeicao-Macros`, `P-Lista-Subs
 **Índice por tarefa (qual artboard ler para cada MOB/BE): [INDICE-POR-TAREFA.md](INDICE-POR-TAREFA.md).**
 
 Rodada DES-16 (17/11/2026, release 1.4.0): saúde e restrições na ficha e alerta no montador. Fotos em [../evidencias/DES-16/](../evidencias/DES-16/). Paciente fictícia.
+
+Rodada DES-18 (17/11/2026, release 1.4.0): fome antes e sensação depois no registro, "Comi algo fora do plano" e o cartão na adesão da nutri. Fotos em [../evidencias/DES-18/](../evidencias/DES-18/).

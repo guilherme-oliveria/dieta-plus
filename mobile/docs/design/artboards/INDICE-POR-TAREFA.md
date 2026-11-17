@@ -12,6 +12,8 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | --- | --- | --- |
 | **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
 | **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+| **MOB-88** Paciente: humor e fora do plano | `P-Refeicao-Humor` (folha após "Comi", duas escalas de 5 níveis, Pular/Salvar, Desfazer continua), `P-Fora-Plano` (texto até 280, refeição opcional, horário), `P-Perfil-Preferencias` (desligar a pergunta, só no aparelho) | Ícone de nível = barras crescentes do Dieta+, sem emoji. Só inclusão, nunca conflito (RN-ROT-06) |
+| **MOB-89** Nutri: humor e fora do plano na adesão | `A-Adesao-Humor` (médias da semana e lista fora do plano) | Média só das refeições com resposta |
 
 ## Mobile pendente
 

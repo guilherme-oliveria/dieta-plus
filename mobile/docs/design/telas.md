@@ -123,8 +123,8 @@ Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4
 | Agenda: visão do mês | `ui/nutri/agenda` | DES-17 | faltando | 85 |
 | Conta da nutri: preferência de lembrete | `ui/nutri/assinatura` (conta) | DES-17 | faltando | 86 |
 | Paciente: próxima consulta com "Entrar na consulta" e orientação | `ui/paciente/hoje` | DES-17 | faltando | 87 |
-| Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano" | `ui/paciente/hoje` | DES-18 | faltando | 88 |
-| Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | faltando | 89 |
+| Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano"; preferência no perfil | `ui/paciente/hoje`, `ui/paciente/perfil` | DES-18 | desenhada: `P-Refeicao-Humor.dc.html`, `P-Fora-Plano.dc.html`, `P-Perfil-Preferencias.dc.html` | 88 |
+| Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | desenhada: `A-Adesao-Humor.dc.html` | 89 |
 | Hoje com as metas (a água é uma delas, com desfazer e valor livre); registro, sequência e progresso | `ui/paciente/hoje` | DES-19 | faltando | 90, 99 |
 | Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | faltando | 91 |
 | Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | faltando | 92 |
