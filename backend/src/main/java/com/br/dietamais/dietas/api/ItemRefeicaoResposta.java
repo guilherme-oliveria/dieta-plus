@@ -36,7 +36,23 @@ public record ItemRefeicaoResposta(
 	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) String textoLivre,
 	/** Presente só no item por produto da nutri (BE-48c); `gramas` é a quantidade e `porcoes` fica nulo. */
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) UUID produtoId) {
+	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) UUID produtoId,
+	/** Alertas calculados pelo servidor ao ler a dieta (RN-DIE-14); só na visão da nutri, nunca no snapshot do paciente. */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) java.util.List<@Valid com.br.dietamais.dietas.api.AlertaRestricao> alertas,
+	/** Confirmação da nutri para item com alergia (RN-DIE-14); só na visão da nutri. */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@Schema(nullable=true,requiredMode=Schema.RequiredMode.NOT_REQUIRED) Boolean alergiaConfirmada) {
+	public ItemRefeicaoResposta(UUID id,UUID alimentoId,UUID grupoId,String nomeAlimento,BigDecimal porcoes,String medidaCaseira,BigDecimal gramas,String observacao,TotaisNutricionaisResposta totais,String grupoNome,Integer opcao,Boolean aVontade,String textoLivre,UUID produtoId){
+		this(id,alimentoId,grupoId,nomeAlimento,porcoes,medidaCaseira,gramas,observacao,totais,grupoNome,opcao,aVontade,textoLivre,produtoId,null,null);
+	}
+	/** Cópia sem alertas nem confirmação: o que o paciente recebe no snapshot publicado. */
+	public ItemRefeicaoResposta semAlertas(){
+		return new ItemRefeicaoResposta(id,alimentoId,grupoId,nomeAlimento,porcoes,medidaCaseira,gramas,observacao,totais,grupoNome,opcao,aVontade,textoLivre,produtoId,null,null);
+	}
+	public ItemRefeicaoResposta comAlertas(java.util.List<AlertaRestricao> alertas,boolean confirmada){
+		return new ItemRefeicaoResposta(id,alimentoId,grupoId,nomeAlimento,porcoes,medidaCaseira,gramas,observacao,totais,grupoNome,opcao,aVontade,textoLivre,produtoId,alertas==null||alertas.isEmpty()?null:alertas,confirmada?Boolean.TRUE:null);
+	}
 	public ItemRefeicaoResposta(UUID id,UUID alimentoId,UUID grupoId,String nomeAlimento,BigDecimal porcoes,String medidaCaseira,BigDecimal gramas,String observacao,TotaisNutricionaisResposta totais,String grupoNome,Integer opcao,Boolean aVontade,String textoLivre){
 		this(id,alimentoId,grupoId,nomeAlimento,porcoes,medidaCaseira,gramas,observacao,totais,grupoNome,opcao,aVontade,textoLivre,null);
 	}

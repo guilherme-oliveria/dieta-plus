@@ -39,6 +39,10 @@ public class PublicarDietas {
 		}
 		var refeicoes=resposta.refeicoes().stream().filter(r->!r.itens().isEmpty()).toList();
 		if(refeicoes.isEmpty())throw new ExcecaoNegocio(CodigoErro.DIETA_VAZIA,"RN-DIE-06");
+		// RN-DIE-14: item com alerta de alergia só publica com a confirmação da nutri; intolerância só avisa
+		for(var r:refeicoes)for(var i:r.itens())
+			if(i.alertas()!=null&&i.alertas().stream().anyMatch(AlertaRestricao::exigeConfirmacao)&&!Boolean.TRUE.equals(i.alergiaConfirmada()))
+				throw new ExcecaoNegocio(CodigoErro.ALERGIA_NAO_CONFIRMADA,"RN-DIE-14");
 		var usados=new HashSet<UUID>();refeicoes.forEach(r->r.itens().forEach(i->{if(i.alimentoId()!=null)usados.add(i.alimentoId());}));
 		for(var a:alimentos.consultar(nutri,usados).values())if(!a.ativo())throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-ALI-03");
 		var produtosUsados=new HashSet<UUID>();refeicoes.forEach(r->r.itens().forEach(i->{if(i.produtoId()!=null)produtosUsados.add(i.produtoId());}));
@@ -50,8 +54,10 @@ public class PublicarDietas {
 		// RN-MOD-03: a restrição da dieta tira da lista do paciente os alimentos que carregam o marcador.
 		if(resposta.restricoes()!=null)lista=new ListaSubstituicaoResposta(lista.pacienteId(),lista.versao(),
 			lista.alimentos().stream().filter(a->a.marcadores()==null||a.marcadores().stream().noneMatch(resposta.restricoes()::contains)).toList(),lista.adicionados(),lista.removidos());
+		// o snapshot é do paciente: sem alertas nem confirmação (gravidade e itens de saúde são da nutri, RN-SAU-01)
+		var refeicoesDoPaciente=refeicoes.stream().map(r->r.comItens(r.itens().stream().map(ItemRefeicaoResposta::semAlertas).toList())).toList();
 		var snapshot=new DietaSnapshotResposta(ids.novo(),atual.id(),atual.pacienteId(),atual.vinculoId(),new NutricionistaResumoResposta(nutri,resumo.nome(),resumo.crn()),
-			atual.titulo(),orientacao,refeicoes,lista,resposta.totais(),agora,resposta.porcoes(),resposta.metas(),resposta.pesoReferenciaKg(),resposta.rodape(),resposta.restricoes());
+			atual.titulo(),orientacao,refeicoesDoPaciente,lista,resposta.totais(),agora,resposta.porcoes(),resposta.metas(),resposta.pesoReferenciaKg(),resposta.rodape(),resposta.restricoes());
 		dietas.substituirPublicada(atual.vinculoId(),atual.id(),agora);dietas.marcarPublicada(atual.id(),nutri,agora);
 		dietas.inserirSnapshot(snapshot.id(),atual.id(),atual.vinculoId(),nutri,atual.pacienteId(),mapper.writeValueAsString(snapshot),agora);
 		auditoria.escrita(referencia(atual,contexto));
@@ -70,7 +76,7 @@ public class PublicarDietas {
 		var novosIds=new HashMap<UUID,UUID>();for(var r:refeicoes)novosIds.put(r.id(),ids.novo());
 		for(var r:refeicoes){
 			UUID rid=novosIds.get(r.id());dietas.inserirRefeicao(new Refeicao(rid,novo,r.nome(),r.horario(),r.ordem(),r.tipo(),r.alternativaDe()==null?null:novosIds.get(r.alternativaDe())));
-			for(var i:itens)if(i.refeicaoId().equals(r.id()))dietas.inserirItem(new Item(ids.novo(),rid,i.alimentoId(),i.grupoId(),i.porcoes(),i.aVontade(),i.textoLivre(),i.observacao(),i.ordem(),i.produtoId(),i.gramas()));
+			for(var i:itens)if(i.refeicaoId().equals(r.id()))dietas.inserirItem(new Item(ids.novo(),rid,i.alimentoId(),i.grupoId(),i.porcoes(),i.aVontade(),i.textoLivre(),i.observacao(),i.ordem(),i.produtoId(),i.gramas(),i.alergiaConfirmada()));
 		}
 		var copia=propria(novo,nutri,false);var resposta=montador.montar(List.of(copia),nutri).get(0);auditoria.escrita(referencia(copia,contexto));return resposta;
 	}

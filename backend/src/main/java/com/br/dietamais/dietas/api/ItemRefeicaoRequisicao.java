@@ -26,7 +26,11 @@ public record ItemRefeicaoRequisicao(
 	UUID produtoId,
 	/** Quantidade em gramas (ou mL) do item por produto. */
 	@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-	@Positive BigDecimal gramas) {
-	public ItemRefeicaoRequisicao(UUID id,UUID alimentoId,BigDecimal porcoes,String observacao){this(id,alimentoId,null,porcoes,null,null,observacao,null,null);}
-	public ItemRefeicaoRequisicao(UUID id,UUID alimentoId,UUID grupoId,BigDecimal porcoes,Boolean aVontade,String textoLivre,String observacao){this(id,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,null,null);}
+	@Positive BigDecimal gramas,
+	/** A nutri confirma que mantém o item mesmo com alerta de alergia (RN-DIE-14); sem isso, publicar é recusado. */
+	@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+	Boolean alergiaConfirmada) {
+	public ItemRefeicaoRequisicao(UUID id,UUID alimentoId,UUID grupoId,BigDecimal porcoes,Boolean aVontade,String textoLivre,String observacao,UUID produtoId,BigDecimal gramas){this(id,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,produtoId,gramas,null);}
+	public ItemRefeicaoRequisicao(UUID id,UUID alimentoId,BigDecimal porcoes,String observacao){this(id,alimentoId,null,porcoes,null,null,observacao,null,null,null);}
+	public ItemRefeicaoRequisicao(UUID id,UUID alimentoId,UUID grupoId,BigDecimal porcoes,Boolean aVontade,String textoLivre,String observacao){this(id,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,null,null,null);}
 }
