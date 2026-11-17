@@ -16,9 +16,9 @@ public class AdministrarAssinaturas {
 	private final JdbcTemplate jdbc;private final RegistroAdmin registro;private final OcupacaoPlano ocupacao;private final Clock relogio;
 	public AdministrarAssinaturas(JdbcTemplate jdbc,RegistroAdmin registro,OcupacaoPlano ocupacao,Clock relogio){this.jdbc=jdbc;this.registro=registro;this.ocupacao=ocupacao;this.relogio=relogio;}
 
-	private static final String COLUNAS_PLANO="id,codigo,nome,preco_mensal,limite_pacientes,duracao_dias,ativo,criado_em";
+	private static final String COLUNAS_PLANO="id,codigo,nome,preco_mensal,limite_pacientes,preco_anual,a_venda,duracao_dias,ativo,criado_em";
 	private static PlanoAdminResposta plano(java.sql.ResultSet rs,int n) throws java.sql.SQLException {
-		return new PlanoAdminResposta(rs.getObject("id",UUID.class),rs.getString("codigo"),rs.getString("nome"),rs.getBigDecimal("preco_mensal"),rs.getInt("limite_pacientes"),
+		return new PlanoAdminResposta(rs.getObject("id",UUID.class),rs.getString("codigo"),rs.getString("nome"),rs.getBigDecimal("preco_mensal"),rs.getObject("limite_pacientes",Integer.class),rs.getBigDecimal("preco_anual"),rs.getBoolean("a_venda"),
 			(Integer)rs.getObject("duracao_dias"),rs.getBoolean("ativo"),rs.getTimestamp("criado_em").toInstant());
 	}
 
@@ -30,7 +30,9 @@ public class AdministrarAssinaturas {
 		if(r.precoMensal().signum()>0&&r.duracaoDias()!=null)throw invalido("duracaoDias","Duração só vale para plano de teste (preço zero).");
 		if(r.codigo().equals("TESTE")&&r.duracaoDias()==null)throw invalido("duracaoDias","O plano TESTE precisa de duração.");
 		if(jdbc.queryForObject("select exists(select 1 from plano where codigo=?)",Boolean.class,r.codigo()))throw new ExcecaoNegocio(CodigoErro.VINCULO_JA_EXISTE,null,"Já existe um plano com este código.",List.of(),null);
-		var id=jdbc.queryForObject("insert into plano(codigo,nome,preco_mensal,limite_pacientes,duracao_dias) values(?,?,?,?,?) returning id",UUID.class,r.codigo(),r.nome().strip(),r.precoMensal(),r.limitePacientes(),r.duracaoDias());
+		boolean aVenda=r.aVenda()!=null?r.aVenda():r.precoMensal().signum()>0;
+		validarVenda(aVenda,true,r.precoMensal(),r.precoAnual(),r.duracaoDias());
+		var id=jdbc.queryForObject("insert into plano(codigo,nome,preco_mensal,limite_pacientes,preco_anual,a_venda,duracao_dias) values(?,?,?,?,?,?,?) returning id",UUID.class,r.codigo(),r.nome().strip(),r.precoMensal(),r.limitePacientes(),r.precoAnual(),aVenda,r.duracaoDias());
 		var criado=umPlano(id);registro.registrar("PLANO_CRIADO","plano",id,null,criado,r.motivo());return criado;
 	}
 
@@ -42,10 +44,17 @@ public class AdministrarAssinaturas {
 			if(r.duracaoDias()==null)throw invalido("duracaoDias","O plano TESTE precisa de duração.");
 			if(!r.ativo())throw invalido("ativo","O plano TESTE não pode ser desativado: é o plano de quem se cadastra.");
 		}else if(r.precoMensal().signum()>0&&r.duracaoDias()!=null)throw invalido("duracaoDias","Duração só vale para plano de teste (preço zero).");
-		jdbc.update("update plano set nome=?,preco_mensal=?,limite_pacientes=?,duracao_dias=?,ativo=? where id=?",r.nome().strip(),r.precoMensal(),r.limitePacientes(),r.duracaoDias(),r.ativo(),id);
+		boolean aVenda=r.aVenda()!=null?r.aVenda():antes.aVenda();
+		validarVenda(aVenda,r.ativo(),r.precoMensal(),r.precoAnual(),r.duracaoDias());
+		jdbc.update("update plano set nome=?,preco_mensal=?,limite_pacientes=?,preco_anual=?,a_venda=?,duracao_dias=?,ativo=? where id=?",r.nome().strip(),r.precoMensal(),r.limitePacientes(),r.precoAnual(),aVenda,r.duracaoDias(),r.ativo(),id);
 		var depois=umPlano(id);registro.registrar("PLANO_ATUALIZADO","plano",id,antes,depois,r.motivo());return depois;
 	}
 
+	/** RN-ASS-09: plano à venda precisa estar ativo e ter preço mensal; plano de teste (com duração) nunca é vendido. */
+	private static void validarVenda(boolean aVenda,boolean ativo,java.math.BigDecimal mensal,java.math.BigDecimal anual,Integer duracao){
+		if(aVenda&&(!ativo||mensal.signum()<=0||duracao!=null))throw invalido("aVenda","Plano à venda precisa estar ativo e ter preço mensal maior que zero.");
+		if(anual!=null&&anual.signum()>0&&mensal.signum()<=0)throw invalido("precoAnual","O preço anual exige preço mensal.");
+	}
 	private PlanoAdminResposta umPlano(UUID id){return jdbc.queryForObject("select "+COLUNAS_PLANO+" from plano where id=?",AdministrarAssinaturas::plano,id);}
 
 	private static final String BASE_ASSINATURA="""

@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 064-planos-anual-e-niveis
+      author: dietamais
+      comment: BE-80 (H-07). Preço dos níveis novos não entra aqui (decisão G-21): o admin informa e ativa.
+      changes:
+        - addColumn:
+            tableName: plano
+            columns:
+              - column: { name: preco_anual, type: 'numeric(10,2)' }
+              - column: { name: a_venda, type: boolean, defaultValueBoolean: false, constraints: { nullable: false } }
+        - dropNotNullConstraint:
+            tableName: plano
+            columnName: limite_pacientes
+            columnDataType: int
+        - addColumn:
+            tableName: assinatura
+            columns:
+              - column: { name: periodicidade, type: varchar(10), defaultValue: MENSAL, constraints: { nullable: false } }
+        - sql:
+            sql: >-
+              ALTER TABLE assinatura ADD CONSTRAINT ck_assinatura_periodicidade CHECK (periodicidade IN ('MENSAL','ANUAL'));
+              ALTER TABLE plano ADD CONSTRAINT ck_plano_preco_anual CHECK (preco_anual IS NULL OR preco_anual >= 0);
+              ALTER TABLE plano ADD CONSTRAINT ck_plano_limite CHECK (limite_pacientes IS NULL OR limite_pacientes >= 0);
+              UPDATE plano SET a_venda = true, preco_anual = 299.00 WHERE codigo = 'BASICO_20';
+              INSERT INTO plano(codigo, nome, preco_mensal, limite_pacientes, ativo, a_venda) VALUES ('CONSULTORIO', 'Consultório', 0, 80, false, false);
+              INSERT INTO plano(codigo, nome, preco_mensal, limite_pacientes, ativo, a_venda) VALUES ('PLUS', 'Plus', 0, NULL, false, false);
