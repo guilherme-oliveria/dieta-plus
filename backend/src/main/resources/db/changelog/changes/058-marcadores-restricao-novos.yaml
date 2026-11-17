@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 058-marcadores-restricao-novos
+      author: dietamais
+      comment: >-
+        BE-69 (H-01): marcadores novos AMENDOIM, FRUTOS_DO_MAR, OVO e SOJA nos alimentos, nas dietas e nos modelos, com sugestão inicial por nome
+        do catálogo. É sugestão, [SUPOSIÇÃO D-10]: a conduta é da nutri e o conteúdo é validado por quem a nutri parceira indicar. A sugestão só soma
+        marcadores (nunca tira) e só mexe nas cópias da nutri que ainda estão iguais ao catálogo (as que ela editou ficam como estão).
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE alimento DROP CONSTRAINT ck_alimento_marcadores;
+              ALTER TABLE alimento_nutri DROP CONSTRAINT ck_alimento_nutri_marcadores;
+              ALTER TABLE dieta DROP CONSTRAINT ck_dieta_restricoes;
+              ALTER TABLE modelo_dieta DROP CONSTRAINT ck_modelo_dieta_restricoes;
+              ALTER TABLE alimento ADD CONSTRAINT ck_alimento_marcadores CHECK
+                (marcadores <@ ARRAY['CONTEM_LACTOSE','CONTEM_GLUTEN','ALTO_SODIO','ACUCAR_ADICIONADO','ALTO_POTASSIO','AMENDOIM','FRUTOS_DO_MAR','OVO','SOJA']::text[]);
+              ALTER TABLE alimento_nutri ADD CONSTRAINT ck_alimento_nutri_marcadores CHECK
+                (marcadores <@ ARRAY['CONTEM_LACTOSE','CONTEM_GLUTEN','ALTO_SODIO','ACUCAR_ADICIONADO','ALTO_POTASSIO','AMENDOIM','FRUTOS_DO_MAR','OVO','SOJA']::text[]);
+              ALTER TABLE dieta ADD CONSTRAINT ck_dieta_restricoes CHECK
+                (restricoes <@ ARRAY['CONTEM_LACTOSE','CONTEM_GLUTEN','ALTO_SODIO','ACUCAR_ADICIONADO','ALTO_POTASSIO','AMENDOIM','FRUTOS_DO_MAR','OVO','SOJA']::text[]);
+              ALTER TABLE modelo_dieta ADD CONSTRAINT ck_modelo_dieta_restricoes CHECK
+                (restricoes <@ ARRAY['CONTEM_LACTOSE','CONTEM_GLUTEN','ALTO_SODIO','ACUCAR_ADICIONADO','ALTO_POTASSIO','AMENDOIM','FRUTOS_DO_MAR','OVO','SOJA']::text[]);
+
+              CREATE TEMP TABLE sugestao_marcador_tmp ON COMMIT DROP AS
+                SELECT a.id AS alimento_id, m.marcador FROM alimento a
+                JOIN (VALUES
+                  ('AMENDOIM','amendoim|paçoca|pacoca'),
+                  ('FRUTOS_DO_MAR','camarão|camarao|lagosta|caranguejo|\msiri\M|\mlula\M|\mpolvo\M|marisco|mexilhão|mexilhao|\mostras?\M|vieira'),
+                  ('OVO','\movos?\M|omelete|gemada|clara de ovo'),
+                  ('SOJA','soja|tofu|shoyu|edamame')
+                ) AS m(marcador,padrao)
+                -- o nome do catálogo vem como "Grupo - Alimento": o grupo ("Ovo e outras carnes") não conta, só o alimento
+                ON (CASE WHEN position(' - ' IN a.nome) > 0 THEN substr(a.nome, position(' - ' IN a.nome) + 3) ELSE a.nome END) ~* m.padrao
+                WHERE a.excluido_em IS NULL;
+              -- cópias da nutri ainda iguais ao catálogo, antes de o catálogo mudar
+              UPDATE alimento_nutri n SET marcadores = (
+                  SELECT array_agg(DISTINCT x ORDER BY x) FROM unnest(n.marcadores || s.novos) AS x),
+                versao = n.versao + 1, seq = nextval('seq_sync'), atualizado_em = now()
+              FROM alimento a, (SELECT alimento_id, array_agg(marcador) AS novos FROM sugestao_marcador_tmp GROUP BY alimento_id) s
+              WHERE n.catalogo_id = a.id AND a.id = s.alimento_id AND n.marcadores = a.marcadores;
+              UPDATE alimento a SET marcadores = (
+                  SELECT array_agg(DISTINCT x ORDER BY x) FROM unnest(a.marcadores || s.novos) AS x),
+                versao = a.versao + 1, seq = nextval('seq_sync'), atualizado_em = now()
+              FROM (SELECT alimento_id, array_agg(marcador) AS novos FROM sugestao_marcador_tmp GROUP BY alimento_id) s
+              WHERE a.id = s.alimento_id;
