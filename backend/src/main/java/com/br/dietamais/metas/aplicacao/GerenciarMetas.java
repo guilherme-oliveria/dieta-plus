@@ -65,7 +65,7 @@ public class GerenciarMetas {
 		var fim=encerrar?hoje:r.fim()!=null?r.fim():atual.fim();
 		var dados=validar(new Dados(atual.tipo(),r.nome()!=null?limpar(r.nome()):atual.nome(),r.alvo()!=null?r.alvo():atual.alvo(),r.unidade()!=null?limpar(r.unidade()):atual.unidade(),
 			frequencia,vezes,r.inicio()!=null?r.inicio():atual.inicio(),fim));
-		metas.atualizar(id,nutri,dados,relogio.instant());
+		metas.atualizar(id,nutri,dados,r.alvo()!=null,relogio.instant());
 		var nova=propria(id,nutri,false);auditoria.escrita(referencia(nova,contexto));return nova;
 	}
 

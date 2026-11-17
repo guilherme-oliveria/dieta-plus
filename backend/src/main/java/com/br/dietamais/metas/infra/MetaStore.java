@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class MetaStore {
-	private static final String SELECT="select id,paciente_id,vinculo_id,tipo,nome,alvo,unidade,frequencia,vezes_por_semana,inicio,fim,versao,criado_em,atualizado_em from meta_habito ";
+	private static final String SELECT="select id,paciente_id,vinculo_id,tipo,nome,alvo,unidade,frequencia,vezes_por_semana,inicio,fim,alvo_padrao,versao,criado_em,atualizado_em from meta_habito ";
 	private final JdbcTemplate jdbc;
 	public MetaStore(JdbcTemplate jdbc){this.jdbc=jdbc;}
 
@@ -23,9 +23,10 @@ public class MetaStore {
 		return jdbc.update("insert into meta_habito(id,vinculo_id,nutricionista_id,paciente_id,tipo,nome,alvo,unidade,frequencia,vezes_por_semana,inicio,fim,criado_em,atualizado_em) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?) on conflict(id) do nothing",
 			id,vinculo,nutri,paciente,d.tipo().name(),d.nome(),d.alvo(),d.unidade(),d.frequencia().name(),d.vezesPorSemana(),data(d.inicio()),data(d.fim()),Timestamp.from(agora),Timestamp.from(agora))==1;
 	}
-	public void atualizar(UUID id,UUID nutri,Dados d,Instant agora){
-		jdbc.update("update meta_habito set nome=?,alvo=?,unidade=?,frequencia=?,vezes_por_semana=?,inicio=?,fim=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",
-			d.nome(),d.alvo(),d.unidade(),d.frequencia().name(),d.vezesPorSemana(),data(d.inicio()),data(d.fim()),Timestamp.from(agora),id,nutri);
+	/** {@code alvoAjustado}: a nutri mandou um alvo; a meta de água deixa de seguir o padrão de 35 ml × peso (RN-MET-05). */
+	public void atualizar(UUID id,UUID nutri,Dados d,boolean alvoAjustado,Instant agora){
+		jdbc.update("update meta_habito set alvo_padrao=alvo_padrao and not ?,nome=?,alvo=?,unidade=?,frequencia=?,vezes_por_semana=?,inicio=?,fim=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",
+			alvoAjustado,d.nome(),d.alvo(),d.unidade(),d.frequencia().name(),d.vezesPorSemana(),data(d.inicio()),data(d.fim()),Timestamp.from(agora),id,nutri);
 	}
 	public MetaResposta daNutri(UUID id,UUID nutri,boolean bloquear){
 		return jdbc.query(SELECT+"where id=? and nutricionista_id=? and excluido_em is null"+(bloquear?" for update":""),this::mapear,id,nutri).stream().findFirst().orElse(null);
@@ -72,6 +73,6 @@ public class MetaStore {
 		var tipo=TipoMeta.valueOf(rs.getString("tipo"));
 		return new MetaResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),tipo,rs.getString("nome"),rs.getBigDecimal("alvo"),rs.getString("unidade"),
 			FrequenciaMeta.valueOf(rs.getString("frequencia")),rs.getObject("vezes_por_semana",Integer.class),rs.getObject("inicio",LocalDate.class),rs.getObject("fim",LocalDate.class),
-			null,rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant());
+			tipo==TipoMeta.AGUA?rs.getBoolean("alvo_padrao"):null,rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant());
 	}
 }

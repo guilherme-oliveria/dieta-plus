@@ -42,7 +42,7 @@ class ModelosMetaApiTest extends TesteComPaciente {
 		String id=json(requisitar("POST","/eu/nutri/modelos-meta",a.token(),modelo("Rotina",item("PASSOS",8000,"DIARIA"),sim))).path("id").asString();
 		var url="/pacientes/"+p.fichaId()+"/metas/de-modelo/"+id;
 		var r=requisitar("POST",url,a.token(),null);assertThat(r.statusCode()).as(r.body()).isEqualTo(201);assertThat(json(r).path("itens")).hasSize(2);
-		assertThat(json(requisitar("GET","/pacientes/"+p.fichaId()+"/metas",a.token(),null)).path("itens")).hasSize(2);
+		assertThat(json(requisitar("GET","/pacientes/"+p.fichaId()+"/metas",a.token(),null)).path("itens")).hasSize(3); // as 2 do modelo e a de água (RN-MET-05)
 		// outra nutri: não vê, não altera, não aplica; o paciente não escreve
 		erro(requisitar("PUT","/eu/nutri/modelos-meta/"+id,b.token(),modelo("X",item("PASSOS",1,"DIARIA")),Map.of("If-Match","\"1\"")),404,"RECURSO_NAO_ENCONTRADO");
 		assertThat(json(requisitar("GET","/eu/nutri/modelos-meta",b.token(),null)).path("itens")).isEmpty();
