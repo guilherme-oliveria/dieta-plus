@@ -40,9 +40,9 @@ public class PdfController {
 
 	@GetMapping("/dietas/{id}/pdf")
 	@RotaNutri
-	@Operation(operationId="pdfDieta",summary="PDF da dieta publicada",description="Link temporário (10 min) para o PDF do snapshot publicado, com nome, CRN e logo da nutri. 404 se a dieta nunca foi publicada. BE-28.")
+	@Operation(operationId="pdfDieta",summary="PDF da dieta publicada",description="Link temporário (10 min) para o PDF do snapshot publicado, com nome, CRN e logo da nutri. 404 se a dieta nunca foi publicada. `incluirSuplementos=true` acrescenta o bloco com os suplementos ativos do paciente (BE-77, RN-SUP-02). BE-28.")
 	@ApiResponse(responseCode="200",description="Link temporário",content=@Content(mediaType="application/json",schema=@Schema(implementation=PdfResposta.class)))
-	public ResponseEntity<PdfResposta> pdfDieta(@PathVariable UUID id){return resposta(pdf.dietaDaNutri(id));}
+	public ResponseEntity<PdfResposta> pdfDieta(@PathVariable UUID id,@RequestParam(defaultValue="false") boolean incluirSuplementos){return resposta(pdf.dietaDaNutri(id,incluirSuplementos));}
 
 	@GetMapping("/avaliacoes/{id}/pdf")
 	@RotaNutri
