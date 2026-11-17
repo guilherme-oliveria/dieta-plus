@@ -74,6 +74,7 @@ public class GerenciarConsultas {
 		boolean mudaAgenda=r.inicio()!=null||r.duracaoMin()!=null||r.tipo()!=null||r.lugar()!=null||r.modalidade()!=null||r.linkOnline()!=null;
 		boolean mudaTextos=r.orientacaoPaciente()!=null||r.observacaoInterna()!=null;
 		if(r.status()==null&&!mudaAgenda&&!mudaTextos)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-01");
+		if(r.status()!=null&&r.status()==atual.status())throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-AGE-03"); // repetir o status atual não é mudança
 		var destino=r.status()==null?atual.status():r.status();
 		if(destino!=atual.status())exigirTransicao(atual.status(),destino);
 		// RN-AGE-03: remarcar só enquanto AGENDADA e sem mudar de status na mesma chamada
