@@ -45,9 +45,12 @@ class MontadorAlergiaViewModelTest {
         override suspend fun criar(requisicao: CriarAlimentoRequisicao, chave: Uuid) = error("não usado")
         override suspend fun alterar(id: Uuid, versao: Long, requisicao: AtualizarAlimentoRequisicao) = error("não usado")
     }
-    // sem rede: a regra roda no aparelho
-    private fun TestScope.vm(d: Dietas, restricoes: List<RestricaoSaudeDto>? = listOf(intolerancia, alergia)) =
-        MontadorDietaViewModel(d, catalogo, StandardTestDispatcher(testScheduler), conectividade = flowOf(false)).also { it.abrirPaciente(paciente, restricoes); runCurrent() }
+    // a rede cai depois de abrir a ficha (recarregar com sucesso volta semConexao para false): a regra roda no aparelho
+    private fun TestScope.vm(d: Dietas, restricoes: List<RestricaoSaudeDto>? = listOf(intolerancia, alergia)): MontadorDietaViewModel {
+        val rede = MutableStateFlow(true)
+        return MontadorDietaViewModel(d, catalogo, StandardTestDispatcher(testScheduler), conectividade = rede)
+            .also { it.abrirPaciente(paciente, restricoes); runCurrent(); rede.value = false; runCurrent() }
+    }
 
     private fun MontadorDietaViewModel.novaCom(vararg alimentos: AlimentoResposta): Uuid {
         nova(); adicionarRefeicao(); mudarTitulo("Plano"); val ref = estado.value.rascunho!!.refeicoes.single().chave
