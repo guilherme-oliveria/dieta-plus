@@ -13,7 +13,7 @@ class AlertaAlergiaApiTest extends TesteComPaciente {
 	}
 	void definirRestricoes(String token,String ficha,List<Map<String,Object>> itens) throws Exception {
 		var atual=requisitar("GET","/pacientes/"+ficha,token,null);String etag=atual.headers().firstValue("ETag").orElseThrow();
-		var r=requisitar("PATCH","/pacientes/"+ficha,token,Map.of("restricoesSaude",itens),Map.of("If-Match",etag));assertThat(r.statusCode()).as(r.body()).isEqualTo(200);
+		var r=requisitar("PATCH","/pacientes/"+ficha,token,Map.of("nome","Paciente fictício","restricoesSaude",itens),Map.of("If-Match",etag));assertThat(r.statusCode()).as(r.body()).isEqualTo(200);
 	}
 	Map<String,Object> restricao(String tipo,String nome,String... marcadores){
 		var m=new LinkedHashMap<String,Object>();m.put("tipo",tipo);m.put("nome",nome);if(marcadores.length>0)m.put("marcadores",List.of(marcadores));return m;
