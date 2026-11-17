@@ -3,7 +3,7 @@ package org.br.dietamais.ui.nutri.listapaciente
 import org.br.dietamais.data.remoto.dto.*
 import kotlin.uuid.Uuid
 
-enum class MensagemLista { SEM_CONEXAO, CONFLITO, ASSINATURA_INATIVA, NAO_ENCONTRADO, VINCULO_ENCERRADO, ERRO, SALVO, COPIADA }
+enum class MensagemLista { SEM_CONEXAO, CONFLITO, ASSINATURA_INATIVA, NAO_ENCONTRADO, VINCULO_ENCERRADO, ERRO, SALVO, COPIADA, SALVO_NO_APARELHO }
 
 data class EstadoListaPaciente(
     val pacienteId: Uuid? = null, val versao: Long = 0, val grupos: List<GrupoAlimentoResposta> = emptyList(),
@@ -11,4 +11,10 @@ data class EstadoListaPaciente(
     val busca: String = "", val pendente: Boolean = false, val carregando: Boolean = false, val enviando: Boolean = false,
     val origens: List<PacienteResposta> = emptyList(), val copiandoDe: Uuid? = null, val escolhendoOrigem: Boolean = false,
     val semConexao: Boolean = false, val erro: MensagemLista? = null, val aviso: MensagemLista? = null,
-)
+    /** MOB-29c: [escritaOffline] = salvar funciona sem rede; [pendenteEnvio] = há ajuste ainda não aceito pelo servidor. */
+    val escritaOffline: Boolean = false, val pendenteEnvio: Boolean = false,
+) {
+    val podeEditar: Boolean get() = !carregando && !enviando && (!semConexao || escritaOffline)
+    /** Copiar troca a lista inteira no servidor: exige rede e nada da lista ainda na fila. */
+    val podeCopiar: Boolean get() = !carregando && !enviando && !semConexao && !pendenteEnvio
+}

@@ -12,7 +12,8 @@ import kotlin.uuid.Uuid
 
 class ListaPacienteViewModel(private val lista: PortaListaPaciente, private val alimentos: PortaAlimentos,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate, conectividade: Flow<Boolean>? = null, pacientes: PortaPacientes? = null) : ViewModel() {
-    private val atual = MutableStateFlow(EstadoListaPaciente())
+    private val atual = MutableStateFlow(EstadoListaPaciente(escritaOffline = lista.escritaOffline))
+    private val temConectividade = conectividade != null
     val estado = atual.asStateFlow()
     private var catalogo = CatalogoAlimentos()
     private var baseEfetiva: List<AlimentoResposta> = emptyList()
@@ -28,14 +29,16 @@ class ListaPacienteViewModel(private val lista: PortaListaPaciente, private val 
     fun abrir(pacienteId: Uuid) {
         if (atual.value.pacienteId == pacienteId && !atual.value.carregando) return
         operacao?.cancel(); ajuste = AjusteLista(); baseEfetiva = emptyList()
-        atual.value = EstadoListaPaciente(pacienteId = pacienteId, semConexao = atual.value.semConexao)
+        atual.value = EstadoListaPaciente(pacienteId = pacienteId, semConexao = atual.value.semConexao, escritaOffline = lista.escritaOffline)
         recarregar()
     }
     fun recarregar() {
         val id = atual.value.pacienteId ?: return
         executar(carregar = true) {
             val resposta = lista.obter(id)
-            baseEfetiva = resposta.alimentos; ajuste = AjusteLista(); atual.update { it.copy(versao = resposta.versao, semConexao = false) }
+            // com escrita offline a lista pode ter vindo do aparelho: quem diz se há rede é a conectividade
+            baseEfetiva = resposta.alimentos; ajuste = AjusteLista()
+            atual.update { it.copy(versao = resposta.versao, semConexao = it.semConexao && it.escritaOffline && temConectividade, pendenteEnvio = lista.pendenteDeEnvio(id)) }
             publicar()
         }
     }
@@ -48,7 +51,7 @@ class ListaPacienteViewModel(private val lista: PortaListaPaciente, private val 
     fun desistirDaCopia() = atual.update { it.copy(copiandoDe = null) }
     fun confirmarCopia() {
         val id = atual.value.pacienteId ?: return; val origem = atual.value.copiandoDe ?: return
-        if (ocupado() || atual.value.semConexao) return
+        if (!atual.value.podeCopiar) return
         atual.update { it.copy(copiandoDe = null) }
         executar {
             // a versão da lista de destino vem do servidor, não do que a nutri editou e ainda não salvou
@@ -61,7 +64,7 @@ class ListaPacienteViewModel(private val lista: PortaListaPaciente, private val 
     fun descartar() { if (!ocupado()) { ajuste = AjusteLista(); publicar() } }
     fun salvar() {
         val id = atual.value.pacienteId ?: return
-        if (ocupado() || atual.value.semConexao || ajuste.vazio) return
+        if (!atual.value.podeEditar || ajuste.vazio) return
         val pedido = ajuste
         executar {
             // o PUT recebe a diferença completa em relação à lista base da nutri, então soma ao que já existia no servidor
@@ -70,7 +73,8 @@ class ListaPacienteViewModel(private val lista: PortaListaPaciente, private val 
             val removidos = (servidor.removidos.toSet() + pedido.removidos.filter { it !in servidor.adicionados }) - pedido.adicionados.toSet()
             val resposta = lista.salvar(id, servidor.versao, AtualizarListaSubstituicaoRequisicao(adicionados.toList().sortedBy { it.toString() }, removidos.toList().sortedBy { it.toString() }))
             baseEfetiva = resposta.alimentos; ajuste = AjusteLista()
-            atual.update { it.copy(versao = resposta.versao, aviso = MensagemLista.SALVO) }; publicar()
+            val pendente = lista.pendenteDeEnvio(id)
+            atual.update { it.copy(versao = resposta.versao, pendenteEnvio = pendente, aviso = if (pendente) MensagemLista.SALVO_NO_APARELHO else MensagemLista.SALVO) }; publicar()
         }
     }
     private fun ocupado() = atual.value.carregando || atual.value.enviando

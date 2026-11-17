@@ -12,6 +12,10 @@ interface PortaListaPaciente {
     suspend fun salvar(pacienteId: Uuid, versao: Long, requisicao: AtualizarListaSubstituicaoRequisicao): ListaSubstituicaoResposta
     /** G-19, RN-ALI-06: a lista efetiva de outro paciente da mesma nutri vira a deste; `versao` é a da lista de destino. */
     suspend fun copiarDe(pacienteId: Uuid, origemId: Uuid, versao: Long): ListaSubstituicaoResposta
+    /** MOB-29c: salvar grava no aparelho e na fila (copiar continua online). */
+    val escritaOffline: Boolean get() = false
+    /** Há ajuste desta lista ainda não aceito pelo servidor (pendente ou em conflito). */
+    fun pendenteDeEnvio(pacienteId: Uuid): Boolean = false
 }
 
 class ListaPacienteRepositorio(private val api: ApiDieta, private val conferirArmazem: (OperacaoSessao) -> Unit) : PortaListaPaciente {

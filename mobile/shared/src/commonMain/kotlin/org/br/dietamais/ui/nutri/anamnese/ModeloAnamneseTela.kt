@@ -28,7 +28,7 @@ data class AcoesEditorModelo(val aoNome: (String) -> Unit = {}, val aoTituloBloc
 @Composable
 fun ModeloAnamneseTela(estado: EstadoAnamneseNutri, acoes: AcoesEditorModelo) {
     val editor = estado.editor ?: return
-    val habilitado = !estado.enviando && !estado.semConexao
+    val habilitado = estado.podeEditarModelos
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = Dimens.larguraLeitura).fillMaxWidth().verticalScroll(rememberScrollState()).padding(Dimens.margemCompacta),

@@ -24,6 +24,8 @@ fun textoMensagemAnamnese(mensagem: MensagemAnamnese): String = stringResource(w
     MensagemAnamnese.MODELO_INVALIDO -> Res.string.anamnese_msg_modelo_invalido
     MensagemAnamnese.ERRO -> Res.string.anamnese_msg_erro
     MensagemAnamnese.MODELO_SALVO -> Res.string.anamnese_msg_modelo_salvo
+    MensagemAnamnese.MODELO_NO_APARELHO -> Res.string.anamnese_msg_modelo_no_aparelho
+    MensagemAnamnese.MODELO_PENDENTE -> Res.string.anamnese_msg_modelo_pendente
     MensagemAnamnese.ENVIADO -> Res.string.anamnese_msg_enviado
     MensagemAnamnese.FECHADO -> Res.string.anamnese_msg_fechado
     MensagemAnamnese.PENDENTES -> Res.string.anamnese_msg_pendentes
@@ -32,7 +34,7 @@ fun textoMensagemAnamnese(mensagem: MensagemAnamnese): String = stringResource(w
     MensagemAnamnese.CONCLUIDO -> Res.string.anamnese_msg_concluido
 })
 
-private val mensagensDeSucesso = setOf(MensagemAnamnese.MODELO_SALVO, MensagemAnamnese.ENVIADO, MensagemAnamnese.CONCLUIDO)
+private val mensagensDeSucesso = setOf(MensagemAnamnese.MODELO_SALVO, MensagemAnamnese.MODELO_NO_APARELHO, MensagemAnamnese.ENVIADO, MensagemAnamnese.CONCLUIDO)
 
 @Composable
 internal fun MensagensAnamnese(erro: MensagemAnamnese?, aviso: MensagemAnamnese?) {
