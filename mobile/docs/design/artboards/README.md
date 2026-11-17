@@ -39,6 +39,9 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `PDF-Avaliacao.dc.html` | PDF da avaliação (A4) |
 | `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | Nutri · Ficha, saúde e restrições (DES-16) |
 | `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | Nutri · Montador com alerta de restrição e confirmação de alergia (DES-16) |
+| `A-Consulta-Form.dc.html`, `A-Consulta-Status.dc.html`, `A-Agenda-Mes.dc.html` | Nutri · Consulta, status e agenda do mês (DES-17) |
+| `A-Conta-Lembrete.dc.html` | Nutri · Preferência de lembrete (DES-17) |
+| `P-Proxima-Consulta.dc.html` | Paciente · Hoje com a próxima consulta (DES-17) |
 | `A-Documentos-Paciente.dc.html`, `A-Documento-Emitir.dc.html`, `A-Documento-Anular.dc.html`, `A-Modelos-Documento.dc.html` | Nutri · Documentos (DES-21) |
 | `P-Documentos.dc.html` | Paciente · Documentos sem internet (DES-21) |
 | `PDF-Declaracao.dc.html`, `W-Conferir-Documento.dc.html` | PDF da declaração (A4) e página pública de conferência (DES-21) |
@@ -50,5 +53,7 @@ Rodada DES-11 (01/11/2026): `P-Dieta-Macros`, `P-Refeicao-Macros`, `P-Lista-Subs
 **Índice por tarefa (qual artboard ler para cada MOB/BE): [INDICE-POR-TAREFA.md](INDICE-POR-TAREFA.md).**
 
 Rodada DES-16 (17/11/2026, release 1.4.0): saúde e restrições na ficha e alerta no montador. Fotos em [../evidencias/DES-16/](../evidencias/DES-16/). Paciente fictícia.
+
+Rodada DES-17 (17/11/2026, release 1.4.0): consulta com tipo, modalidade e link, ações de status, visão do mês, preferência de lembrete e próxima consulta do paciente. Fotos em [../evidencias/DES-17/](../evidencias/DES-17/).
 
 Rodada DES-21 (17/11/2026, release 1.4.0): documentos (atestado e declaração de comparecimento). Nutri, CRN e código são fictícios. Fotos em [../evidencias/DES-21/](../evidencias/DES-21/).
