@@ -7,13 +7,29 @@ import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.sync.novoIdLocal
 import kotlin.uuid.Uuid
 
-/** Dietas de um paciente na visão da nutri (MOB-12/13). Online: rascunhos e publicação passam pela API. */
+/** Dietas de um paciente na visão da nutri (MOB-12/13). Na web tudo passa pela API; no app o rascunho grava offline ([DietasOffline], MOB-29b). */
 interface PortaDietas {
     suspend fun listar(pacienteId: Uuid): List<DietaResposta>
     suspend fun criar(pacienteId: Uuid, requisicao: SalvarDietaRequisicao, chave: Uuid): DietaResposta
     suspend fun salvar(id: Uuid, versao: Long, requisicao: SalvarDietaRequisicao): DietaResposta
     suspend fun publicar(id: Uuid, versao: Long): DietaSnapshotResposta
     suspend fun duplicar(id: Uuid, chave: Uuid = novoIdLocal()): DietaResposta
+    /** [previa] só importa para a escrita offline: totais e nomes que a tela calculou, até o servidor devolver os oficiais. */
+    suspend fun criar(pacienteId: Uuid, requisicao: SalvarDietaRequisicao, chave: Uuid, previa: PreviaDieta): DietaResposta = criar(pacienteId, requisicao, chave)
+    suspend fun salvar(id: Uuid, versao: Long, requisicao: SalvarDietaRequisicao, previa: PreviaDieta): DietaResposta = salvar(id, versao, requisicao)
+    /** true = salvar rascunho funciona sem rede (o envio fica na fila). */
+    val escritaOffline: Boolean get() = false
+    /** Dietas com edição local que o servidor ainda não confirmou (pendente ou em conflito). */
+    fun pendentesDeEnvio(): Set<Uuid> = emptySet()
+    /** Rascunhos criados no aparelho que o servidor ainda não recebeu (os únicos que dá para descartar). */
+    fun rascunhosSoLocais(): Set<Uuid> = emptySet()
+    /** Apaga o rascunho que nunca saiu do aparelho; false se ele já chegou ao servidor. */
+    suspend fun descartarRascunhoLocal(id: Uuid): Boolean = false
+}
+
+/** Prévia local de uma dieta salva offline: totais do dia e nome de item que a requisição não carrega (produto da nutri). */
+data class PreviaDieta(val totais: TotaisNutricionaisResposta? = null, val nomes: Map<Uuid, String> = emptyMap()) {
+    override fun toString() = "PreviaDieta[conteúdo clínico protegido]"
 }
 
 /** [conferirArmazem] confere a sessão guardada fora da memória; a web (sem banco) não tem nada a conferir. */

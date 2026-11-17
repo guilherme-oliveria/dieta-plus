@@ -8,6 +8,8 @@ import kotlin.uuid.Uuid
 enum class MensagemPlanejador {
     TITULO_OBRIGATORIO, NOME_REFEICAO_OBRIGATORIO, HORARIO_INVALIDO, METAS_INVALIDAS, DIETA_VAZIA, LIMITE_EXCEDIDO, SEM_CONEXAO, CONFLITO,
     ASSINATURA_INATIVA, NAO_EDITAVEL, NAO_ENCONTRADA, TAXA_EXCEDIDA, ERRO, SALVA, SO_NO_MONTADOR, SEM_PORCOES,
+    /** MOB-29b: gravada no aparelho; o total oficial chega depois do envio. */
+    SALVA_NO_APARELHO,
 }
 
 /** Um item da refeição: porção do grupo (quantidade em passos de 0,5), "à vontade" (sem kcal) ou texto livre (fora do catálogo). */
@@ -43,4 +45,9 @@ data class EstadoPlanejador(
     val produtosDisponiveis: Boolean = false, val produtosBusca: List<ProdutoResposta> = emptyList(), val buscandoProdutos: Boolean = false,
     val refeicaoAtiva: Uuid? = null, val carregando: Boolean = false, val enviando: Boolean = false, val semConexao: Boolean = false,
     val erro: MensagemPlanejador? = null, val aviso: MensagemPlanejador? = null,
-) { override fun toString() = "EstadoPlanejador[conteúdo clínico protegido]" }
+    /** MOB-29b: salvar funciona sem rede (a referência de porções já carregada continua valendo). */
+    val escritaOffline: Boolean = false,
+) {
+    val podeSalvar get() = !carregando && (!semConexao || escritaOffline)
+    override fun toString() = "EstadoPlanejador[conteúdo clínico protegido]"
+}

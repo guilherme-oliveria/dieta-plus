@@ -46,11 +46,11 @@ fun MontarDietaTela(estado: EstadoDieta, acoes: AcoesMontador, classe: WindowSiz
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(Dimens.margemCompacta), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
                 Resumo(estado, rascunho, acoes, comBotoes = false); Corpo(estado, rascunho, acoes)
             }
-            val habilitado = !estado.semConexao && !estado.enviando && !estado.carregando
+            val habilitado = estado.online
             RodapeAcoes {
                 if (rascunho.editavel) {
-                    BotaoContornado(stringResource(Res.string.dieta_publicar), acoes.aoPublicar, Modifier.weight(1f), habilitado = habilitado && rascunho.versao != null && !rascunho.alterado)
-                    BotaoPrincipal(stringResource(Res.string.dieta_salvar), acoes.aoSalvar, Modifier.weight(1f), habilitado = habilitado && rascunho.alterado, carregando = estado.enviando)
+                    BotaoContornado(stringResource(Res.string.dieta_publicar), acoes.aoPublicar, Modifier.weight(1f), habilitado = habilitado && podePublicar(estado, rascunho))
+                    BotaoPrincipal(stringResource(Res.string.dieta_salvar), acoes.aoSalvar, Modifier.weight(1f), habilitado = estado.podeSalvar && rascunho.alterado, carregando = estado.enviando)
                 } else BotaoContornado(stringResource(Res.string.dieta_duplicar), acoes.aoDuplicar, Modifier.weight(1f), habilitado = habilitado)
             }
         }
@@ -67,6 +67,7 @@ private fun ColumnScope.Resumo(estado: EstadoDieta, r: RascunhoDieta, a: AcoesMo
     BotaoTexto(stringResource(Res.string.pacientes_voltar), a.aoVoltar)
     Text(stringResource(if (r.editavel) Res.string.dieta_montar else Res.string.dieta_ver), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
     Text(stringResource(textoStatus(r.status)), style = MaterialTheme.typography.labelLarge)
+    if (r.versao != null && estado.pendente(r.dietaId)) SeloPendenteEnvio()
     if (estado.semConexao) FaixaOffline()
     estado.erro?.let { Text(textoMensagemDieta(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
     estado.aviso?.let { Text(textoMensagemDieta(it), style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
@@ -75,11 +76,11 @@ private fun ColumnScope.Resumo(estado: EstadoDieta, r: RascunhoDieta, a: AcoesMo
         Text(stringResource(Res.string.dieta_kcal, formatar(estado.totais.kcalReais)), style = MaterialTheme.typography.headlineMedium)
         Text(stringResource(Res.string.dieta_macros, formatar(estado.totais.carboidratosReais), formatar(estado.totais.proteinasReais), formatar(estado.totais.gordurasReais)), style = MaterialTheme.typography.bodyMedium)
     }
-    val habilitado = !estado.semConexao && !estado.enviando && !estado.carregando
+    val habilitado = estado.online
     if (r.editavel) {
         if (comBotoes) {
-            BotaoPrincipal(stringResource(Res.string.dieta_salvar), a.aoSalvar, Modifier.fillMaxWidth(), habilitado = habilitado && r.alterado, carregando = estado.enviando)
-            BotaoContornado(stringResource(Res.string.dieta_publicar), a.aoPublicar, Modifier.fillMaxWidth(), habilitado = habilitado && r.versao != null && !r.alterado)
+            BotaoPrincipal(stringResource(Res.string.dieta_salvar), a.aoSalvar, Modifier.fillMaxWidth(), habilitado = estado.podeSalvar && r.alterado, carregando = estado.enviando)
+            BotaoContornado(stringResource(Res.string.dieta_publicar), a.aoPublicar, Modifier.fillMaxWidth(), habilitado = habilitado && podePublicar(estado, r))
         }
         if (r.versao == null || r.alterado) Text(stringResource(Res.string.dieta_salvar_antes), style = MaterialTheme.typography.bodySmall)
     } else if (comBotoes) BotaoContornado(stringResource(Res.string.dieta_duplicar), a.aoDuplicar, Modifier.fillMaxWidth(), habilitado = habilitado)
@@ -142,6 +143,16 @@ internal fun formatar(valor: Double): String {
     return "$inteiro,$frac"
 }
 
+/** MOB-29b: publicar exige a versão que o servidor já conhece; com edição na fila, espera o envio. */
+private fun podePublicar(estado: EstadoDieta, r: RascunhoDieta) = r.versao != null && !r.alterado && !estado.pendente(r.dietaId)
+
+/** Selo "Aguardando envio" (mesmo texto da tela de pendências): gravada no aparelho, ainda não no servidor. */
+@Composable
+internal fun SeloPendenteEnvio() {
+    Text(stringResource(Res.string.dieta_pendente_envio), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary,
+        modifier = Modifier.testTag("dieta-pendente").semantics { liveRegion = LiveRegionMode.Polite })
+}
+
 internal fun textoStatus(status: StatusDieta) = when (status) {
     StatusDieta.RASCUNHO -> Res.string.dieta_status_rascunho
     StatusDieta.PUBLICADA -> Res.string.dieta_status_publicada
@@ -169,4 +180,7 @@ fun textoMensagemDieta(mensagem: MensagemDieta): String = stringResource(when (m
     MensagemDieta.PUBLICADA -> Res.string.dieta_publicada
     MensagemDieta.DUPLICADA -> Res.string.dieta_duplicada
     MensagemDieta.EDITAR_NO_PLANEJADOR -> Res.string.dieta_editar_no_planejador
+    MensagemDieta.SALVA_NO_APARELHO -> Res.string.dieta_salva_no_aparelho
+    MensagemDieta.PENDENTE_DE_ENVIO -> Res.string.dieta_erro_pendente_envio
+    MensagemDieta.DESCARTADA -> Res.string.dieta_descartada
 })
