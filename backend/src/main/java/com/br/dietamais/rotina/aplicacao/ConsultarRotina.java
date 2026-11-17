@@ -21,6 +21,6 @@ public class ConsultarRotina {
 		if(de==null||ate==null||ate.isBefore(de)||ChronoUnit.DAYS.between(de,ate)+1>DIAS_MAXIMOS)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);
 		var fuso=ZoneId.of(contexto.usuario().fuso());
 		var inicio=de.atStartOfDay(fuso).toInstant();var fim=ate.plusDays(1).atStartOfDay(fuso).toInstant();
-		return new RotinaResposta(rotina.checkinsDoPeriodo(paciente,de,ate),rotina.aguaDoPeriodo(paciente,inicio,fim),rotina.pesosDoPeriodo(paciente,inicio,fim));
+		return new RotinaResposta(rotina.checkinsDoPeriodo(paciente,de,ate),rotina.aguaDoPeriodo(paciente,inicio,fim),rotina.pesosDoPeriodo(paciente,inicio,fim),rotina.foraDoPlanoDoPeriodo(paciente,de,ate));
 	}
 }

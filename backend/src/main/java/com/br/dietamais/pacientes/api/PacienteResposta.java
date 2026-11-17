@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -35,7 +36,13 @@ public record PacienteResposta(
 		@Schema(nullable = true,requiredMode = Schema.RequiredMode.NOT_REQUIRED) Instant proximaConsulta,
 		/** Avaliação mais recente (BE-66); só na lista da nutri. */
 		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-		@Schema(nullable = true,requiredMode = Schema.RequiredMode.NOT_REQUIRED) UltimaAvaliacaoResumo ultimaAvaliacao) {
+		@Schema(nullable = true,requiredMode = Schema.RequiredMode.NOT_REQUIRED) UltimaAvaliacaoResumo ultimaAvaliacao,
+		/** Itens de saúde (BE-68, RN-SAU-01): dado clínico só da nutri dona; ausente quando não há nenhum. */
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+		@Schema(nullable = true,requiredMode = Schema.RequiredMode.NOT_REQUIRED) List<RestricaoSaude> restricoesSaude) {
+	public PacienteResposta(UUID id,UUID vinculoId,String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes,StatusVinculo status,Long versao,Instant criadoEm,Instant atualizadoEm,BigDecimal adesao7d,CadastroAmpliado cadastroAmpliado,Instant proximaConsulta,UltimaAvaliacaoResumo ultimaAvaliacao){
+		this(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,adesao7d,cadastroAmpliado,proximaConsulta,ultimaAvaliacao,null);
+	}
 	public PacienteResposta(UUID id,UUID vinculoId,String nome,String email,LocalDate dataNascimento,Sexo sexo,String telefone,BigDecimal estaturaReferencia,String objetivo,String observacoes,StatusVinculo status,Long versao,Instant criadoEm,Instant atualizadoEm,BigDecimal adesao7d,CadastroAmpliado cadastroAmpliado){
 		this(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,adesao7d,cadastroAmpliado,null,null);
 	}
@@ -43,9 +50,9 @@ public record PacienteResposta(
 		this(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,adesao7d,null);
 	}
 	public PacienteResposta comAdesao7d(BigDecimal valor) {
-		return new PacienteResposta(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,valor,cadastroAmpliado,proximaConsulta,ultimaAvaliacao);
+		return new PacienteResposta(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,valor,cadastroAmpliado,proximaConsulta,ultimaAvaliacao,restricoesSaude);
 	}
 	public PacienteResposta comResumo(Instant proxima,UltimaAvaliacaoResumo ultima) {
-		return new PacienteResposta(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,adesao7d,cadastroAmpliado,proxima,ultima);
+		return new PacienteResposta(id,vinculoId,nome,email,dataNascimento,sexo,telefone,estaturaReferencia,objetivo,observacoes,status,versao,criadoEm,atualizadoEm,adesao7d,cadastroAmpliado,proxima,ultima,restricoesSaude);
 	}
 }

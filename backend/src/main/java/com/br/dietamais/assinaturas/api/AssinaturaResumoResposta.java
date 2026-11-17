@@ -10,7 +10,7 @@ public record AssinaturaResumoResposta(
 		@NotNull UUID organizacaoId,
 		@NotBlank String plano,
 		@NotNull StatusAssinatura status,
-		@NotNull @PositiveOrZero Integer limitePacientes,
+		@io.swagger.v3.oas.annotations.media.Schema(nullable=true) @PositiveOrZero Integer limitePacientes,
 		@NotNull @PositiveOrZero Integer pacientesOcupados,
 		@NotNull Instant fimPeriodoEm) {
 }

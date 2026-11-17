@@ -10,7 +10,7 @@ import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Escritas só de inclusão do paciente (RN-ROT-01..03): check-in, água e peso. Repetir o mesmo id devolve o registro já gravado. */
+/** Escritas só de inclusão do paciente (RN-ROT-01..03 e 06): check-in, água, peso e registro fora do plano. Repetir o mesmo id devolve o registro já gravado. */
 @Service
 public class RegistrarRotina {
 	static final int DIAS_RETROATIVOS=3;
@@ -54,6 +54,17 @@ public class RegistrarRotina {
 		if(kg.stripTrailingZeros().scale()>2)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-ROT-03");
 		if(!rotina.inserirPeso(id,paciente,kg,r.registradoEm())&&rotina.peso(id,paciente)==null)throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
 		return rotina.peso(id,paciente);
+	}
+	/** RN-ROT-06: só inclusão, mesmas janelas de data do check-in; o texto é aparado e o id repetido devolve o registro já gravado. */
+	@Transactional
+	public RegistroForaDoPlanoResposta foraDoPlano(RegistroForaDoPlanoRequisicao r){
+		var contexto=usuario.obter();var paciente=contexto.exigirPaciente();UUID id=id(r.id());
+		var hoje=LocalDate.now(relogio.withZone(ZoneId.of(contexto.usuario().fuso())));
+		if(r.data().isAfter(hoje.plusDays(1))||r.data().isBefore(hoje.minusDays(DIAS_RETROATIVOS))||r.registradoEm().isAfter(relogio.instant().plusSeconds(300)))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-ROT-06");
+		var texto=r.texto().strip();
+		if(texto.isEmpty())throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-ROT-06");
+		if(!rotina.inserirForaDoPlano(id,paciente,r,texto)&&rotina.foraDoPlano(id,paciente)==null)throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
+		return rotina.foraDoPlano(id,paciente);
 	}
 	private void janela(Instant quando){
 		var agora=relogio.instant();

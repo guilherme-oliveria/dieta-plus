@@ -1,0 +1,154 @@
+databaseChangeLog:
+  - changeSet:
+      id: 067-agua-como-meta
+      author: dietamais
+      comment: "BE-86 (RN-MET-05): a água vira a meta AGUA de cada vínculo ativo; registro_agua continua sendo gravado e é espelhado em registro_meta (sem apagar a tabela antiga)."
+      changes:
+        - addColumn:
+            tableName: meta_habito
+            columns:
+              - column: { name: alvo_padrao, type: boolean, defaultValueBoolean: false, constraints: { nullable: false } }
+        - addColumn:
+            tableName: registro_meta
+            columns:
+              - column: { name: origem_agua_id, type: uuid, remarks: "Registro de registro_agua que este registro espelha (meta AGUA)." }
+        - sql:
+            sql: >-
+              CREATE UNIQUE INDEX ux_registro_meta_origem_agua ON registro_meta(meta_id,origem_agua_id) WHERE origem_agua_id IS NOT NULL;
+              CREATE UNIQUE INDEX ux_meta_agua_vinculo ON meta_habito(vinculo_id) WHERE tipo='AGUA' AND excluido_em IS NULL;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- RN-ROT-03 / RN-MET-05: 35 ml × peso mais recente (registro em casa ou avaliação); sem peso, 2.000 ml.
+              CREATE FUNCTION alvo_agua_padrao(p_paciente uuid) RETURNS numeric LANGUAGE sql STABLE AS $$
+                SELECT coalesce(round(35*(
+                  SELECT peso FROM (
+                    SELECT peso_kg AS peso,registrado_em AS quando FROM registro_peso WHERE paciente_id=p_paciente
+                    UNION ALL
+                    SELECT peso_kg,data_hora FROM avaliacao WHERE paciente_id=p_paciente AND excluido_em IS NULL
+                  ) x ORDER BY quando DESC LIMIT 1)),2000);
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Copia para a meta os registros de água do paciente que ela ainda não tem (idempotente).
+              CREATE FUNCTION copiar_agua_para_meta(p_meta uuid) RETURNS integer LANGUAGE plpgsql AS $$
+              DECLARE n integer;
+              BEGIN
+                INSERT INTO registro_meta(id,meta_id,paciente_id,data,valor,registrado_em,origem_agua_id)
+                SELECT uuidv7(),m.id,a.paciente_id,(a.registrado_em AT TIME ZONE coalesce(u.fuso,'America/Sao_Paulo'))::date,a.ml,a.registrado_em,a.id
+                FROM meta_habito m
+                JOIN registro_agua a ON a.paciente_id=m.paciente_id
+                JOIN paciente p ON p.id=m.paciente_id
+                LEFT JOIN usuario u ON u.id=p.usuario_id
+                WHERE m.id=p_meta AND m.tipo='AGUA' AND m.excluido_em IS NULL
+                ON CONFLICT DO NOTHING;
+                GET DIAGNOSTICS n = ROW_COUNT;
+                RETURN n;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Garante a meta AGUA de um vínculo ativo e traz o histórico de água do paciente.
+              CREATE FUNCTION garantir_meta_agua(p_vinculo uuid) RETURNS uuid LANGUAGE plpgsql AS $$
+              DECLARE v record; meta uuid;
+              BEGIN
+                SELECT id,nutricionista_id,paciente_id INTO v FROM vinculo WHERE id=p_vinculo AND status='ATIVO' AND excluido_em IS NULL;
+                IF NOT FOUND THEN RETURN NULL; END IF;
+                SELECT id INTO meta FROM meta_habito WHERE vinculo_id=p_vinculo AND tipo='AGUA' AND excluido_em IS NULL;
+                IF meta IS NULL THEN
+                  INSERT INTO meta_habito(vinculo_id,nutricionista_id,paciente_id,tipo,alvo,unidade,frequencia,alvo_padrao)
+                  VALUES (v.id,v.nutricionista_id,v.paciente_id,'AGUA',alvo_agua_padrao(v.paciente_id),NULL,'DIARIA',true)
+                  RETURNING id INTO meta;
+                END IF;
+                PERFORM copiar_agua_para_meta(meta);
+                RETURN meta;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Migração (e reexecução segura): meta AGUA para todo vínculo ativo, com os registros antigos.
+              CREATE FUNCTION migrar_agua_para_metas() RETURNS integer LANGUAGE plpgsql AS $$
+              DECLARE v uuid; n integer := 0;
+              BEGIN
+                FOR v IN SELECT id FROM vinculo WHERE status='ATIVO' AND excluido_em IS NULL LOOP
+                  PERFORM garantir_meta_agua(v); n := n+1;
+                END LOOP;
+                RETURN n;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION vinculo_meta_agua() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                IF NEW.status='ATIVO' AND NEW.excluido_em IS NULL THEN PERFORM garantir_meta_agua(NEW.id); END IF;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Caminho antigo (POST /eu/agua e coleção agua): cada registro vira registro da meta AGUA dos vínculos ativos.
+              CREATE FUNCTION agua_espelhar_meta() RETURNS trigger LANGUAGE plpgsql AS $$
+              DECLARE m uuid;
+              BEGIN
+                FOR m IN SELECT mh.id FROM meta_habito mh JOIN vinculo vi ON vi.id=mh.vinculo_id
+                         WHERE mh.paciente_id=NEW.paciente_id AND mh.tipo='AGUA' AND mh.excluido_em IS NULL AND vi.status='ATIVO' AND vi.excluido_em IS NULL LOOP
+                  INSERT INTO registro_meta(id,meta_id,paciente_id,data,valor,registrado_em,origem_agua_id)
+                  SELECT uuidv7(),m,NEW.paciente_id,(NEW.registrado_em AT TIME ZONE coalesce(u.fuso,'America/Sao_Paulo'))::date,NEW.ml,NEW.registrado_em,NEW.id
+                  FROM paciente p LEFT JOIN usuario u ON u.id=p.usuario_id WHERE p.id=NEW.paciente_id
+                  ON CONFLICT DO NOTHING;
+                END LOOP;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Caminho novo (registrosMeta na meta AGUA): marca a origem antes de gravar...
+              CREATE FUNCTION registro_meta_agua_origem() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                IF NEW.origem_agua_id IS NULL AND EXISTS(SELECT 1 FROM meta_habito WHERE id=NEW.meta_id AND tipo='AGUA') THEN
+                  NEW.origem_agua_id := NEW.id;
+                END IF;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- ...e grava também em registro_agua, para rotina, adesão, evolução, exportação e app 1.3.x verem o mesmo total.
+              CREATE FUNCTION registro_meta_agua_legado() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                IF NEW.origem_agua_id=NEW.id THEN
+                  INSERT INTO registro_agua(id,paciente_id,ml,registrado_em) VALUES (NEW.id,NEW.paciente_id,round(NEW.valor)::int,NEW.registrado_em)
+                  ON CONFLICT DO NOTHING;
+                END IF;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- O alvo padrão acompanha o peso mais recente enquanto a nutri não ajustar a meta.
+              CREATE FUNCTION peso_atualiza_alvo_agua() RETURNS trigger LANGUAGE plpgsql AS $$
+              DECLARE alvo_novo numeric;
+              BEGIN
+                alvo_novo := alvo_agua_padrao(NEW.paciente_id);
+                UPDATE meta_habito SET alvo=alvo_novo,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=now()
+                WHERE paciente_id=NEW.paciente_id AND tipo='AGUA' AND alvo_padrao AND excluido_em IS NULL AND alvo<>alvo_novo;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            sql: >-
+              CREATE TRIGGER vinculo_meta_agua AFTER INSERT OR UPDATE OF status,excluido_em ON vinculo FOR EACH ROW EXECUTE FUNCTION vinculo_meta_agua();
+              CREATE TRIGGER agua_espelhar_meta AFTER INSERT ON registro_agua FOR EACH ROW EXECUTE FUNCTION agua_espelhar_meta();
+              CREATE TRIGGER registro_meta_agua_origem BEFORE INSERT ON registro_meta FOR EACH ROW EXECUTE FUNCTION registro_meta_agua_origem();
+              CREATE TRIGGER registro_meta_agua_legado AFTER INSERT ON registro_meta FOR EACH ROW EXECUTE FUNCTION registro_meta_agua_legado();
+              CREATE TRIGGER registro_peso_alvo_agua AFTER INSERT ON registro_peso FOR EACH ROW EXECUTE FUNCTION peso_atualiza_alvo_agua();
+              CREATE TRIGGER avaliacao_alvo_agua AFTER INSERT OR UPDATE OF peso_kg,excluido_em ON avaliacao FOR EACH ROW EXECUTE FUNCTION peso_atualiza_alvo_agua();
+              SELECT migrar_agua_para_metas();

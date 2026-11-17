@@ -30,4 +30,10 @@ class RenderizadorEmailTest {
 		assertThat(convite.html()).contains("dietamais://convites/AB2CD3EF","2026-11-02T12:00:00Z").doesNotContain("ficticio@example.invalid","redefinir-senha");
 		assertThat(convite.assunto()).contains("convite");
 	}
+	@Test void emailDoFimDoTesteSoTemOPrazo() {
+		var r=renderizador("dietamais://confirmar-email");
+		var sete=r.renderizar(new EmailTransacional(TipoEmail.FIM_TESTE,"ficticio@example.invalid","7",Instant.parse("2026-10-26T12:00:00Z")));
+		assertThat(sete.assunto()).contains("teste");assertThat(sete.html()).contains("7 dias").doesNotContain("th:text");
+		assertThat(r.renderizar(new EmailTransacional(TipoEmail.FIM_TESTE,"ficticio@example.invalid","1",Instant.parse("2026-10-26T12:00:00Z"))).html()).contains("1 dia").doesNotContain("1 dias");
+	}
 }

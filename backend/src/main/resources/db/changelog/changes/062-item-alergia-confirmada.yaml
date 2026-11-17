@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 062-item-alergia-confirmada
+      author: dietamais
+      changes:
+        - addColumn:
+            tableName: item_refeicao
+            columns:
+              - column: { name: alergia_confirmada, type: boolean, defaultValueBoolean: false, constraints: { nullable: false } }

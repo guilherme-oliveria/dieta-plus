@@ -20,7 +20,7 @@ public class Plano {
 	private String nome;
 	@Column(name = "preco_mensal", precision = 10, scale = 2, nullable = false)
 	private BigDecimal precoMensal;
-	@Column(name = "limite_pacientes", nullable = false)
+	@Column(name = "limite_pacientes")
 	private Integer limitePacientes;
 	@Column(name = "ativo", nullable = false)
 	private boolean ativo;

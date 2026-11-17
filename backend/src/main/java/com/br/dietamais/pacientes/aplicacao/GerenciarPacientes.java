@@ -33,7 +33,7 @@ public class GerenciarPacientes {
 	@Transactional
 	public PacienteResposta criar(CriarPacienteRequisicao requisicao) {
 		var contexto=usuario.obter();var nutri=contexto.exigirNutricionista();
-		var dados=DadosFicha.de(requisicao);validarNascimento(dados);
+		var dados=normalizar(DadosFicha.de(requisicao));validarNascimento(dados);
 		UUID paciente=requisicao.id()==null?ids.novo():requisicao.id();
 		if(paciente.version()!=7)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);
 		vagas.validar();guarda.validar();fichas.bloquearEscrita(nutri);
@@ -57,7 +57,7 @@ public class GerenciarPacientes {
 			throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02","A ficha foi atualizada. Revise os dados atuais.",List.of(),mapper.valueToTree(atual));
 		}
 		if(atual.status()==StatusVinculo.ENCERRADO)throw new ExcecaoNegocio(CodigoErro.ACESSO_NEGADO,"RN-VIN-05");
-		guarda.validar();var dados=DadosFicha.de(requisicao);validarNascimento(dados);
+		guarda.validar();var dados=normalizar(DadosFicha.de(requisicao));validarNascimento(dados);
 		// O bloqueio por nutri serializa a duplicidade de e-mail sem consumir vaga ao editar.
 		validarEmail(dados.email(),nutri,paciente);
 		fichas.atualizar(atual.vinculoId(),nutri,dados,relogio.instant());
@@ -105,6 +105,22 @@ public class GerenciarPacientes {
 		var ficha=fichas.consultar(paciente,nutri,bloquear);
 		if(ficha==null)throw new ExcecaoNegocio(CodigoErro.RECURSO_NAO_ENCONTRADO,null);
 		return ficha;
+	}
+	/** RN-SAU-01 e 02: ids dos itens (UUIDv7 do app ou gerados aqui), marcadores só em alergia e intolerância, textos aparados. Nada disso vai para log. */
+	private DadosFicha normalizar(DadosFicha dados) {
+		if(dados.restricoes()==null)return dados;
+		var vistos=new HashSet<UUID>();var itens=new ArrayList<RestricaoSaude>();
+		for(var item:dados.restricoes()) {
+			UUID id=item.id()==null?ids.novo():item.id();
+			if(id.version()!=7||!vistos.add(id))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);
+			var marcadores=item.marcadores()==null?List.<String>of():item.marcadores().stream().map(String::strip).distinct().toList();
+			if(!marcadores.isEmpty()&&item.tipo()!=TipoRestricaoSaude.ALERGIA&&item.tipo()!=TipoRestricaoSaude.INTOLERANCIA)
+				throw new ExcecaoNegocio(CodigoErro.ITEM_INVALIDO,"RN-SAU-02");
+			if(!marcadores.stream().allMatch(m->m.matches("^[A-Z][A-Z0-9_]{1,39}$")))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,null);
+			var observacao=item.observacao()==null||item.observacao().isBlank()?null:item.observacao().strip();
+			itens.add(new RestricaoSaude(id,item.tipo(),item.nome().strip(),item.gravidade(),observacao,marcadores.isEmpty()?null:marcadores));
+		}
+		return dados.comRestricoes(List.copyOf(itens));
 	}
 	private void validarEmail(String email,UUID nutri,UUID exceto) {
 		if(fichas.emailOcupado(email,nutri,exceto))throw new ExcecaoNegocio(CodigoErro.VINCULO_JA_EXISTE,"RN-VIN-07");

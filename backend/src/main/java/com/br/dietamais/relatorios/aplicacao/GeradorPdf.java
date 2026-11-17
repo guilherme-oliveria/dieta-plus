@@ -21,7 +21,10 @@ public class GeradorPdf {
 	public record Logo(byte[] conteudo,String tipo) { }
 	public record Cabecalho(String nutricionista,String crn,String paciente,Logo logo) { }
 
-	public byte[] dieta(Cabecalho c,DietaSnapshotResposta d){
+	public byte[] dieta(Cabecalho c,DietaSnapshotResposta d){return dieta(c,d,List.of());}
+
+	/** BE-77: {@code suplementos} são os ativos do paciente, quando a nutri pede `incluirSuplementos`; lista vazia não gera o bloco. */
+	public byte[] dieta(Cabecalho c,DietaSnapshotResposta d,List<com.br.dietamais.prescricoes.api.SuplementoResposta> suplementos){
 		var h=new StringBuilder();
 		cabecalho(h,c,"Plano alimentar");
 		h.append("<h2>").append(esc(d.titulo())).append("</h2>");
@@ -53,6 +56,12 @@ public class GeradorPdf {
 				.append(num(s.proteina(),1)).append(" g | gorduras ").append(num(s.lipidio(),1)).append(" g</p>");
 		}
 		h.append("</div>");
+		if(!suplementos.isEmpty()){
+			h.append("<div class=\"bloco\"><h3>Suplementos</h3><table><thead><tr><th>Suplemento</th><th>Dose</th><th>Forma</th><th>Frequência</th><th>Horários</th></tr></thead><tbody>");
+			for(var s:suplementos)h.append("<tr><td>").append(esc(s.nome())).append("</td><td>").append(esc(s.dose())).append("</td><td>").append(esc(s.forma())).append("</td><td>")
+				.append(esc(s.frequencia())).append("</td><td>").append(esc(String.join(", ",s.horarios()))).append("</td></tr>");
+			h.append("</tbody></table></div>");
+		}
 		if(d.orientacao()!=null&&!d.orientacao().isBlank())h.append("<div class=\"bloco\"><h3>Orientações</h3><p class=\"texto\">").append(esc(d.orientacao())).append("</p></div>");
 		if(d.rodape()!=null&&!d.rodape().isBlank())h.append("<div class=\"bloco\"><p class=\"texto\">").append(esc(d.rodape())).append("</p></div>");
 		if(d.porcoes()!=null&&!d.porcoes().isEmpty())h.append("<p class=\"obs\">Valores por porção do grupo: ").append(esc(PorcoesGrupos.FONTE)).append("</p>");

@@ -12,7 +12,8 @@ public final class LinhasDieta {
 		public Dieta(UUID id,UUID vinculoId,UUID pacienteId,String titulo,String orientacao,StatusDieta status,long versao,Instant criadoEm,Instant atualizadoEm){this(id,vinculoId,pacienteId,titulo,orientacao,status,versao,criadoEm,atualizadoEm,null,null,null,null,java.util.List.of());}
 	}
 	public record Refeicao(UUID id,UUID dietaId,String nome,LocalTime horario,int ordem,String tipo,UUID alternativaDe) {}
-	public record Item(UUID id,UUID refeicaoId,UUID alimentoId,UUID grupoId,BigDecimal porcoes,boolean aVontade,String textoLivre,String observacao,int ordem,UUID produtoId,BigDecimal gramas) {
-		public Item(UUID id,UUID refeicaoId,UUID alimentoId,UUID grupoId,BigDecimal porcoes,boolean aVontade,String textoLivre,String observacao,int ordem){this(id,refeicaoId,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,ordem,null,null);}
+	public record Item(UUID id,UUID refeicaoId,UUID alimentoId,UUID grupoId,BigDecimal porcoes,boolean aVontade,String textoLivre,String observacao,int ordem,UUID produtoId,BigDecimal gramas,boolean alergiaConfirmada) {
+		public Item(UUID id,UUID refeicaoId,UUID alimentoId,UUID grupoId,BigDecimal porcoes,boolean aVontade,String textoLivre,String observacao,int ordem,UUID produtoId,BigDecimal gramas){this(id,refeicaoId,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,ordem,produtoId,gramas,false);}
+		public Item(UUID id,UUID refeicaoId,UUID alimentoId,UUID grupoId,BigDecimal porcoes,boolean aVontade,String textoLivre,String observacao,int ordem){this(id,refeicaoId,alimentoId,grupoId,porcoes,aVontade,textoLivre,observacao,ordem,null,null,false);}
 	}
 }
