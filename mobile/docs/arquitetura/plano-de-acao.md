@@ -116,7 +116,7 @@ Detalhe (problema, critério de aceite, tela, estimativa) em [tarefas-usabilidad
 ## Fase 10 — Release 1.4.0 (marco M11)
 
 Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4.0.md), na raiz do monorepo: histórias (seção 3), ordem e paralelismo (seção 5), conflitos `C-xx` (seção 6), decisões `D-xx` (seção 7) e critérios da release (seção 9). Os critérios de aceite de cada história valem para as tarefas dela: copie os que se aplicam para o PR. Telas novas estão em [`../design/telas.md`](../design/telas.md), seção "Release 1.4.0", e só entram com o artboard da `DES-NN` aprovado.
-**Nenhuma tarefa desta fase começa antes do "ok" do Guilherme no plano.** Enquanto o endpoint real não chega, use `MockEngine` com os JSONs do BE-C9 e do BE-C10 e diga isso no PR. Na 1.4.0 as entidades novas da nutri (metas, suplementos, orientações, documentos) são escritas online e lidas offline; o paciente registra offline (C-09). O `MOB-80` não é usado aqui: já serviu a um PR de estabilização de teste.
+**Liberada pelo Guilherme em 16/11/2026**, com as decisões D-03 a D-12 aprovadas como recomendadas no plano (seção 7.2). Enquanto o endpoint real não chega, use `MockEngine` com os JSONs do BE-C9 e do BE-C10 e diga isso no PR. Na 1.4.0 as entidades novas da nutri (metas, suplementos, orientações, documentos) são escritas online e lidas offline; o paciente registra offline (C-09). O `MOB-80` não é usado aqui: já serviu a um PR de estabilização de teste.
 
 ### Onda 24
 
@@ -131,7 +131,7 @@ Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1
 - [ ] **MOB-29d Modelo de dieta offline.** Criar, editar, duplicar e excluir modelo de dieta pela fila (`modelosDieta`); o modelo excluído sai do cache local; modelo do sistema continua só leitura. *Depende de:* BE-83, MOB-29b.
 - [ ] **MOB-84 Agenda: formulário e status (H-02).** Formulário com tipo, modalidade, link (só `https`), orientação para o paciente e observação interna; ações "Realizada" e "Falta" no menu da consulta (MOB-UX-08), com o financeiro lendo o comparecimento derivado; escrita offline das consultas mantida. *Depende de:* DES-17, MOB-81, BE-71.
 - [ ] **MOB-85 Agenda: visão do mês (H-02).** Calendário do mês além de dia e semana; tocar num horário vazio abre a nova consulta com data e hora preenchidas; nos 3 tamanhos. *Depende de:* DES-17, MOB-84.
-- [ ] **MOB-87 Paciente: próxima consulta (H-02).** Botão "Entrar na consulta" (abre o link no navegador ou app externo), orientação da nutri e modalidade na próxima consulta; sem observação interna. *Depende de:* DES-17, BE-71.
+- [ ] **MOB-87 Paciente: próxima consulta (H-02).** Botão "Entrar na consulta" (abre o link no navegador ou app externo), orientação da nutri e modalidade na próxima consulta; sem observação interna e sem "Falta" (D-03). *Depende de:* DES-17, BE-71.
 - [ ] **MOB-88 Paciente: humor e fora do plano (H-03).** Escalas opcionais "fome antes" e "como ficou depois" no registro da refeição, com rótulos e ícones próprios; botão "Comi algo fora do plano" (texto curto, refeição opcional, horário); offline, pela fila de inclusão, com o "Desfazer" de 5 s valendo para o registro inteiro; preferência no perfil para desligar a pergunta, guardada no aparelho. *Depende de:* DES-18, MOB-81, BE-73.
 
 ### Onda 26
@@ -147,7 +147,7 @@ Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1
 
 - [ ] **MOB-94 Nutri: documentos (H-06).** Modelos de documento na conta, emitir atestado e declaração (a declaração também a partir da consulta realizada), lista na ficha, anular com motivo, compartilhar o PDF pelo link assinado. Exige rede. *Depende de:* DES-21, BE-78.
 - [ ] **MOB-95 Paciente: Documentos (H-06).** Lista offline dos documentos emitidos para ele; abrir o PDF exige rede. *Depende de:* DES-21, BE-79.
-- [ ] **MOB-96 Assinatura: comparar planos (H-07).** Comparação com alternância mensal/anual lida da API (nenhum preço no código), uso de cada limite, "faltam N dias de teste", aviso de fim do teste no painel e botão que abre o navegador. No iOS, preço e botão seguem a D-09. *Depende de:* DES-22, BE-80.
+- [ ] **MOB-96 Assinatura: comparar planos (H-07).** Comparação com alternância mensal/anual lida da API (nenhum preço no código), uso de cada limite, "faltam N dias de teste", aviso de fim do teste no painel e botão que abre o navegador. Preço e botão de assinar só aparecem quando a chave do `GET /assinatura` permitir para a plataforma (D-09), sem `if (plataforma)` na tela. *Depende de:* DES-22, BE-80.
 - [ ] **MOB-97 Ponta a ponta da web da 1.4.0.** Cenários novos em `e2e/`: restrição na ficha e alerta no montador, status da consulta e link, humor e fora do plano, meta, suplemento e orientação, documento e conferência, comparação de planos; trava de acessibilidade (axe-core) sem regressão nas telas novas. *Depende de:* as histórias na `develop`.
 - [ ] **MOB-98 Fechamento do app.** `CHANGELOG.md` com a seção 1.4.0, versão 1.4.0 (`X-App-Versao`), `telas.md` e `divergencias.md` atualizados, conferência das telas novas nos 3 tamanhos, cópias dos docs comuns iguais às do backend. *Depende de:* todas.
 
