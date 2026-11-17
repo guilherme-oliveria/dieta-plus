@@ -63,10 +63,23 @@ public class ConsultaStore {
 		jdbc.update("update consulta set status=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",status.name(),Timestamp.from(agora),id,nutri);
 	}
 
-	public record Lembrete(UUID id,UUID nutricionistaId,UUID pacienteId,Instant inicio) {}
+	/** Consulta a lembrar, com a preferência da nutri dona (RN-AGE-05; sem preferência salva: UM_DIA e sem lembrete extra). */
+	public record Lembrete(UUID id,UUID nutricionistaId,UUID pacienteId,Instant inicio,AntecedenciaLembrete antecedencia,boolean lembreteExtraUmaHora) {}
 	/** Consultas agendadas que começam entre {@code de} (exclusive) e {@code ate}, só de vínculos ativos. */
 	public List<Lembrete> aComecar(Instant de,Instant ate){
-		return jdbc.query("select c.id,c.nutricionista_id,c.paciente_id,c.inicio from consulta c join vinculo v on v.id=c.vinculo_id where c.status='AGENDADA' and c.excluido_em is null and v.status='ATIVO' and c.inicio>? and c.inicio<=? order by c.inicio",
-			(rs,i)->new Lembrete(rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getObject(3,UUID.class),rs.getTimestamp(4).toInstant()),Timestamp.from(de),Timestamp.from(ate));
+		return jdbc.query("select c.id,c.nutricionista_id,c.paciente_id,c.inicio,coalesce(p.antecedencia,'UM_DIA'),coalesce(p.lembrete_extra_uma_hora,false) from consulta c join vinculo v on v.id=c.vinculo_id "
+			+"left join preferencia_agenda p on p.nutricionista_id=c.nutricionista_id where c.status='AGENDADA' and c.excluido_em is null and v.status='ATIVO' and c.inicio>? and c.inicio<=? order by c.inicio",
+			(rs,i)->new Lembrete(rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getObject(3,UUID.class),rs.getTimestamp(4).toInstant(),AntecedenciaLembrete.valueOf(rs.getString(5)),rs.getBoolean(6)),
+			Timestamp.from(de),Timestamp.from(ate));
+	}
+
+	/**
+	 * E-mail do paciente para a confirmação de consulta (BE-72): só com conta e sem o tipo CONSULTA_AMANHA desligado (RN-NOT-03).
+	 * Paciente sem conta (convite pendente) não recebe.
+	 */
+	public Optional<String> emailParaConfirmacao(UUID paciente){
+		return jdbc.query("select u.email from paciente p join usuario u on u.id=p.usuario_id where p.id=? and u.ativo and u.email is not null "
+			+"and not exists(select 1 from preferencia_notificacao n where n.usuario_id=u.id and n.tipos_desligados @> to_jsonb('CONSULTA_AMANHA'::text))",
+			(rs,i)->rs.getString(1),paciente).stream().findFirst();
 	}
 }
