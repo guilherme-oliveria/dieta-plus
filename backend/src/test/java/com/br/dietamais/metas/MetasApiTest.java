@@ -37,7 +37,7 @@ class MetasApiTest extends TesteComPaciente {
 		erro(requisitar("POST",url,a.token(),meta("AGUA",2000,"DIARIA")),422,"META_INVALIDA");
 		var invertido=meta("PASSOS",8000,"DIARIA");invertido.put("inicio","2026-12-10");invertido.put("fim","2026-12-01");erro(requisitar("POST",url,a.token(),invertido),422,"META_INVALIDA");
 		erro(requisitar("POST",url,a.token(),meta("PASSOS",0,"DIARIA")),400,"FORMATO_INVALIDO");
-		assertThat(json(requisitar("GET",url,a.token(),null)).path("itens")).hasSize(3);
+		assertThat(json(requisitar("GET",url,a.token(),null)).path("itens")).hasSize(4); // as 3 criadas e a de água, que nasce com o vínculo (RN-MET-05)
 	}
 
 	@Test void ajustaEncerraComVersaoEIsolaDaOutraNutriEDoPaciente() throws Exception {
@@ -90,15 +90,15 @@ class MetasApiTest extends TesteComPaciente {
 		assertThat(requisitar("POST","/eu/registros-meta",null,corpo).statusCode()).isEqualTo(401);
 		// cumprimento da nutri: hoje cumpriu passos (1 de 1 previsto no dia aberto) e alongar
 		var c=json(requisitar("GET","/pacientes/"+p.fichaId()+"/metas/cumprimento?de="+hoje()+"&ate="+hoje(),a.token(),null));
-		assertThat(c.path("metas")).hasSize(2);
-		for(JsonNode m:c.path("metas")){assertThat(m.path("diasPrevistos").asInt()).isEqualTo(1);assertThat(m.path("diasCumpridos").asInt()).isEqualTo(1);assertThat(m.path("percentual").decimalValue()).isEqualByComparingTo("100");}
+		assertThat(c.path("metas")).hasSize(3); // passos, alongar e a água (RN-MET-05), sem registro hoje
+		for(JsonNode m:c.path("metas")){if(m.path("tipo").asString().equals("AGUA"))continue;assertThat(m.path("diasPrevistos").asInt()).isEqualTo(1);assertThat(m.path("diasCumpridos").asInt()).isEqualTo(1);assertThat(m.path("percentual").decimalValue()).isEqualByComparingTo("100");}
 		erro(requisitar("GET","/pacientes/"+p.fichaId()+"/metas/cumprimento?de="+hoje()+"&ate="+hoje().minusDays(1),a.token(),null),400,"FORMATO_INVALIDO");
 		erro(requisitar("GET","/pacientes/"+p.fichaId()+"/metas/cumprimento?de="+hoje().minusDays(400)+"&ate="+hoje(),a.token(),null),400,"FORMATO_INVALIDO");
 		// sync: o paciente recebe as metas e os próprios registros; a nutri do vínculo também recebe os registros; a outra nutri nada
 		var viaSync=json(requisitar("GET","/sync?limite=1000&cursor="+cursor,p.token(),null)).path("mudancas");
 		assertThat(viaSync.path("registrosMeta")).hasSize(3);
-		assertThat(json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("mudancas").path("metas")).hasSize(2);
-		var nutri=json(requisitar("GET","/sync?limite=1000",a.token(),null)).path("mudancas");assertThat(nutri.path("metas")).hasSize(2);assertThat(nutri.path("registrosMeta")).hasSize(3);
+		assertThat(json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("mudancas").path("metas")).hasSize(3);
+		var nutri=json(requisitar("GET","/sync?limite=1000",a.token(),null)).path("mudancas");assertThat(nutri.path("metas")).hasSize(3);assertThat(nutri.path("registrosMeta")).hasSize(3);
 		assertThat(json(requisitar("GET","/sync?limite=1000",b.token(),null)).path("mudancas").path("registrosMeta")).isEmpty(); // nenhum registro de outro paciente chega à outra nutri
 		// mutação do sync: só CRIAR, com as mesmas regras
 		var lote=Map.of("mutacoes",List.of(Map.of("idMutacao",UUID.randomUUID().toString(),"entidade","registrosMeta","operacao","CRIAR","id",novoId(),"dados",registro(passos,hoje().minusDays(1),9000))));

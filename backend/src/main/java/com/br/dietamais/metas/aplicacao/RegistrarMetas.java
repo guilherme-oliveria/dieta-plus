@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegistrarMetas {
 	static final int DIAS_RETROATIVOS=3;
 	static final BigDecimal VALOR_MAXIMO=new BigDecimal("1000000");
+	static final BigDecimal AGUA_MAXIMO_ML=new BigDecimal("5000");
 	private final MetaStore metas;private final UsuarioAtual usuario;private final GeradorIds ids;private final Clock relogio;
 	public RegistrarMetas(MetaStore metas,UsuarioAtual usuario,GeradorIds ids,Clock relogio){this.metas=metas;this.usuario=usuario;this.ids=ids;this.relogio=relogio;}
 
@@ -30,6 +31,8 @@ public class RegistrarMetas {
 		var valor=r.valor();
 		if(valor.compareTo(VALOR_MAXIMO)>0||valor.stripTrailingZeros().scale()>2)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-MET-02");
 		if(meta.tipo()==TipoMeta.SIM_NAO&&valor.compareTo(BigDecimal.ZERO)!=0&&valor.compareTo(BigDecimal.ONE)!=0)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-MET-02");
+		// RN-MET-05: o registro da água também vai para registro_agua (ml inteiro de 1 a 5.000), para o app 1.3.x e a rotina verem o mesmo total
+		if(meta.tipo()==TipoMeta.AGUA&&(valor.stripTrailingZeros().scale()>0||valor.compareTo(BigDecimal.ONE)<0||valor.compareTo(AGUA_MAXIMO_ML)>0))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-MET-05");
 		if(!metas.inserirRegistro(id,meta.id(),paciente,r.data(),valor,r.registradoEm())&&metas.registro(id,paciente)==null)throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
 		return metas.registro(id,paciente);
 	}

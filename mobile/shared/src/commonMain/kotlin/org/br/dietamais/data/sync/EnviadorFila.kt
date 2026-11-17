@@ -65,6 +65,14 @@ class EnviadorFila(private val fonte: FonteEnvioSync, private val banco: BancoDi
                 val r = porId.getValue(m.idMutacao); val id = m.idMutacao.toString()
                 when (r.status) {
                     StatusMutacao.APLICADA -> {
+                        // MOB-29b: a escrita offline pode juntar uma edição nova na mutação que já estava no lote (rascunho de dieta).
+                        // O servidor aplicou o conteúdo antigo; o novo segue como atualização sobre a versão que ele devolveu.
+                        val agora = banco.mutacaoPendenteQueries.buscar(id, usuario, perfil).executeAsOneOrNull()
+                        if (agora != null && r.versao != null && agora.status == "PENDENTE" &&
+                            kotlinx.serialization.json.Json.parseToJsonElement(agora.dados_json) != m.dados) {
+                            banco.mutacaoPendenteQueries.reabrirComoAtualizacao(novoIdLocal().toString(), r.versao, id, usuario, perfil)
+                            return@forEach
+                        }
                         banco.mutacaoPendenteQueries.concluir(id, usuario, perfil)
                         if (m.entidade == "alimentos") {
                             banco.confirmarAlimento(usuario, perfil, m, r.versao)

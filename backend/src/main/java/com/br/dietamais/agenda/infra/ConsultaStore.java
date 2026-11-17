@@ -9,21 +9,21 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class ConsultaStore {
-	private static final String SQL_SELECT="select id,paciente_id,vinculo_id,inicio,duracao_min,tipo,lugar,status,versao,criado_em,atualizado_em from consulta ";
+	private static final String SQL_SELECT="select id,paciente_id,vinculo_id,inicio,duracao_min,tipo,lugar,status,versao,criado_em,atualizado_em,modalidade,link_online,orientacao_paciente,observacao_interna from consulta ";
 	private final JdbcTemplate jdbc;
 	public ConsultaStore(JdbcTemplate jdbc){this.jdbc=jdbc;}
 
-	public record Dados(Instant inicio,int duracaoMin,TipoConsulta tipo,String lugar,StatusConsulta status) {}
+	public record Dados(Instant inicio,int duracaoMin,TipoConsulta tipo,String lugar,StatusConsulta status,ModalidadeConsulta modalidade,String linkOnline,String orientacaoPaciente,String observacaoInterna) {}
 
 	public void bloquear(UUID nutri){jdbc.queryForObject("select pg_advisory_xact_lock(hashtextextended(?,0))",Object.class,"consultas:"+nutri);}
 
 	public boolean inserir(UUID id,UUID vinculo,UUID nutri,UUID paciente,Dados d,Instant agora){
-		return jdbc.update("insert into consulta(id,vinculo_id,nutricionista_id,paciente_id,inicio,duracao_min,tipo,lugar,status,criado_em,atualizado_em) values(?,?,?,?,?,?,?,?,?,?,?) on conflict(id) do nothing",
-			id,vinculo,nutri,paciente,Timestamp.from(d.inicio()),d.duracaoMin(),d.tipo().name(),d.lugar(),d.status().name(),Timestamp.from(agora),Timestamp.from(agora))==1;
+		return jdbc.update("insert into consulta(id,vinculo_id,nutricionista_id,paciente_id,inicio,duracao_min,tipo,lugar,status,modalidade,link_online,orientacao_paciente,observacao_interna,criado_em,atualizado_em) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) on conflict(id) do nothing",
+			id,vinculo,nutri,paciente,Timestamp.from(d.inicio()),d.duracaoMin(),d.tipo().name(),d.lugar(),d.status().name(),d.modalidade().name(),d.linkOnline(),d.orientacaoPaciente(),d.observacaoInterna(),Timestamp.from(agora),Timestamp.from(agora))==1;
 	}
 	public void atualizar(UUID id,UUID nutri,Dados d,Instant agora){
-		jdbc.update("update consulta set inicio=?,duracao_min=?,tipo=?,lugar=?,status=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",
-			Timestamp.from(d.inicio()),d.duracaoMin(),d.tipo().name(),d.lugar(),d.status().name(),Timestamp.from(agora),id,nutri);
+		jdbc.update("update consulta set inicio=?,duracao_min=?,tipo=?,lugar=?,status=?,modalidade=?,link_online=?,orientacao_paciente=?,observacao_interna=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",
+			Timestamp.from(d.inicio()),d.duracaoMin(),d.tipo().name(),d.lugar(),d.status().name(),d.modalidade().name(),d.linkOnline(),d.orientacaoPaciente(),d.observacaoInterna(),Timestamp.from(agora),id,nutri);
 	}
 	public ConsultaResposta daNutri(UUID id,UUID nutri,boolean bloquear){
 		return jdbc.query(SQL_SELECT+"where id=? and nutricionista_id=? and excluido_em is null"+(bloquear?" for update":""),this::mapear,id,nutri).stream().findFirst().orElse(null);
@@ -45,17 +45,22 @@ public class ConsultaStore {
 	}
 	/** Consultas do paciente em vínculos ativos ou encerrados (histórico autorizado). */
 	public List<ConsultaResposta> doPaciente(UUID paciente,Instant de,Instant ate){
-		return jdbc.query("select c.id,c.paciente_id,c.vinculo_id,c.inicio,c.duracao_min,c.tipo,c.lugar,c.status,c.versao,c.criado_em,c.atualizado_em from consulta c join vinculo v on v.id=c.vinculo_id "
+		return jdbc.query("select c.id,c.paciente_id,c.vinculo_id,c.inicio,c.duracao_min,c.tipo,c.lugar,c.status,c.versao,c.criado_em,c.atualizado_em,c.modalidade,c.link_online,c.orientacao_paciente,c.observacao_interna from consulta c join vinculo v on v.id=c.vinculo_id "
 			+"where c.paciente_id=? and c.excluido_em is null and v.status in ('ATIVO','ENCERRADO') and v.excluido_em is null and c.inicio>=? and c.inicio<? order by c.inicio,c.id limit 500",
-			this::mapear,paciente,Timestamp.from(de),Timestamp.from(ate));
+			(rs,n)->mapear(rs,n).paraPaciente(),paciente,Timestamp.from(de),Timestamp.from(ate));
 	}
 	public ConsultaResposta doPaciente(UUID id,UUID paciente){
-		return jdbc.query("select c.id,c.paciente_id,c.vinculo_id,c.inicio,c.duracao_min,c.tipo,c.lugar,c.status,c.versao,c.criado_em,c.atualizado_em from consulta c join vinculo v on v.id=c.vinculo_id "
-			+"where c.id=? and c.paciente_id=? and c.excluido_em is null and v.status in ('ATIVO','ENCERRADO') and v.excluido_em is null",this::mapear,id,paciente).stream().findFirst().orElse(null);
+		return jdbc.query("select c.id,c.paciente_id,c.vinculo_id,c.inicio,c.duracao_min,c.tipo,c.lugar,c.status,c.versao,c.criado_em,c.atualizado_em,c.modalidade,c.link_online,c.orientacao_paciente,c.observacao_interna from consulta c join vinculo v on v.id=c.vinculo_id "
+			+"where c.id=? and c.paciente_id=? and c.excluido_em is null and v.status in ('ATIVO','ENCERRADO') and v.excluido_em is null",(rs,n)->mapear(rs,n).paraPaciente(),id,paciente).stream().findFirst().orElse(null);
 	}
 	private ConsultaResposta mapear(ResultSet rs,int linha) throws SQLException {
 		return new ConsultaResposta(rs.getObject("id",UUID.class),rs.getObject("paciente_id",UUID.class),rs.getObject("vinculo_id",UUID.class),rs.getTimestamp("inicio").toInstant(),rs.getInt("duracao_min"),
-			TipoConsulta.valueOf(rs.getString("tipo")),rs.getString("lugar"),StatusConsulta.valueOf(rs.getString("status")),rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant());
+			TipoConsulta.valueOf(rs.getString("tipo")),rs.getString("lugar"),StatusConsulta.valueOf(rs.getString("status")),rs.getLong("versao"),rs.getTimestamp("criado_em").toInstant(),rs.getTimestamp("atualizado_em").toInstant(),
+			ModalidadeConsulta.valueOf(rs.getString("modalidade")),rs.getString("link_online"),rs.getString("orientacao_paciente"),rs.getString("observacao_interna"));
+	}
+	/** Muda só o status (usado pelo financeiro, RN-FIN-01); sobe versão e seq para o sync. */
+	public void mudarStatus(UUID id,UUID nutri,StatusConsulta status,Instant agora){
+		jdbc.update("update consulta set status=?,versao=versao+1,seq=nextval('seq_sync'),atualizado_em=? where id=? and nutricionista_id=? and excluido_em is null",status.name(),Timestamp.from(agora),id,nutri);
 	}
 
 	public record Lembrete(UUID id,UUID nutricionistaId,UUID pacienteId,Instant inicio) {}

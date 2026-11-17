@@ -29,16 +29,17 @@ public class AssinaturaController {
 	@GetMapping
 	@Operation(operationId="consultarAssinatura",summary="Assinatura da nutri",description="Plano, status, uso x limite, fim do período e carência (RN-ASS-04). Só leitura: funciona com a assinatura inativa. BE-26.")
 	@ApiResponse(responseCode="200",description="Detalhe da assinatura",content=@Content(mediaType="application/json",schema=@Schema(implementation=AssinaturaDetalheResposta.class)))
-	public ResponseEntity<AssinaturaDetalheResposta> consultarAssinatura(){
-		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.detalhe());
+	public ResponseEntity<AssinaturaDetalheResposta> consultarAssinatura(@RequestHeader(value="X-Plataforma",required=false) String plataforma){
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.detalhe(plataforma));
 	}
 
 	@PostMapping("/checkout")
-	@Operation(operationId="criarCheckout",summary="Link do checkout hospedado",description="RN-ASS-06: o app abre a URL no navegador externo. `ASSINATURA_JA_ATIVA` (409) se já paga; `PAGAMENTO_INDISPONIVEL` (503) se o gateway não responde. O status só muda pelo webhook (RN-ASS-07). BE-26.")
+	@Operation(operationId="criarCheckout",summary="Link do checkout hospedado",description="RN-ASS-06 e 09: o app abre a URL no navegador externo. Aceita `planoCodigo` e `periodicidade` (MENSAL ou ANUAL; o corpo antigo `plano` segue aceito). `PLANO_INDISPONIVEL` (422) se o plano não está à venda ou não tem preço anual; `ASSINATURA_JA_ATIVA` (409) se já paga; `PAGAMENTO_INDISPONIVEL` (503) se o gateway não responde. O status só muda pelo webhook (RN-ASS-07). BE-26.")
 	@ApiResponse(responseCode="200",description="URL do checkout",content=@Content(mediaType="application/json",schema=@Schema(implementation=CheckoutResposta.class)))
+	@ApiResponse(responseCode="422",description="PLANO_INDISPONIVEL",content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=ProblemaResposta.class)))
 	@ApiResponse(responseCode="409",description="ASSINATURA_JA_ATIVA",content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=ProblemaResposta.class)))
 	@ApiResponse(responseCode="503",description="PAGAMENTO_INDISPONIVEL",content=@Content(mediaType="application/problem+json",schema=@Schema(implementation=ProblemaResposta.class)))
 	public ResponseEntity<CheckoutResposta> criarCheckout(@Valid @RequestBody CheckoutRequisicao requisicao){
-		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.checkout(requisicao.plano()));
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(servico.checkout(requisicao.codigo(),requisicao.periodicidadeOuMensal()));
 	}
 }

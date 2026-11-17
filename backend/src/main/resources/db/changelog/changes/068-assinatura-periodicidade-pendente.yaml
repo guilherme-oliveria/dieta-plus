@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 068-assinatura-periodicidade-pendente
+      author: dietamais
+      comment: "BE-81a (RN-ASS-06/09): a periodicidade escolhida no checkout só vale quando o pagamento é confirmado, como o plano pendente."
+      changes:
+        - addColumn:
+            tableName: assinatura
+            columns:
+              - column: { name: periodicidade_pendente, type: varchar(10) }
+        - sql:
+            sql: >-
+              ALTER TABLE assinatura ADD CONSTRAINT ck_assinatura_periodicidade_pendente CHECK (periodicidade_pendente IS NULL OR periodicidade_pendente IN ('MENSAL','ANUAL'));

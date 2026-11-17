@@ -17,18 +17,24 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class FiltroTaxaLogin extends OncePerRequestFilter {
 	private final LimiteTaxaLogin limite;
 	private final LimiteTaxaLogin recuperacao;
+	private final LimiteTaxaLogin planos;
 	private final Clock relogio;
 	private final FabricaProblema problemas;
+	public FiltroTaxaLogin(Clock relogio,FabricaProblema problemas,int quantidade,int limiteRecuperacao) {
+		this(relogio,problemas,quantidade,limiteRecuperacao,60);
+	}
+	@org.springframework.beans.factory.annotation.Autowired
 	public FiltroTaxaLogin(Clock relogio,FabricaProblema problemas,@Value("${dieta.auth.login-limite-ip:10}") int quantidade,
-			@Value("${dieta.auth.recuperacao-limite-ip:10}") int limiteRecuperacao) {
+			@Value("${dieta.auth.recuperacao-limite-ip:10}") int limiteRecuperacao,@Value("${dieta.planos.limite-ip:60}") int limitePlanos) {
 		this.relogio=relogio;this.problemas=problemas;limite=new LimiteTaxaLogin(quantidade,10000);
-		recuperacao=new LimiteTaxaLogin(limiteRecuperacao,10000);
+		recuperacao=new LimiteTaxaLogin(limiteRecuperacao,10000);planos=new LimiteTaxaLogin(limitePlanos,10000);
 	}
 	@Override protected boolean shouldNotFilter(HttpServletRequest req) {
+		if("GET".equals(req.getMethod())&&"/api/v1/planos".equals(req.getRequestURI()))return false; // BE-80: endpoint público de planos
 		return !"POST".equals(req.getMethod())||!java.util.Set.of("/api/v1/auth/login","/api/v1/auth/esqueci-senha").contains(req.getRequestURI());
 	}
 	@Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain cadeia) throws IOException,ServletException {
-		var limitador=req.getRequestURI().equals("/api/v1/auth/login")?limite:recuperacao;
+		var limitador=req.getRequestURI().equals("/api/v1/planos")?planos:req.getRequestURI().equals("/api/v1/auth/login")?limite:recuperacao;
 		long espera=limitador.espera(req.getRemoteAddr(),relogio.instant());
 		if(espera>0) {
 			res.setHeader("Retry-After",Long.toString(espera));res.setHeader("Cache-Control","no-store");

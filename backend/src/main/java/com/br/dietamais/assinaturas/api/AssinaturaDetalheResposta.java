@@ -18,4 +18,17 @@ public record AssinaturaDetalheResposta(
 		@Schema(nullable=true) Instant fimPeriodoEm,
 		@Schema(nullable=true) Instant carenciaAte,
 		@NotNull Boolean pagamentoDisponivel,
-		@NotNull List<PlanoResposta> planosDisponiveis) { }
+		@NotNull List<@jakarta.validation.Valid PlanoPublicoResposta> planosDisponiveis,
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable=true) Periodicidade periodicidade,
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable=true) @PositiveOrZero Integer diasRestantesTeste,
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable=true) Boolean exibePrecoEBotao,
+		@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) @Schema(nullable=true,description="BE-81b: troca para plano menor agendada (RN-ASS-10)") @jakarta.validation.Valid TrocaPlanoAgendada trocaAgendada) {
+	/** Forma da 1.3, sem os campos da 1.4 (RN-ASS-10 e 11). */
+	public AssinaturaDetalheResposta(UUID organizacaoId,PlanoResposta plano,StatusAssinatura status,Integer pacientesOcupados,Instant fimPeriodoEm,Instant carenciaAte,Boolean pagamentoDisponivel,List<PlanoPublicoResposta> planosDisponiveis){
+		this(organizacaoId,plano,status,pacientesOcupados,fimPeriodoEm,carenciaAte,pagamentoDisponivel,planosDisponiveis,null,null,null,null);
+	}
+	public AssinaturaDetalheResposta(UUID organizacaoId,PlanoResposta plano,StatusAssinatura status,Integer pacientesOcupados,Instant fimPeriodoEm,Instant carenciaAte,Boolean pagamentoDisponivel,
+			List<PlanoPublicoResposta> planosDisponiveis,Periodicidade periodicidade,Integer diasRestantesTeste,Boolean exibePrecoEBotao){
+		this(organizacaoId,plano,status,pacientesOcupados,fimPeriodoEm,carenciaAte,pagamentoDisponivel,planosDisponiveis,periodicidade,diasRestantesTeste,exibePrecoEBotao,null);
+	}
+}

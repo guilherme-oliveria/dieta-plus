@@ -310,6 +310,11 @@
     <string name="pac_dieta_item">%1$s · %2$s (%3$s g)</string>
     <string name="pac_dieta_item_a_vontade">%1$s · à vontade</string>
     <string name="dieta_editar_no_planejador">Esta dieta usa porções por grupo, itens à vontade ou alternativas. Ela será editável no planejador por porções.</string>
+    <string name="dieta_salva_no_aparelho">Rascunho salvo no aparelho. Ele vai para o servidor quando houver conexão.</string>
+    <string name="dieta_pendente_envio">Aguardando envio</string>
+    <string name="dieta_erro_pendente_envio">Este rascunho ainda não foi enviado. Publique, duplique ou salve como modelo depois que ele sincronizar.</string>
+    <string name="dieta_descartar_local">Descartar rascunho</string>
+    <string name="dieta_descartada">Rascunho descartado.</string>
     <string name="pac_dieta_orientacoes">Orientações</string>
     <string name="pac_dieta_escolher">Dieta em uso</string>
     <string name="pac_dieta_usar">Usar esta dieta</string>

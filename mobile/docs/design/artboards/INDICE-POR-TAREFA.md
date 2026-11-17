@@ -4,6 +4,19 @@ Para quem vai implementar (Codex, Claude, pessoas). Cada `.dc.html` desta pasta 
 
 Estado conferido na `develop` em 01/11/2026 (plano de ação, linha de MOB-49 em diante).
 
+## Release 1.4.0 (DES-16 a DES-22)
+
+Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lima").
+
+| Tarefa | Artboards (nesta pasta) | Ver também |
+| --- | --- | --- |
+| **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
+| **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+| **MOB-84** Agenda: formulário e status | `A-Consulta-Form` (tipo, modalidade, link, orientação, observação interna), `A-Consulta-Status` (Realizada, Faltou, Remarcar, Cancelar) | Link só aparece com modalidade Online. Realizada/Falta atualizam o financeiro (RN-FIN-01); para o paciente viram "Consulta encerrada" |
+| **MOB-85** Agenda: visão do mês | `A-Agenda-Mes` (Dia/Semana/Mês, pontos por consulta, horário livre abre a nova consulta) | Hoje com contorno, dia escolhido preenchido |
+| **MOB-86** Preferência de lembrete | `A-Conta-Lembrete` (2 h, 1 dia, 2 dias; extra 1 h antes; e-mail de confirmação) | Vale para a nutri e para os pacientes (D-08). Push sem dado clínico (RN-NOT-02) |
+| **MOB-87** Paciente: próxima consulta | `P-Proxima-Consulta` (cartão no Hoje com "Entrar na consulta" e a orientação) | O `.ics` não leva link nem orientação |
+
 ## Mobile pendente
 
 Plano de melhorias (05/11): as telas novas seguem os IDs `ART-P1-nn` a `ART-P4-nn` de [ART-IDS.md](ART-IDS.md). MOB-63 (4 gráficos): ART-P1-09 e ART-P1-10; MOB-64: ART-P1-02 a 08; MOB-65 e MOB-66: ART-P4-04 e ART-P4-05; MOB-67: ART-P1-01 e ART-P1-12; MOB-68 e MOB-69: ART-P2-01 a 05; MOB-56b e MOB-70 a 76: ART-P3-01 a 09; MOB-77 e 78: ART-P4-02 e ART-P4-03.

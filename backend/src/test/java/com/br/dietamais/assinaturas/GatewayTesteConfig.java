@@ -9,11 +9,13 @@ import org.springframework.context.annotation.Primary;
 @TestConfiguration(proxyBeanMethods=false)
 public class GatewayTesteConfig {
 	public static class GatewayFalso implements GatewayPagamento {
-		public boolean ligado=true;public int criados=0;public final List<String> cancelados=new ArrayList<>();
+		public boolean ligado=true;public int criados=0;public final List<String> cancelados=new ArrayList<>();public DadosCheckout ultimo;public final List<String> alterados=new ArrayList<>();
 		@Override public boolean disponivel(){return ligado;}
-		@Override public CheckoutCriado criarCheckout(DadosCheckout d){criados++;return new CheckoutCriado("cus_"+criados,"sub_"+d.assinaturaId()+"_"+criados,"https://pagamento.invalid/checkout/"+criados);}
+		@Override public CheckoutCriado criarCheckout(DadosCheckout d){criados++;ultimo=d;return new CheckoutCriado("cus_"+criados,"sub_"+d.assinaturaId()+"_"+criados,"https://pagamento.invalid/checkout/"+criados);}
 		@Override public Optional<String> urlCobranca(String id){return Optional.of("https://pagamento.invalid/cobranca/"+id);}
 		@Override public void cancelar(String id){cancelados.add(id);}
+		/** Registra "id|valor|ANUAL ou MENSAL". */
+		@Override public void alterar(String id,java.math.BigDecimal valor,boolean anual,String descricao){alterados.add(id+"|"+valor.stripTrailingZeros().toPlainString()+"|"+(anual?"ANUAL":"MENSAL"));}
 		@Override public boolean tokenValido(String token){return "segredo-de-teste".equals(token);}
 		/** Formato simples só para o teste: "id|TIPO|assinatura|vencimento". */
 		@Override public Evento interpretar(String corpo){

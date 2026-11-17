@@ -10,4 +10,7 @@ class PoliticaLimitePlanoTest {
 		for(int ocupados:new int[]{5,6})assertThatThrownBy(()->PoliticaLimitePlano.validar(ocupados,5))
 			.isInstanceOfSatisfying(ExcecaoNegocio.class,erro->{assertThat(erro.codigo()).isEqualTo(CodigoErro.LIMITE_PACIENTES_ATINGIDO);assertThat(erro.regra()).isEqualTo("RN-ASS-03");});
 	}
+	@Test void limiteNuloSignificaSemLimite() {
+		assertThatCode(()->PoliticaLimitePlano.validar(100000,null)).doesNotThrowAnyException();
+	}
 }

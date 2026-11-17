@@ -10,7 +10,9 @@ public record PlanoAdminResposta(
 	@NotBlank String codigo,
 	@NotBlank String nome,
 	@NotNull @PositiveOrZero BigDecimal precoMensal,
-	@NotNull @Positive Integer limitePacientes,
+	@io.swagger.v3.oas.annotations.media.Schema(nullable=true) @Positive Integer limitePacientes,
+	@io.swagger.v3.oas.annotations.media.Schema(nullable=true) BigDecimal precoAnual,
+	@NotNull Boolean aVenda,
 	Integer duracaoDias,
 	@NotNull Boolean ativo,
 	@NotNull Instant criadoEm) { }

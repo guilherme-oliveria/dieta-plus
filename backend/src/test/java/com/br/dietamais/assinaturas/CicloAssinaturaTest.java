@@ -24,11 +24,22 @@ class CicloAssinaturaTest extends TesteComPaciente {
 		erro(requisitar("POST","/pacientes",a.token(),Map.of("nome","Fulano")),422,"ASSINATURA_INATIVA");
 	}
 
+	int emailsFimTeste(){return jdbc.queryForObject("select count(*) from notificacao_pendente where tipo='FIM_TESTE'",Integer.class);}
+
+	/** RN-ASS-11: aviso no painel e e-mail 7 dias e 1 dia antes do fim do teste, cada um uma vez. */
 	@Test void avisaQuandoOTesteEstaAcabando() throws Exception {
-		var a=cadastrarNutri();fim(a,"TESTE","2 days");
-		ciclo.executar();ciclo.executar();
-		assertThat(status(a)).isEqualTo("TESTE");assertThat(avisos(a)).isEqualTo(1);
 		var longe=cadastrarNutri();fim(longe,"TESTE","20 days");ciclo.executar();assertThat(avisos(longe)).isZero();
+		int antes=emailsFimTeste();
+		var a=cadastrarNutri();fim(a,"TESTE","5 days");
+		ciclo.executar();ciclo.executar();
+		assertThat(status(a)).isEqualTo("TESTE");assertThat(avisos(a)).isEqualTo(1);assertThat(emailsFimTeste()).isEqualTo(antes+1);
+		fim(a,"TESTE","20 hours");
+		ciclo.executar();ciclo.executar();
+		assertThat(avisos(a)).isEqualTo(2);assertThat(emailsFimTeste()).isEqualTo(antes+2);
+		// visto só a menos de 1 dia do fim: um aviso e um e-mail, não dois
+		var tarde=cadastrarNutri();fim(tarde,"TESTE","10 hours");
+		ciclo.executar();ciclo.executar();
+		assertThat(avisos(tarde)).isEqualTo(1);assertThat(emailsFimTeste()).isEqualTo(antes+3);
 	}
 
 	@Test void ativaSemRenovacaoVaiParaAtrasoDepoisDaToleranciaEBloqueiaDepoisDaCarencia() throws Exception {
@@ -54,5 +65,18 @@ class CicloAssinaturaTest extends TesteComPaciente {
 		erro(requisitar("POST","/pacientes",a.token(),Map.of("nome","Novo")),422,"LIMITE_PACIENTES_ATINGIDO");
 		assertThat(jdbc.queryForObject("select count(*) from vinculo where nutricionista_id=? and status='ATIVO'",Integer.class,a.nutri())).isEqualTo(2);
 		jdbc.update("update plano set ativo=false where codigo='MINI_1'");
+	}
+
+	/** BE-81a (RN-ASS-10): renovação anual avisa no painel 7 dias antes do vencimento, uma vez por vencimento; a mensal não avisa (padrão). */
+	@Test void avisaAntesDaRenovacaoAnual() throws Exception {
+		var a=cadastrarNutri();fim(a,"ATIVA","20 days");
+		jdbc.update("update assinatura set periodicidade='ANUAL' where organizacao_id=?",a.organizacao());
+		ciclo.executar();assertThat(avisos(a)).isZero();
+		fim(a,"ATIVA","5 days");
+		ciclo.executar();ciclo.executar();
+		assertThat(status(a)).isEqualTo("ATIVA");assertThat(avisos(a)).isEqualTo(1);
+		// o vencimento seguinte avisa de novo
+		fim(a,"ATIVA","3 days");ciclo.executar();assertThat(avisos(a)).isEqualTo(2);
+		var mensal=cadastrarNutri();fim(mensal,"ATIVA","2 days");ciclo.executar();assertThat(avisos(mensal)).isZero();
 	}
 }

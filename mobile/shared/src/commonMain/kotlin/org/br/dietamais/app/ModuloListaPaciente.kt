@@ -48,7 +48,12 @@ fun moduloListaPaciente(ambiente: AmbienteDieta?) = module {
 }
 
 fun moduloDietas(ambiente: AmbienteDieta?) = module {
-    single<org.br.dietamais.data.repositorio.PortaDietas> { org.br.dietamais.data.repositorio.DietasRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), get<org.br.dietamais.data.local.BancoDieta>()) }
+    // MOB-29b: rascunho grava no banco local e na fila; publicar e duplicar seguem online
+    single<org.br.dietamais.data.repositorio.PortaDietas> {
+        val banco = get<org.br.dietamais.data.local.BancoDieta>()
+        org.br.dietamais.data.repositorio.DietasOffline(org.br.dietamais.data.repositorio.DietasRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), banco), banco,
+            aoAlterar = { ambiente?.solicitarLeitura() })
+    }
     viewModel { org.br.dietamais.ui.nutri.dieta.MontadorDietaViewModel(get(), get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
 }
 

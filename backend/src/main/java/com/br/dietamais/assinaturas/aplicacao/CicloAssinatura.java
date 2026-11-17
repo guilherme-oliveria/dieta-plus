@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,13 +22,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CicloAssinatura {
 	public record Resultado(int expiradas,int atrasadas,int avisos) { }
+	private int diasAvisoRenovacaoAnual=7;private int diasAvisoRenovacaoMensal=0;
+	/** RN-ASS-10: no PIX e no boleto a renovação depende de a nutri pagar a cobrança nova; avisa no painel N dias antes do vencimento (0 desliga). */
+	@org.springframework.beans.factory.annotation.Autowired(required=false)
+	void avisosRenovacao(@Value("${dieta.assinatura.aviso-renovacao-dias.anual:7}") int anual,@Value("${dieta.assinatura.aviso-renovacao-dias.mensal:0}") int mensal){
+		this.diasAvisoRenovacaoAnual=anual;this.diasAvisoRenovacaoMensal=mensal;
+	}
 	private final JdbcTemplate jdbc;private final Clock relogio;private final ConsultaNutricionistas nutris;private final RegistrarAviso avisos;
-	private final Duration carencia;private final Duration tolerancia;private final Duration antecedenciaTeste;
-	public CicloAssinatura(JdbcTemplate jdbc,Clock relogio,ConsultaNutricionistas nutris,RegistrarAviso avisos,
+	private final Duration carencia;private final Duration tolerancia;private final List<Integer> diasAvisoTeste;private final EnfileirarEmail emails;
+	public CicloAssinatura(JdbcTemplate jdbc,Clock relogio,ConsultaNutricionistas nutris,RegistrarAviso avisos,EnfileirarEmail emails,
 			@Value("${dieta.assinatura.carencia:P7D}") Duration carencia,
 			@Value("${dieta.assinatura.tolerancia-webhook:P3D}") Duration tolerancia,
-			@Value("${dieta.assinatura.aviso-fim-teste:P3D}") Duration antecedenciaTeste) {
-		this.jdbc=jdbc;this.relogio=relogio;this.nutris=nutris;this.avisos=avisos;this.carencia=carencia;this.tolerancia=tolerancia;this.antecedenciaTeste=antecedenciaTeste;
+			@Value("${dieta.assinatura.avisos-fim-teste-dias:7,1}") List<Integer> diasAvisoTeste) {
+		this.jdbc=jdbc;this.relogio=relogio;this.nutris=nutris;this.avisos=avisos;this.carencia=carencia;this.tolerancia=tolerancia;this.diasAvisoTeste=diasAvisoTeste;this.emails=emails;
 	}
 
 	@Scheduled(fixedDelayString="${dieta.assinatura.intervalo-ciclo:PT1H}",initialDelayString="${dieta.assinatura.intervalo-ciclo:PT1H}")
@@ -43,10 +50,23 @@ public class CicloAssinatura {
 		var expiradas=jdbc.query("update assinatura set status='EXPIRADA' where status='TESTE' and fim_periodo_em<=? returning id,organizacao_id",
 			(rs,n)->new UUID[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class)},Timestamp.from(agora));
 		for(var e:expiradas)avisados+=avisar(e[1],"EXPIRADA:"+e[0]);
-		// o teste está acabando
-		for(var e:jdbc.query("select id,organizacao_id from assinatura where status='TESTE' and fim_periodo_em>? and fim_periodo_em<=?",
-				(rs,n)->new UUID[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class)},Timestamp.from(agora),Timestamp.from(agora.plus(antecedenciaTeste))))
-			avisados+=avisar(e[1],"TESTE_FIM:"+e[0]);
+		// RN-ASS-11: o teste está acabando; aviso no painel e e-mail 7 dias e 1 dia antes. Cada assinatura cai na menor janela que a contém,
+		// então quem só é visto a menos de 1 dia do fim recebe um aviso só (chave por janela, uma vez por assinatura).
+		var janelas=diasAvisoTeste.stream().sorted().toList();
+		if(!janelas.isEmpty())
+			for(var e:jdbc.query("select id,organizacao_id,fim_periodo_em from assinatura where status='TESTE' and fim_periodo_em>? and fim_periodo_em<=?",
+					(rs,n)->new Object[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getTimestamp(3).toInstant()},Timestamp.from(agora),Timestamp.from(agora.plus(Duration.ofDays(janelas.getLast()))))){
+				var fim=(Instant)e[2];long restantes=Math.max(1,(Duration.between(agora,fim).toSeconds()+86399)/86400);
+				int janela=janelas.stream().filter(d->restantes<=d).findFirst().orElse(janelas.getLast());
+				avisados+=avisar((UUID)e[1],"TESTE_FIM_"+janela+":"+e[0],new EmailFimTeste((int)restantes,fim));
+			}
+		// RN-ASS-10: a renovação está chegando (uma vez por vencimento); o ciclo anual avisa com mais antecedência
+		for(var r:jdbc.query("select id,organizacao_id,fim_periodo_em from assinatura where status='ATIVA' and fim_periodo_em>? and "
+				+"((periodicidade='ANUAL' and ?>0 and fim_periodo_em<=?) or (periodicidade='MENSAL' and ?>0 and fim_periodo_em<=?))",
+				(rs,n)->new Object[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getTimestamp(3).toInstant()},Timestamp.from(agora),
+				diasAvisoRenovacaoAnual,Timestamp.from(agora.plus(Duration.ofDays(Math.max(0,diasAvisoRenovacaoAnual)))),
+				diasAvisoRenovacaoMensal,Timestamp.from(agora.plus(Duration.ofDays(Math.max(0,diasAvisoRenovacaoMensal))))))
+			avisados+=avisar((UUID)r[1],"RENOVACAO:"+r[0]+":"+((Instant)r[2]).getEpochSecond());
 		// o gateway não avisou do atraso (webhook perdido): depois da tolerância, entra em atraso
 		var atrasadas=jdbc.query("update assinatura set status='EM_ATRASO' where status='ATIVA' and fim_periodo_em<=? returning id,organizacao_id,fim_periodo_em",
 			(rs,n)->new Object[]{rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getTimestamp(3).toInstant()},Timestamp.from(agora.minus(tolerancia)));
@@ -58,12 +78,18 @@ public class CicloAssinatura {
 		return new Resultado(expiradas.size(),atrasadas.size(),avisados);
 	}
 
-	private int avisar(UUID organizacao,String chave) {
+	private record EmailFimTeste(int dias,Instant fim) { }
+	private int avisar(UUID organizacao,String chave) {return avisar(organizacao,chave,null);}
+	private int avisar(UUID organizacao,String chave,EmailFimTeste email) {
 		int n=0;
 		for(var nutri:nutris.daOrganizacao(organizacao)){
 			var antes=jdbc.queryForObject("select count(*) from aviso a join nutricionista n on n.usuario_id=a.usuario_id where n.id=? and a.chave_dedup=?",Integer.class,nutri,chave);
 			avisos.registrar(new NovoAviso(Perfil.NUTRICIONISTA,nutri,TipoAviso.ASSINATURA,"/assinatura",chave));
-			if(antes!=null&&antes==0)n++;
+			if(antes!=null&&antes==0){
+				n++;
+				if(email!=null)jdbc.query("select u.email from nutricionista n join usuario u on u.id=n.usuario_id where n.id=?",rs->{
+					emails.enfileirar(new EmailTransacional(TipoEmail.FIM_TESTE,rs.getString(1),Integer.toString(email.dias()),email.fim()));},nutri);
+			}
 		}
 		return n;
 	}

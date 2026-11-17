@@ -39,6 +39,18 @@ class GatewayAsaasTest {
 		m.servidor().verify();
 	}
 
+	@Test void checkoutAnualUsaCicloAnualEOValorAnualComAsTresFormasDePagamento() {
+		var m=montar();
+		m.servidor().expect(requestTo("https://asaas.invalid/v3/subscriptions")).andExpect(jsonPath("$.customer").value("cus_9")).andExpect(jsonPath("$.cycle").value("YEARLY"))
+			.andExpect(jsonPath("$.billingType").value("UNDEFINED")).andExpect(jsonPath("$.value").value(299.0))
+			.andRespond(withSuccess("{\"id\":\"sub_9\"}",MediaType.APPLICATION_JSON));
+		m.servidor().expect(requestTo("https://asaas.invalid/v3/subscriptions/sub_9/payments"))
+			.andRespond(withSuccess("{\"data\":[{\"invoiceUrl\":\"https://asaas.invalid/i/anual\"}]}",MediaType.APPLICATION_JSON));
+		var r=m.gateway().criarCheckout(new GatewayPagamento.DadosCheckout(UUID.randomUUID(),"Nutri","n@example.invalid","BASICO_20","Básico",new BigDecimal("299.00"),"cus_9",true));
+		assertThat(r.url()).isEqualTo("https://asaas.invalid/i/anual");
+		m.servidor().verify();
+	}
+
 	@Test void falhaDoGatewayViraPagamentoIndisponivelSemVazarDetalhe() {
 		var m=montar();
 		m.servidor().expect(requestTo("https://asaas.invalid/v3/customers")).andRespond(withServerError());
