@@ -12,6 +12,8 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | --- | --- | --- |
 | **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
 | **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+| **MOB-90** e **MOB-99** Paciente: metas e água como meta | `P-Hoje-Metas` (cartões no Hoje; água com +250/+500, Outro valor e Desfazer último), `P-Metas-Semana` (dias da semana, sequência, lembrete local por meta) | Sem pontos nem níveis. Lembrete respeita o horário de silêncio (RN-NOT-03) |
+| **MOB-91** Nutri: metas, modelos e cumprimento | `A-Metas-Paciente` (cumprimento na semana, abaixo de 50% em laranja), `A-Meta-Nova` (tipo, alvo, frequência, início e fim), `A-Modelos-Meta` (aplicar modelo) | Água mostra o alvo padrão de 35 ml/kg, ajustável (RN-MET-05) |
 
 ## Mobile pendente
 
