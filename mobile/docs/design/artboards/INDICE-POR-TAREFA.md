@@ -12,6 +12,7 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | --- | --- | --- |
 | **MOB-82** Ficha: saúde e restrições | `A-Saude-Ficha` (seção, selo no cabeçalho, aviso de que o paciente não vê), `A-Saude-Item` (folha de novo/editar item) | Selo laranja só para alergia grave; intolerância em azul. Marcadores sugeridos pelo nome, editáveis |
 | **MOB-83** Montador: alerta e confirmação | `A-Montador-Alerta` (alerta de alergia com Revisar/Trocar, aviso de intolerância, Publicar bloqueado), `A-Montador-Confirmar` (diálogo de confirmação) | Intolerância só avisa; alergia exige confirmação por item antes de publicar (`ALERGIA_NAO_CONFIRMADA`) |
+| **MOB-96** Assinatura: comparar planos | `A-Assinatura-Planos` (teste com dias restantes e uso, Mensal/Anual, três planos, botão que abre o navegador), `A-Assinatura-Ativa` (uso perto do limite, trocar de plano), `A-Assinatura-Sem-Preco` (variante quando a chave do servidor desliga preço e botão, D-09), `A-Painel-Fim-Teste` (aviso no painel) | Valores da seção 7.1 vêm do servidor (`planosDisponiveis`), nunca fixos no app. Troca: subir na hora, descer no vencimento (D-11) |
 
 ## Mobile pendente
 

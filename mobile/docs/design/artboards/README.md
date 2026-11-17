@@ -39,6 +39,7 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `PDF-Avaliacao.dc.html` | PDF da avaliação (A4) |
 | `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | Nutri · Ficha, saúde e restrições (DES-16) |
 | `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | Nutri · Montador com alerta de restrição e confirmação de alergia (DES-16) |
+| `A-Assinatura-Planos.dc.html`, `A-Assinatura-Ativa.dc.html`, `A-Assinatura-Sem-Preco.dc.html`, `A-Painel-Fim-Teste.dc.html` | Nutri · Assinatura, troca de plano e aviso do fim do teste (DES-22) |
 
 Fotos (PNG) dos artboards novos em [../evidencias/DES-08-10/](../evidencias/DES-08-10/). Os dados dos artboards novos são de exemplo (paciente Guilherme do PDF da nutri; criança fictícia).
 
@@ -47,3 +48,5 @@ Rodada DES-11 (01/11/2026): `P-Dieta-Macros`, `P-Refeicao-Macros`, `P-Lista-Subs
 **Índice por tarefa (qual artboard ler para cada MOB/BE): [INDICE-POR-TAREFA.md](INDICE-POR-TAREFA.md).**
 
 Rodada DES-16 (17/11/2026, release 1.4.0): saúde e restrições na ficha e alerta no montador. Fotos em [../evidencias/DES-16/](../evidencias/DES-16/). Paciente fictícia.
+
+Rodada DES-22 (17/11/2026, release 1.4.0): assinatura com mensal/anual e os planos Básico, Consultório e Plus. Fotos em [../evidencias/DES-22/](../evidencias/DES-22/).

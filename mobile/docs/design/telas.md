@@ -131,6 +131,6 @@ Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4
 | "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | faltando | 93 |
 | Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | faltando | 94 |
 | "Documentos" do paciente | `ui/paciente/perfil` | DES-21 | faltando | 95 |
-| Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | faltando | 96 |
+| Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | desenhada: `A-Assinatura-Planos.dc.html`, `A-Assinatura-Ativa.dc.html`, `A-Assinatura-Sem-Preco.dc.html`, `A-Painel-Fim-Teste.dc.html` | 96 |
 
 Os pacotes são a proposta do PO; a DES e a tarefa MOB podem ajustar, dizendo no PR.
