@@ -99,7 +99,7 @@ class MetasApiTest extends TesteComPaciente {
 		assertThat(viaSync.path("registrosMeta")).hasSize(3);
 		assertThat(json(requisitar("GET","/sync?limite=1000",p.token(),null)).path("mudancas").path("metas")).hasSize(2);
 		var nutri=json(requisitar("GET","/sync?limite=1000",a.token(),null)).path("mudancas");assertThat(nutri.path("metas")).hasSize(2);assertThat(nutri.path("registrosMeta")).hasSize(3);
-		assertThat(json(requisitar("GET","/sync?limite=1000",b.token(),null)).path("mudancas").path("registrosMeta")).hasSize(1); // só o do paciente dela
+		assertThat(json(requisitar("GET","/sync?limite=1000",b.token(),null)).path("mudancas").path("registrosMeta")).isEmpty(); // nenhum registro de outro paciente chega à outra nutri
 		// mutação do sync: só CRIAR, com as mesmas regras
 		var lote=Map.of("mutacoes",List.of(Map.of("idMutacao",UUID.randomUUID().toString(),"entidade","registrosMeta","operacao","CRIAR","id",novoId(),"dados",registro(passos,hoje().minusDays(1),9000))));
 		var rs=requisitar("POST","/sync",p.token(),lote);assertThat(rs.statusCode()).as(rs.body()).isEqualTo(200);assertThat(json(rs).path("resultados").get(0).path("status").asString()).isEqualTo("APLICADA");
