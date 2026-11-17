@@ -56,6 +56,6 @@ public record MudancasFase1Resposta(
 		@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) @Valid List<MudancaSyncResposta<com.br.dietamais.metas.api.MetaResposta>> metas,
 		@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED) @Valid List<MudancaSyncResposta<com.br.dietamais.metas.api.RegistroMetaResposta>> registrosMeta) {
 	public MudancasFase1Resposta(List<MudancaSyncResposta<PacienteResposta>> pacientes,List<MudancaSyncResposta<VinculoResposta>> vinculos,List<MudancaSyncResposta<NutricionistaResumoResposta>> nutris) {
-		this(pacientes,vinculos,nutris,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+		this(pacientes,vinculos,nutris,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
 	}
 }
