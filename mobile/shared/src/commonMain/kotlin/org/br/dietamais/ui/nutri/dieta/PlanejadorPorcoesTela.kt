@@ -57,7 +57,7 @@ fun PlanejadorPorcoesTela(estado: EstadoPlanejador, acoes: AcoesPlanejador, clas
             }
             if (!expandido && rascunho.editavel) RodapeAcoes {
                 BotaoPrincipal(stringResource(Res.string.plan_salvar), acoes.aoSalvar, Modifier.weight(1f),
-                    habilitado = rascunho.alterado && !estado.semConexao && !estado.carregando, carregando = estado.enviando)
+                    habilitado = rascunho.alterado && estado.podeSalvar, carregando = estado.enviando)
             }
         }
     }
@@ -99,7 +99,7 @@ private fun ColumnScope.Resumo(estado: EstadoPlanejador, r: RascunhoPlano, a: Ac
         }
     }
     if (comSalvar && r.editavel) BotaoPrincipal(stringResource(Res.string.plan_salvar), a.aoSalvar, Modifier.fillMaxWidth(),
-        habilitado = r.alterado && !estado.semConexao && !estado.carregando, carregando = estado.enviando)
+        habilitado = r.alterado && estado.podeSalvar, carregando = estado.enviando)
 }
 
 /** Meta em gramas e a palavra da faixa (90% a 110% = dentro); a barra nunca é o único sinal. */
@@ -264,4 +264,5 @@ fun textoMensagemPlanejador(m: MensagemPlanejador): String = stringResource(when
     MensagemPlanejador.SALVA -> Res.string.plan_salva
     MensagemPlanejador.SO_NO_MONTADOR -> Res.string.plan_so_no_montador
     MensagemPlanejador.SEM_PORCOES -> Res.string.plan_sem_porcoes
+    MensagemPlanejador.SALVA_NO_APARELHO -> Res.string.dieta_salva_no_aparelho
 })

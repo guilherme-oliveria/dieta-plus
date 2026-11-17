@@ -79,6 +79,57 @@ class MontadorDietaViewModelTest {
         assertEquals(listOf(3L), d.publicadas); assertNull(vm.estado.value.publicarDaLista) // o fake de publicar termina em erro, por isso não se confere o aviso
     }
 
+    /** MOB-29b: aparelho que guarda a escrita; o que foi salvo fica pendente até o envio. */
+    private inner class DietasNoAparelho : PortaDietas {
+        val pendentes = mutableSetOf<Uuid>(); val previas = mutableListOf<PreviaDieta>(); val descartadas = mutableListOf<Uuid>()
+        var lista = emptyList<DietaResposta>()
+        override val escritaOffline get() = true
+        override fun pendentesDeEnvio() = pendentes.toSet()
+        override fun rascunhosSoLocais() = pendentes.toSet()
+        override suspend fun descartarRascunhoLocal(id: Uuid): Boolean { descartadas += id; pendentes -= id; lista = lista.filter { it.id != id }; return true }
+        override suspend fun listar(pacienteId: Uuid) = lista
+        override suspend fun criar(pacienteId: Uuid, requisicao: SalvarDietaRequisicao, chave: Uuid) = criar(pacienteId, requisicao, chave, PreviaDieta())
+        override suspend fun salvar(id: Uuid, versao: Long, requisicao: SalvarDietaRequisicao) = salvar(id, versao, requisicao, PreviaDieta())
+        override suspend fun criar(pacienteId: Uuid, requisicao: SalvarDietaRequisicao, chave: Uuid, previa: PreviaDieta): DietaResposta {
+            previas += previa; pendentes += requisicao.id!!
+            return DietaResposta(requisicao.id!!, paciente, paciente, requisicao.titulo, StatusDieta.RASCUNHO, null, emptyList(), previa.totais ?: zero, 1,
+                Instant.parse("2026-10-26T12:00:00Z"), Instant.parse("2026-10-26T12:00:00Z")).also { lista = listOf(it) }
+        }
+        override suspend fun salvar(id: Uuid, versao: Long, requisicao: SalvarDietaRequisicao, previa: PreviaDieta): DietaResposta = error("não usado")
+        override suspend fun publicar(id: Uuid, versao: Long): DietaSnapshotResposta = error("publicar só depois do envio")
+        override suspend fun duplicar(id: Uuid, chave: Uuid) = error("não usado")
+    }
+
+    @Test fun semRedeSalvaNoAparelhoComPreviaEBloqueiaPublicarAteOEnvio() = runTest {
+        val d = DietasNoAparelho()
+        val vm = MontadorDietaViewModel(d, catalogo, StandardTestDispatcher(testScheduler), conectividade = flowOf(false)).also { it.abrirPaciente(paciente); runCurrent() }
+        assertTrue(vm.estado.value.semConexao); assertTrue(vm.estado.value.podeSalvar); assertFalse(vm.estado.value.online)
+        vm.nova(); vm.adicionarRefeicao()
+        val ref = vm.estado.value.rascunho!!.refeicoes.single().chave
+        vm.mudarTitulo("Plano offline"); vm.mudarNomeRefeicao(ref, "Café"); vm.adicionarItem(ref, pao.id); vm.salvar(); runCurrent()
+        val id = vm.estado.value.rascunho!!.dietaId
+        assertEquals(MensagemDieta.SALVA_NO_APARELHO, vm.estado.value.aviso)
+        assertEquals(150.0, d.previas.single().totais?.kcal)
+        assertTrue(vm.estado.value.pendente(id)); assertEquals(listOf(id), vm.estado.value.dietas.map { it.id })
+        // offline o botão de publicar fica desabilitado; mesmo chamado direto, a dieta pendente não segue
+        vm.pedirPublicacao(); assertFalse(vm.estado.value.confirmarPublicar)
+        vm.pedirPublicacaoDaLista(vm.estado.value.dietas.single()); assertNull(vm.estado.value.publicarDaLista)
+        // o rascunho que nunca saiu do aparelho pode ser descartado
+        vm.descartarLocal(vm.estado.value.dietas.single()); runCurrent()
+        assertEquals(listOf(id), d.descartadas); assertTrue(vm.estado.value.dietas.isEmpty()); assertNull(vm.estado.value.rascunho)
+        assertEquals(MensagemDieta.DESCARTADA, vm.estado.value.aviso)
+    }
+
+    @Test fun comRedeDietaPendenteNaoPublicaNemDuplica() = runTest {
+        val d = DietasNoAparelho()
+        val vm = MontadorDietaViewModel(d, catalogo, StandardTestDispatcher(testScheduler), conectividade = flowOf(true)).also { it.abrirPaciente(paciente); runCurrent() }
+        vm.nova(); vm.mudarTitulo("Plano"); vm.salvar(); runCurrent()
+        val dieta = vm.estado.value.dietas.single()
+        vm.pedirPublicacaoDaLista(dieta); assertNull(vm.estado.value.publicarDaLista); assertEquals(MensagemDieta.PENDENTE_DE_ENVIO, vm.estado.value.erro)
+        vm.duplicar(dieta); runCurrent(); assertEquals(MensagemDieta.PENDENTE_DE_ENVIO, vm.estado.value.erro)
+        vm.pedirPublicacao(); assertFalse(vm.estado.value.confirmarPublicar)
+    }
+
     @Test fun validadoresDePorcoesEHorario() {
         assertEquals(1.5, MontadorDietaViewModel.porcoesValidas("1,5")); assertNull(MontadorDietaViewModel.porcoesValidas("0")); assertNull(MontadorDietaViewModel.porcoesValidas("1,23456"))
         assertNotNull(MontadorDietaViewModel.horarioValido("7:05")); assertNull(MontadorDietaViewModel.horarioValido("24:00")); assertNull(MontadorDietaViewModel.horarioValido("8h"))

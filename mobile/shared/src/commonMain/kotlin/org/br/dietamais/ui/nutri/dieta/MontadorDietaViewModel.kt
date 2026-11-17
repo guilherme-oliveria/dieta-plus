@@ -16,7 +16,7 @@ import kotlin.uuid.Uuid
 
 class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimentos: PortaAlimentos,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate, conectividade: Flow<Boolean>? = null) : ViewModel() {
-    private val atual = MutableStateFlow(EstadoDieta())
+    private val atual = MutableStateFlow(EstadoDieta(escritaOffline = dietas.escritaOffline))
     val estado = atual.asStateFlow()
     private var catalogo = CatalogoAlimentos()
     private var operacao: Job? = null
@@ -29,12 +29,13 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     fun abrirPaciente(pacienteId: Uuid) {
         if (atual.value.pacienteId == pacienteId) return
         operacao?.cancel()
-        atual.value = EstadoDieta(pacienteId = pacienteId, semConexao = atual.value.semConexao); recalcular()
+        atual.value = EstadoDieta(pacienteId = pacienteId, semConexao = atual.value.semConexao, escritaOffline = dietas.escritaOffline); recalcular()
         recarregar()
     }
     fun recarregar() {
         val id = atual.value.pacienteId ?: return
-        executar(carregar = true) { val itens = dietas.listar(id); atual.update { it.copy(dietas = itens, semConexao = false) } }
+        // com escrita offline a lista vem do aparelho quando falta rede: só a conectividade diz se voltou
+        executar(carregar = true) { val itens = dietas.listar(id); atual.update { it.copy(dietas = itens, semConexao = it.semConexao && it.escritaOffline) }; marcarPendentes() }
     }
     fun nova() {
         if (atual.value.pacienteId == null) return
@@ -76,19 +77,36 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
 
     // ---- salvar, publicar, duplicar
     fun salvar() {
-        if (!podeEnviar()) return
+        if (!atual.value.podeSalvar) return
         val r = atual.value.rascunho?.takeIf { it.editavel } ?: return
         val pacienteId = atual.value.pacienteId ?: return
         val pedido = montar(r) ?: return
+        val t = atual.value.totais
+        val previa = PreviaDieta(TotaisNutricionaisResposta(t.kcalReais, t.carboidratosReais, t.proteinasReais, t.gordurasReais))
         executar {
-            val resposta = if (r.versao == null) dietas.criar(pacienteId, pedido, r.chave) else dietas.salvar(r.dietaId, r.versao, pedido)
-            atual.update { it.copy(rascunho = it.rascunho?.copy(dietaId = resposta.id, versao = resposta.versao, alterado = false), aviso = MensagemDieta.SALVA) }
-            val lista = dietas.listar(pacienteId); atual.update { it.copy(dietas = lista) }
+            val resposta = if (r.versao == null) dietas.criar(pacienteId, pedido, r.chave, previa) else dietas.salvar(r.dietaId, r.versao, pedido, previa)
+            marcarPendentes()
+            val aviso = if (atual.value.pendente(resposta.id)) MensagemDieta.SALVA_NO_APARELHO else MensagemDieta.SALVA
+            atual.update { it.copy(rascunho = it.rascunho?.copy(dietaId = resposta.id, versao = resposta.versao, alterado = false), aviso = aviso) }
+            val lista = dietas.listar(pacienteId); atual.update { it.copy(dietas = lista) }; marcarPendentes()
+        }
+    }
+    /** MOB-29b: apaga o rascunho que nunca chegou ao servidor (o que já chegou não tem exclusão). */
+    fun descartarLocal(dieta: DietaResposta) {
+        val pacienteId = atual.value.pacienteId ?: return
+        if (dieta.id !in atual.value.soLocais || atual.value.enviando) return
+        executar {
+            if (dietas.descartarRascunhoLocal(dieta.id)) {
+                val lista = dietas.listar(pacienteId)
+                atual.update { it.copy(dietas = lista, rascunho = it.rascunho?.takeIf { r -> r.dietaId != dieta.id }, aviso = MensagemDieta.DESCARTADA) }
+            }
+            marcarPendentes()
         }
     }
     fun pedirPublicacao() {
         val r = atual.value.rascunho ?: return
         if (!r.editavel || r.versao == null || r.alterado || !podeEnviar()) return
+        if (atual.value.pendente(r.dietaId)) { atual.update { it.copy(erro = MensagemDieta.PENDENTE_DE_ENVIO) }; return }
         atual.update { it.copy(confirmarPublicar = true, erro = null) }
     }
     fun cancelarPublicacao() { atual.update { it.copy(confirmarPublicar = false) } }
@@ -106,6 +124,7 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     /** Publicar direto do cartão da lista: vale também para a dieta por porções, que não tem botão de publicar no editor. */
     fun pedirPublicacaoDaLista(dieta: DietaResposta) {
         if (dieta.status != StatusDieta.RASCUNHO || !podeEnviar()) return
+        if (atual.value.pendente(dieta.id)) { atual.update { it.copy(erro = MensagemDieta.PENDENTE_DE_ENVIO) }; return }
         atual.update { it.copy(publicarDaLista = dieta, erro = null) }
     }
     fun cancelarPublicacaoDaLista() { atual.update { it.copy(publicarDaLista = null) } }
@@ -121,6 +140,7 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     }
     fun duplicar(dieta: DietaResposta) {
         if (!podeEnviar()) return
+        if (atual.value.pendente(dieta.id)) { atual.update { it.copy(erro = MensagemDieta.PENDENTE_DE_ENVIO) }; return }
         val pacienteId = atual.value.pacienteId ?: return
         executar {
             dietas.duplicar(dieta.id)
@@ -129,7 +149,8 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     }
 
     // ---- internos
-    private fun podeEnviar() = !atual.value.enviando && !atual.value.carregando && !atual.value.semConexao
+    private fun podeEnviar() = atual.value.online
+    private fun marcarPendentes() { atual.update { it.copy(pendentes = dietas.pendentesDeEnvio(), soLocais = dietas.rascunhosSoLocais()) } }
     private fun editar(bloco: (RascunhoDieta) -> RascunhoDieta) {
         val r = atual.value.rascunho ?: return
         if (!r.editavel || atual.value.enviando) return
@@ -177,6 +198,7 @@ class MontadorDietaViewModel(private val dietas: PortaDietas, private val alimen
     private fun apresentar(falha: Throwable) {
         val mensagem = when (falha) {
             is FalhaComunicacao -> MensagemDieta.SEM_CONEXAO
+            is RascunhoPendente -> MensagemDieta.PENDENTE_DE_ENVIO
             is ErroApi -> when (falha.codigo) {
                 "CONFLITO_VERSAO" -> MensagemDieta.CONFLITO
                 "ASSINATURA_INATIVA" -> MensagemDieta.ASSINATURA_INATIVA

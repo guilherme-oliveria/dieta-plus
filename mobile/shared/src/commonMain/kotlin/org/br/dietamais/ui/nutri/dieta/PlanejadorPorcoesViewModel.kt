@@ -22,7 +22,7 @@ import kotlin.uuid.Uuid
 class PlanejadorPorcoesViewModel(private val dietas: PortaDietas, private val porcoes: PortaPorcoes,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate, conectividade: Flow<Boolean>? = null,
     private val produtos: PortaProdutos? = null) : ViewModel() {
-    private val atual = MutableStateFlow(EstadoPlanejador(produtosDisponiveis = produtos != null))
+    private val atual = MutableStateFlow(EstadoPlanejador(produtosDisponiveis = produtos != null, escritaOffline = dietas.escritaOffline))
     val estado = atual.asStateFlow()
     private var operacao: Job? = null
     private var buscaProdutos: Job? = null
@@ -33,7 +33,7 @@ class PlanejadorPorcoesViewModel(private val dietas: PortaDietas, private val po
     fun abrirPaciente(pacienteId: Uuid) {
         if (atual.value.pacienteId == pacienteId && atual.value.referencia != null) return
         operacao?.cancel()
-        atual.value = EstadoPlanejador(pacienteId = pacienteId, semConexao = atual.value.semConexao, produtosDisponiveis = produtos != null)
+        atual.value = EstadoPlanejador(pacienteId = pacienteId, semConexao = atual.value.semConexao, produtosDisponiveis = produtos != null, escritaOffline = dietas.escritaOffline)
         carregarReferencia()
     }
     fun carregarReferencia() = executar(carregar = true) { val r = porcoes.obter(); atual.update { it.copy(referencia = r, semConexao = false) }; recalcular() }
@@ -135,13 +135,19 @@ class PlanejadorPorcoesViewModel(private val dietas: PortaDietas, private val po
     // ---- salvar
     fun salvar() {
         val a = atual.value
-        if (a.enviando || a.carregando || a.semConexao) return
+        if (a.enviando || !a.podeSalvar) return
         val r = a.rascunho?.takeIf { it.editavel } ?: return
         val pacienteId = a.pacienteId ?: return
         val pedido = montar(r) ?: return
+        val dia = a.totalDia
+        // MOB-29b: offline, o cartão da lista mostra esta prévia até o servidor devolver o total oficial (RN-DIE-05)
+        val previa = PreviaDieta(TotaisNutricionaisResposta(dia.energia, dia.carboidratos, dia.proteinas, dia.gorduras),
+            r.refeicoes.flatMap { it.itens }.filterIsInstance<ItemPlano.DoProduto>().associate { it.chave to it.nome })
         executar {
-            val resposta = if (r.versao == null) dietas.criar(pacienteId, pedido, r.chave) else dietas.salvar(r.dietaId, r.versao, pedido)
-            atual.update { it.copy(rascunho = it.rascunho?.copy(dietaId = resposta.id, versao = resposta.versao, alterado = false), totaisServidor = resposta.totais, aviso = MensagemPlanejador.SALVA) }
+            val resposta = if (r.versao == null) dietas.criar(pacienteId, pedido, r.chave, previa) else dietas.salvar(r.dietaId, r.versao, pedido, previa)
+            val pendente = resposta.id in dietas.pendentesDeEnvio()
+            atual.update { it.copy(rascunho = it.rascunho?.copy(dietaId = resposta.id, versao = resposta.versao, alterado = false),
+                totaisServidor = resposta.totais.takeIf { !pendente }, aviso = if (pendente) MensagemPlanejador.SALVA_NO_APARELHO else MensagemPlanejador.SALVA) }
         }
     }
 
