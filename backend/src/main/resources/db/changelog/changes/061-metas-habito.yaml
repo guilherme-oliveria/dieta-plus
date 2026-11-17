@@ -1,0 +1,104 @@
+databaseChangeLog:
+  - changeSet:
+      id: 061-metas-habito
+      author: dietamais
+      changes:
+        - createTable:
+            tableName: meta_habito
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: vinculo_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: paciente_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: tipo, type: varchar(20), constraints: { nullable: false } }
+              - column: { name: nome, type: varchar(80) }
+              - column: { name: alvo, type: 'numeric(12,2)', constraints: { nullable: false } }
+              - column: { name: unidade, type: varchar(20) }
+              - column: { name: frequencia, type: varchar(10), constraints: { nullable: false } }
+              - column: { name: vezes_por_semana, type: smallint }
+              - column: { name: inicio, type: date }
+              - column: { name: fim, type: date }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: seq, type: bigint, defaultValueComputed: "nextval('seq_sync')", constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - addForeignKeyConstraint:
+            baseTableName: meta_habito
+            baseColumnNames: vinculo_id,nutricionista_id
+            referencedTableName: vinculo
+            referencedColumnNames: id,nutricionista_id
+            constraintName: fk_meta_vinculo_proprio
+            onDelete: CASCADE
+        - createIndex:
+            tableName: meta_habito
+            indexName: ix_meta_paciente
+            columns:
+              - column: { name: paciente_id }
+              - column: { name: criado_em }
+        - createIndex:
+            tableName: meta_habito
+            indexName: ix_meta_nutri
+            columns:
+              - column: { name: nutricionista_id }
+        - createTable:
+            tableName: registro_meta
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: meta_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_registro_meta_meta, references: meta_habito(id) } }
+              - column: { name: paciente_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_registro_meta_paciente, references: paciente(id) } }
+              - column: { name: data, type: date, constraints: { nullable: false } }
+              - column: { name: valor, type: 'numeric(12,2)', constraints: { nullable: false } }
+              - column: { name: registrado_em, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: seq, type: bigint, defaultValueComputed: "nextval('seq_sync')", constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - createIndex:
+            tableName: registro_meta
+            indexName: ix_registro_meta_meta_data
+            columns:
+              - column: { name: meta_id }
+              - column: { name: data }
+        - createIndex:
+            tableName: registro_meta
+            indexName: ix_registro_meta_paciente_data
+            columns:
+              - column: { name: paciente_id }
+              - column: { name: data }
+        - sql:
+            sql: >-
+              ALTER TABLE meta_habito ADD CONSTRAINT ck_meta_tipo CHECK (tipo IN ('AGUA','ATIVIDADE_MIN','PASSOS','SONO_HORAS','FRUTAS_VERDURAS','SIM_NAO','CONTADOR'));
+              ALTER TABLE meta_habito ADD CONSTRAINT ck_meta_frequencia CHECK (frequencia IN ('DIARIA','SEMANAL'));
+              ALTER TABLE meta_habito ADD CONSTRAINT ck_meta_vezes CHECK ((frequencia='SEMANAL' AND vezes_por_semana BETWEEN 1 AND 7) OR (frequencia='DIARIA' AND vezes_por_semana IS NULL));
+              ALTER TABLE meta_habito ADD CONSTRAINT ck_meta_alvo CHECK (alvo > 0);
+              ALTER TABLE meta_habito ADD CONSTRAINT ck_meta_periodo CHECK (inicio IS NULL OR fim IS NULL OR fim >= inicio);
+              ALTER TABLE registro_meta ADD CONSTRAINT ck_registro_meta_valor CHECK (valor >= 0);
+              ALTER TABLE diario_sync DROP CONSTRAINT ck_diario_sync_colecao;
+              ALTER TABLE diario_sync ADD CONSTRAINT ck_diario_sync_colecao CHECK (colecao IN
+              ('PACIENTES','VINCULOS','NUTRIS','GRUPOS','ALIMENTOS','LISTAS','DIETAS','SNAPSHOTS','DIETA_EM_USO','CHECKINS','AGUA','PESOS','AVALIACOES','MODELOS','QUESTIONARIOS','CONSULTAS','AVISOS','PROTOCOLOS','MODELOS_DIETA','PRODUTOS','FORA_DO_PLANO','METAS','REGISTROS_META'));
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION meta_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                PERFORM registrar_mudanca_sync('NUTRICIONISTA',NEW.nutricionista_id,'METAS',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'METAS',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION registro_meta_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
+              DECLARE nutri uuid;
+              BEGIN
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'REGISTROS_META',NEW.id,NULL,NEW.paciente_id);
+                FOR nutri IN SELECT nutricionista_id FROM vinculo WHERE paciente_id=NEW.paciente_id AND status='ATIVO' AND excluido_em IS NULL LOOP
+                  PERFORM registrar_mudanca_sync('NUTRICIONISTA',nutri,'REGISTROS_META',NEW.id,nutri,NEW.paciente_id);
+                END LOOP;
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            sql: >-
+              CREATE TRIGGER meta_diario_sync AFTER INSERT OR UPDATE ON meta_habito FOR EACH ROW EXECUTE FUNCTION meta_diario_sync();
+              CREATE TRIGGER registro_meta_diario_sync AFTER INSERT ON registro_meta FOR EACH ROW EXECUTE FUNCTION registro_meta_diario_sync();
