@@ -32,7 +32,7 @@ public class FinanceiroStore {
 			  count(*) filter (where c.status='FALTA') as faltaram,
 			  count(*) filter (where c.status='AGENDADA') as pendentes,
 			  coalesce(sum(f.valor) filter (where f.pago),0) as recebido,
-			  coalesce(sum(f.valor) filter (where not f.pago and f.comparecimento='COMPARECEU'),0) as a_receber
+			  coalesce(sum(f.valor) filter (where not f.pago and c.status='REALIZADA'),0) as a_receber
 			from consulta c left join consulta_financeiro f on f.consulta_id=c.id
 			where c.nutricionista_id=? and c.excluido_em is null and c.status<>'CANCELADA' and c.inicio>=? and c.inicio<?
 			""",rs->{

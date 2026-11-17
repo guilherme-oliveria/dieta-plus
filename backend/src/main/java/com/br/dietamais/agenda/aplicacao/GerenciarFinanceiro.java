@@ -43,10 +43,12 @@ public class GerenciarFinanceiro {
 		// RN-FIN-01: marcar como pago exige valor e forma; valor ou forma sem comparecimento da paciente não faz sentido se faltou sem cobrança, mas a nutri pode cobrar falta
 		if(r.pago()&&(r.valor()==null||r.formaPagamento()==null))throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-FIN-01");
 		if(r.pago()&&r.comparecimento()==ComparecimentoConsulta.PENDENTE)throw new ExcecaoNegocio(CodigoErro.FORMATO_INVALIDO,"RN-FIN-01");
+		// RN-FIN-01 (C-01): o status da consulta é a fonte do comparecimento; quem lança comparecimento (app 1.3.x) muda o status.
+		// RN-AGE-03 vale aqui também: consulta REALIZADA ou FALTA não volta para AGENDADA (comparecimento PENDENTE).
+		var destino=switch(r.comparecimento()){case COMPARECEU->StatusConsulta.REALIZADA;case FALTOU->StatusConsulta.FALTA;case PENDENTE->StatusConsulta.AGENDADA;};
+		if(destino==StatusConsulta.AGENDADA&&c.status()!=StatusConsulta.AGENDADA)throw new ExcecaoNegocio(CodigoErro.TRANSICAO_STATUS_INVALIDA,"RN-AGE-03");
 		var agora=relogio.instant();
 		if(existente==null)financeiro.inserir(consulta,nutri,r,agora);else financeiro.atualizar(consulta,nutri,r,agora);
-		// RN-FIN-01 (C-01): o status da consulta é a fonte do comparecimento; quem lança comparecimento (app 1.3.x) muda o status
-		var destino=switch(r.comparecimento()){case COMPARECEU->StatusConsulta.REALIZADA;case FALTOU->StatusConsulta.FALTA;case PENDENTE->StatusConsulta.AGENDADA;};
 		if(destino!=c.status())consultas.mudarStatus(consulta,nutri,destino,agora);
 		var nova=atual(consulta,nutri,false);auditoria.escrita(referencia(c,contexto));return nova;
 	}

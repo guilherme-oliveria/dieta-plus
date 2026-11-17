@@ -6,6 +6,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import liquibase.change.core.RawSQLChange;
+import liquibase.changelog.ChangeLogParameters;
+import liquibase.parser.core.yaml.YamlChangeLogParser;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.Test;
 
 /** BE-65 (G-20), RN-FIN-01: comparecimento, valor e forma de pagamento da consulta; só da nutri, nunca do paciente. */
@@ -71,5 +75,82 @@ class FinanceiroApiTest extends TesteComPaciente {
 		assertThat(json(requisitar("GET","/eu/nutri/financeiro?de="+de+"&ate="+ate,b.token(),null)).path("consultas").asInt()).isZero();
 		erro(requisitar("GET","/eu/nutri/financeiro?de="+ate+"&ate="+de,a.token(),null),400,"FORMATO_INVALIDO");
 		assertThat(requisitar("GET","/eu/nutri/financeiro",p.token(),null).statusCode()).isEqualTo(403);
+	}
+
+	String status(String token,String consulta) throws Exception {
+		return json(requisitar("GET","/consultas/"+consulta,token,null)).path("status").asString();
+	}
+
+	/** BE-71 (C-01): o comparecimento é o status da consulta, nos dois sentidos; RN-AGE-03 vale também pelo financeiro. */
+	@Test void comparecimentoEhOStatusDaConsultaNosDoisSentidos() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);
+		String c1=agendar(a.token(),p.fichaId(),1),c2=agendar(a.token(),p.fichaId(),2);
+		// app 1.3.x lança comparecimento: vira status
+		assertThat(requisitar("PUT","/consultas/"+c1+"/financeiro",a.token(),corpo("COMPARECEU",new BigDecimal("120"),"PIX",false),Map.of("If-Match","\"0\"")).statusCode()).isEqualTo(200);
+		assertThat(status(a.token(),c1)).isEqualTo("REALIZADA");
+		assertThat(requisitar("PUT","/consultas/"+c1+"/financeiro",a.token(),corpo("FALTOU",null,null,false),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
+		assertThat(status(a.token(),c1)).isEqualTo("FALTA");
+		// FALTA não volta para AGENDADA, nem pelo financeiro; nada muda
+		erro(requisitar("PUT","/consultas/"+c1+"/financeiro",a.token(),corpo("PENDENTE",null,null,false),Map.of("If-Match","\"2\"")),422,"TRANSICAO_STATUS_INVALIDA");
+		assertThat(status(a.token(),c1)).isEqualTo("FALTA");
+		var depois=requisitar("GET","/consultas/"+c1+"/financeiro",a.token(),null);
+		assertThat(json(depois).path("comparecimento").asString()).isEqualTo("FALTOU");assertThat(depois.headers().firstValue("ETag").orElseThrow()).isEqualTo("\"2\"");
+		// app 1.4.0 muda o status: o financeiro lê o comparecimento dele, mesmo sem lançamento
+		assertThat(requisitar("PATCH","/consultas/"+c2,a.token(),Map.of("status","REALIZADA"),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
+		var sem=json(requisitar("GET","/consultas/"+c2+"/financeiro",a.token(),null));
+		assertThat(sem.path("comparecimento").asString()).isEqualTo("COMPARECEU");assertThat(sem.path("versao").asLong()).isZero();
+		// lançar só o valor mantendo o comparecimento derivado não mexe no status
+		assertThat(requisitar("PUT","/consultas/"+c2+"/financeiro",a.token(),corpo("COMPARECEU",new BigDecimal("80"),null,false),Map.of("If-Match","\"0\"")).statusCode()).isEqualTo(200);
+		assertThat(status(a.token(),c2)).isEqualTo("REALIZADA");
+	}
+
+	/** O resumo conta pelo status da consulta: a receber inclui a REALIZADA marcada pela agenda, sem comparecimento lançado à parte. */
+	@Test void resumoContaPeloStatusDaConsulta() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);
+		String c1=agendar(a.token(),p.fichaId(),1),c2=agendar(a.token(),p.fichaId(),2),c3=agendar(a.token(),p.fichaId(),3);
+		// c1: valor lançado com comparecimento ainda pendente; depois a agenda marca REALIZADA
+		assertThat(requisitar("PUT","/consultas/"+c1+"/financeiro",a.token(),corpo("PENDENTE",new BigDecimal("90"),null,false),Map.of("If-Match","\"0\"")).statusCode()).isEqualTo(200);
+		assertThat(requisitar("PATCH","/consultas/"+c1,a.token(),Map.of("status","REALIZADA"),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
+		assertThat(requisitar("PATCH","/consultas/"+c2,a.token(),Map.of("status","FALTA"),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
+		String de=Instant.now().minus(1,ChronoUnit.DAYS).toString(),ate=Instant.now().plus(10,ChronoUnit.DAYS).toString();
+		var r=json(requisitar("GET","/eu/nutri/financeiro?de="+de+"&ate="+ate,a.token(),null));
+		assertThat(r.path("consultas").asInt()).isEqualTo(3);assertThat(r.path("compareceram").asInt()).isEqualTo(1);
+		assertThat(r.path("faltaram").asInt()).isEqualTo(1);assertThat(r.path("pendentes").asInt()).isEqualTo(1);
+		assertThat(r.path("aReceber").decimalValue()).isEqualByComparingTo("90");
+		assertThat(c3).isNotBlank();
+	}
+
+	/**
+	 * Massa de dados da 1.3: consulta AGENDADA com comparecimento lançado no financeiro. Roda o passo de dados do changeset 059
+	 * (o SQL do próprio arquivo) e confere que COMPARECEU vira REALIZADA, FALTOU vira FALTA, PENDENTE e CANCELADA não mudam,
+	 * e que a linha mexida sobe de versão para o sync levar a mudança.
+	 */
+	@Test void migracao059LevaComparecimentoDa13ParaOStatus() throws Exception {
+		var a=cadastrarNutri();var p=pacienteVinculado(a);var nutri=a.nutri();
+		String compareceu=agendar(a.token(),p.fichaId(),1),faltou=agendar(a.token(),p.fichaId(),2),pendente=agendar(a.token(),p.fichaId(),3),cancelada=agendar(a.token(),p.fichaId(),4);
+		assertThat(requisitar("PATCH","/consultas/"+cancelada,a.token(),Map.of("status","CANCELADA"),Map.of("If-Match","\"1\"")).statusCode()).isEqualTo(200);
+		for(var linha:List.of(List.of(compareceu,"COMPARECEU"),List.of(faltou,"FALTOU"),List.of(pendente,"PENDENTE"),List.of(cancelada,"FALTOU")))
+			jdbc.update("insert into consulta_financeiro(consulta_id,nutricionista_id,comparecimento) values(?,?,?)",UUID.fromString(linha.get(0)),nutri,linha.get(1));
+		Map<String,Long> antes=new HashMap<>();
+		for(var id:List.of(compareceu,faltou,pendente,cancelada))antes.put(id,jdbc.queryForObject("select versao from consulta where id=?",Long.class,UUID.fromString(id)));
+		jdbc.execute(passoDeDados059());
+		assertThat(status(a.token(),compareceu)).isEqualTo("REALIZADA");assertThat(status(a.token(),faltou)).isEqualTo("FALTA");
+		assertThat(status(a.token(),pendente)).isEqualTo("AGENDADA");assertThat(status(a.token(),cancelada)).isEqualTo("CANCELADA");
+		assertThat(jdbc.queryForObject("select versao from consulta where id=?",Long.class,UUID.fromString(compareceu))).isEqualTo(antes.get(compareceu)+1);
+		assertThat(jdbc.queryForObject("select versao from consulta where id=?",Long.class,UUID.fromString(pendente))).isEqualTo(antes.get(pendente));
+		assertThat(json(requisitar("GET","/consultas/"+faltou+"/financeiro",a.token(),null)).path("comparecimento").asString()).isEqualTo("FALTOU");
+		// o paciente vê as duas como ENCERRADA (D-03)
+		var minhas=json(requisitar("GET","/eu/consultas",p.token(),null)).path("itens");
+		var encerradas=new ArrayList<String>();for(var c:minhas)if("ENCERRADA".equals(c.path("status").asString()))encerradas.add(c.path("id").asString());
+		assertThat(encerradas).containsExactlyInAnyOrder(compareceu,faltou);
+	}
+
+	private static String passoDeDados059() throws Exception {
+		try(var recursos=new ClassLoaderResourceAccessor()){
+			var log=new YamlChangeLogParser().parse("db/changelog/changes/059-consulta-status-modalidade.yaml",new ChangeLogParameters(),recursos);
+			var sql=((RawSQLChange)log.getChangeSets().getFirst().getChanges().getFirst()).getSql();
+			int inicio=sql.indexOf("UPDATE consulta c SET status");assertThat(inicio).isPositive();
+			return sql.substring(inicio).trim();
+		}
 	}
 }
