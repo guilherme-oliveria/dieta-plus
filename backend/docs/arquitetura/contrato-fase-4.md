@@ -117,6 +117,7 @@ Sem endpoint novo: os clientes já registram o aparelho (`POST /eu/dispositivos`
 | Tipo | Quem recebe | Gatilho | `rota` |
 | --- | --- | --- | --- |
 | `NOVA_DIETA` | paciente | dieta publicada | `/dieta` |
+| `NOVA_ORIENTACAO` | paciente | nutri envia orientação (1.4.0, BE-76; texto genérico, sem título nem conteúdo) | `/orientacoes` |
 | `QUESTIONARIO_ENVIADO` | paciente | nutri envia questionário | `/questionarios/{id}` |
 | `QUESTIONARIO_RESPONDIDO` | nutri | paciente conclui | `/pacientes/{fichaId}` |
 | `CONSULTA_AMANHA` | paciente e nutri | consulta `AGENDADA` de vínculo `ATIVO` que começa em até 24 h (job a cada 15 min) | `/agenda` |

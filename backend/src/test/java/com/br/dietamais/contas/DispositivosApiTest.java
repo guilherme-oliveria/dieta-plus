@@ -28,7 +28,7 @@ class DispositivosApiTest extends TesteComPaciente {
 		var a=cadastrarNutri();var p=pacienteVinculado(a);
 		var ini=requisitar("GET","/eu/preferencias-notificacao",p.token(),null);
 		assertThat(ini.headers().firstValue("ETag").orElse("")).isEqualTo("\"0\"");
-		var padrao=json(ini);assertThat(padrao.path("tipos")).hasSize(3);assertThat(padrao.path("silencio").path("inicio").asString()).startsWith("22:00");
+		var padrao=json(ini);assertThat(padrao.path("tipos")).hasSize(4);assertThat(padrao.path("silencio").path("inicio").asString()).startsWith("22:00");
 		for(var t:padrao.path("tipos"))assertThat(t.path("ativo").asBoolean()).isTrue();
 		var corpo=Map.of("tipos",List.of(Map.of("tipo","CONSULTA_AMANHA","ativo",false)),"silencio",Map.of("ativo",true,"inicio","23:00","fim","06:30"));
 		erro(requisitar("PUT","/eu/preferencias-notificacao",p.token(),corpo),400,"FORMATO_INVALIDO");

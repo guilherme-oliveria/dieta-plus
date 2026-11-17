@@ -1,0 +1,68 @@
+databaseChangeLog:
+  - changeSet:
+      id: 066-orientacoes
+      author: dietamais
+      comment: "BE-76 (H-05). A coleção ORIENTACOES já está no CHECK do diário desde o changeset 065."
+      changes:
+        - createTable:
+            tableName: orientacao
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: vinculo_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: paciente_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: titulo, type: varchar(120), constraints: { nullable: false } }
+              - column: { name: texto, type: varchar(5000), constraints: { nullable: false } }
+              - column: { name: arquivada_em, type: timestamptz }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: seq, type: bigint, defaultValueComputed: "nextval('seq_sync')", constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - addForeignKeyConstraint:
+            baseTableName: orientacao
+            baseColumnNames: vinculo_id,nutricionista_id
+            referencedTableName: vinculo
+            referencedColumnNames: id,nutricionista_id
+            constraintName: fk_orientacao_vinculo_proprio
+            onDelete: CASCADE
+        - createIndex:
+            tableName: orientacao
+            indexName: ix_orientacao_paciente
+            columns:
+              - column: { name: paciente_id }
+              - column: { name: criado_em }
+        - createIndex:
+            tableName: orientacao
+            indexName: ix_orientacao_nutri
+            columns:
+              - column: { name: nutricionista_id }
+        - createTable:
+            tableName: modelo_orientacao
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: false, foreignKeyName: fk_modelo_orientacao_nutri, references: nutricionista(id), deleteCascade: true } }
+              - column: { name: titulo, type: varchar(120), constraints: { nullable: false } }
+              - column: { name: texto, type: varchar(5000), constraints: { nullable: false } }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - createIndex:
+            tableName: modelo_orientacao
+            indexName: ix_modelo_orientacao_nutri
+            columns:
+              - column: { name: nutricionista_id }
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION orientacao_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                PERFORM registrar_mudanca_sync('NUTRICIONISTA',NEW.nutricionista_id,'ORIENTACOES',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'ORIENTACOES',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            sql: >-
+              CREATE TRIGGER orientacao_diario_sync AFTER INSERT OR UPDATE ON orientacao FOR EACH ROW EXECUTE FUNCTION orientacao_diario_sync();

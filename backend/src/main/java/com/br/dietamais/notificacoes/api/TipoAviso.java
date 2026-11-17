@@ -9,7 +9,8 @@ public enum TipoAviso {
 	CONSULTA_AMANHA("CONSULTA_AMANHA",null,"Consulta em breve","Você tem uma consulta nas próximas 24 horas."),
 	QUESTIONARIO_RESPONDIDO("QUESTIONARIO_RESPONDIDO",Perfil.NUTRICIONISTA,"Questionário respondido","Um paciente respondeu a um questionário."),
 	PACIENTE_SEM_CHECKIN("PACIENTE_SEM_CHECKIN",Perfil.NUTRICIONISTA,"Paciente sem registros","Um paciente está há dias sem registrar refeições."),
-	ASSINATURA("ASSINATURA",Perfil.NUTRICIONISTA,"Assinatura","Há uma novidade sobre a sua assinatura.");
+	ASSINATURA("ASSINATURA",Perfil.NUTRICIONISTA,"Assinatura","Há uma novidade sobre a sua assinatura."),
+	NOVA_ORIENTACAO("NOVA_ORIENTACAO",Perfil.PACIENTE,"Nova orientação","Sua nutricionista enviou uma nova orientação.");
 	private final String preferencia;private final Perfil perfil;private final String titulo;private final String corpo;
 	TipoAviso(String preferencia,Perfil perfil,String titulo,String corpo){this.preferencia=preferencia;this.perfil=perfil;this.titulo=titulo;this.corpo=corpo;}
 	public String preferencia(){return preferencia;}
