@@ -375,7 +375,7 @@ O backend e o app têm duas pistas cada, que mexem em módulos diferentes. Com d
 1. BE-C9 → BE-68 → BE-70 → MOB-83, que ainda espera a MOB-29b: é a cadeia mais longa e a que entrega o item de segurança.
 2. BE-71 → BE-78 → BE-79 → MOB-94 e MOB-95: os documentos dependem do status da consulta.
 3. DES-16 e DES-17 precisam sair na primeira metade da onda 24. O design é uma pista só e atende sete conjuntos de telas.
-4. Os valores (G-21) já estão decididos. A ativação dos planos novos depende da conta do Asaas validada no sandbox (G-08) e dos nomes; sem isso até o corte, a 1.4.0 sai com os níveis novos e o anual inativos.
+4. Os valores (G-21) já estão decididos. A ativação dos planos novos depende da conta do Asaas validada no sandbox (G-08) ; sem isso até o corte, a 1.4.0 sai com os níveis novos e o anual inativos.
 
 ## 6. Conflitos entre o benchmark e a arquitetura atual
 
@@ -406,13 +406,13 @@ Situação de hoje, na tabela `plano`: **Teste**, grátis, 30 dias, 5 pacientes;
 | --- | --- | --- | --- | --- |
 | Teste | grátis | — | 5, por 30 dias | Não muda |
 | Básico | R$ 29,90 | R$ 299,00 | 20 | Já existe; ganha o anual |
-| Nível novo 1 | R$ 79,90 | R$ 799,00 | 80 | Novo |
-| Nível novo 2 | R$ 179,90 | R$ 1.799,00 | Ilimitado | Novo |
+| **Consultório** (`CONSULTORIO`) | R$ 79,90 | R$ 799,00 | 80 | Novo |
+| **Plus** (`PLUS`) | R$ 179,90 | R$ 1.799,00 | Ilimitado | Novo |
 
-- Os valores dos dois níveis novos são os do concorrente (seção 4.1 de `analise-de-lacunas.md`). Os **nomes** são próprios do Dieta+ e ainda precisam ser escolhidos; até lá ficam provisórios e editáveis no admin.
+- Os valores dos dois níveis novos são os do concorrente (seção 4.1 de `analise-de-lacunas.md`). Os **nomes** são próprios do Dieta+, escolhidos pelo PO a pedido do Guilherme em 17/11/2026: **Consultório** (a nutri com a agenda cheia de um consultório) e **Plus** (o nível sem limite, que reforça a marca Dieta+). Continuam editáveis no admin.
 - Nada disso vira changeset de preço: os níveis nascem inativos e os valores entram pelo admin (C-05). A ativação depende da conta do Asaas validada no sandbox (G-08).
 - "Ilimitado" exige que o limite de pacientes do plano aceite "sem limite" (hoje a coluna é obrigatória e numérica). Entrou na BE-80.
-- Continua em aberto, sem travar nada: se o anual aceita PIX e boleto além de cartão (sem cartão a renovação não é automática).
+- **Formas de pagamento (decidido em 17/11/2026): PIX e cartão de crédito, por enquanto. Sem boleto.** Vale para mensal e anual. No cartão a renovação é automática; no PIX a nutri paga uma cobrança nova a cada período, então o aviso de renovação é obrigatório (BE-81, R-09). Hoje o `GatewayAsaas` cria a assinatura com `billingType` `UNDEFINED`, que deixa o pagador escolher qualquer forma, inclusive boleto: a BE-81 precisa restringir a PIX e cartão e conferir isso no sandbox.
 
 As perguntas originais ficam abaixo, como registro.
 
@@ -470,7 +470,7 @@ Registro do que valia antes da resposta: nenhuma decisão travava a onda 24, exc
 
 | ID | O quê | Quando | Trava |
 | --- | --- | --- | --- |
-| **G-21** | Valores e limites dos planos (seção 7.1) | **Feito em 16/11/2026.** Falta só escolher os nomes dos dois níveis novos | Ativar os planos |
+| **G-21** | Valores e limites dos planos (seção 7.1) | **Feito em 16/11/2026.** Nomes (Consultório e Plus) e formas de pagamento (PIX e cartão) definidos em 17/11/2026 | Ativar os planos |
 | **G-22** | Landing em `site/` no monorepo: **decidido**, só registro | — | `SITE-01` (futura) |
 | **G-23** | Fotos de evolução e do prato entram no roadmap? | Depois da 1.4.0 | L-10 |
 | **G-24** | Assistente de IA vira plano próprio? | Depois da 1.4.0 | L-21 |
@@ -493,7 +493,7 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 | R-06 | **Compatibilidade com o app 1.3.x** já instalado | App antigo quebra ou mostra dado errado | Só campos opcionais; teste do backend com os JSONs de contrato da 1.3; sem subir a versão mínima |
 | R-07 | **Rota pública de conferência** é alvo de varredura | Enumeração de códigos | Código longo e aleatório, limite de requisições do BE-31, resposta igual para "não existe" e "anulado há muito tempo", auditoria |
 | R-08 | **Regras das lojas** para preço e link de pagamento fora do app | Reprovação na revisão da App Store | D-09 com chave do backend; conferir as regras antes de publicar (S4) |
-| R-09 | **Anual no gateway**: renovação por PIX e boleto não é automática; troca de plano não tem crédito proporcional nativo | Assinatura anual expira sem a nutri perceber; cobrança errada na troca | Avisos de renovação, testes com relógio controlado, validação no sandbox do Asaas (G-08), D-11 |
+| R-09 | **Anual no gateway**: renovação por PIX não é automática (boleto não é aceito); troca de plano não tem crédito proporcional nativo | Assinatura anual expira sem a nutri perceber; cobrança errada na troca | Avisos de renovação, testes com relógio controlado, validação no sandbox do Asaas (G-08), D-11 |
 | R-10 | **Conteúdo com valor legal ou clínico** (modelos de atestado e declaração) | Documento emitido com texto inadequado | D-06; modelos do sistema marcados como suposição até a revisão |
 | R-11 | **Ambiente da nuvem**: sem Docker (Testcontainers) e sem compilar Android e iOS | Erro só aparece no CI | CI verde é obrigatório; `ops/validar-wsl.sh` quando precisar reproduzir; erros de import do alvo web aparecem só no job Web |
 | R-12 | **Colisão de PRs paralelos** nos docs comuns e na numeração dos changesets | Retrabalho e fila no QA | Regras da seção 2 e da 5.2; BE-C9 escreve as regras de uma vez |
@@ -526,7 +526,7 @@ A conta do Asaas (G-08, já aberta no plano anterior) continua necessária para 
 - [ ] **CI completo no PR da release**, incluindo **iOS**, que só roda em `release/*`.
 - [ ] **Acessibilidade:** a verificação com axe-core do e2e continua sem regressão nas telas novas.
 - [ ] `CHANGELOG.md` dos dois projetos com a seção 1.4.0; versão 1.4.0 no backend e no app.
-- [ ] Planos novos cadastrados com os valores da seção 7.1 e conferidos no sandbox do Asaas; ficam **inativos** se a conta do gateway (G-08) ou os nomes ainda não estiverem definidos.
+- [ ] Planos novos cadastrados com os valores da seção 7.1 e conferidos no sandbox do Asaas; ficam **inativos** se a conta do gateway (G-08) ainda não estiver validada. O checkout só oferece PIX e cartão.
 
 ### 9.3 QA e teste manual
 
