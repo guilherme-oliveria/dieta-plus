@@ -10,6 +10,7 @@ public class GatewayDesligado implements GatewayPagamento {
 	@Override public CheckoutCriado criarCheckout(DadosCheckout dados){throw new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06");}
 	@Override public Optional<String> urlCobranca(String id){return Optional.empty();}
 	@Override public void cancelar(String id){ }
+	@Override public void alterar(String id,java.math.BigDecimal valor,boolean anual,String descricao){throw new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06");}
 	@Override public boolean tokenValido(String token){return false;}
 	@Override public Evento interpretar(String corpo){throw new IllegalArgumentException("Gateway desligado.");}
 }

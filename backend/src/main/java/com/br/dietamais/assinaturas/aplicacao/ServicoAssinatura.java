@@ -33,8 +33,11 @@ public class ServicoAssinatura {
 		if(resumo.status()==StatusAssinatura.TESTE&&resumo.fimPeriodoEm()!=null)diasTeste=(int)Math.max(0,(Duration.between(relogio.instant(),resumo.fimPeriodoEm()).toSeconds()+86399)/86400);
 		boolean exibe=plataforma==null||!plataformasSemPreco.contains(plataforma.strip().toUpperCase());
 		var carenciaAte=resumo.status()==StatusAssinatura.EM_ATRASO&&resumo.fimPeriodoEm()!=null?resumo.fimPeriodoEm().plus(carencia):null;
+		var troca=jdbc.query("select p.codigo,coalesce(a.periodicidade_pendente,a.periodicidade),a.troca_a_partir_de from assinatura a join plano p on p.id=a.plano_pendente_id "
+				+"where a.organizacao_id=? and a.status='ATIVA' and a.troca_a_partir_de is not null order by a.inicio_em desc,a.id desc limit 1",
+			(rs,n)->new TrocaPlanoAgendada(rs.getString(1),Periodicidade.valueOf(rs.getString(2)),rs.getObject(3,java.time.LocalDate.class)),resumo.organizacaoId()).stream().findFirst().orElse(null);
 		return new AssinaturaDetalheResposta(resumo.organizacaoId(),plano,resumo.status(),resumo.pacientesOcupados(),resumo.fimPeriodoEm(),carenciaAte,
-			gateway.disponivel(),planosPagos(),periodicidade,diasTeste,exibe);
+			gateway.disponivel(),planosPagos(),periodicidade,diasTeste,exibe,troca);
 	}
 
 	/**
@@ -59,9 +62,10 @@ public class ServicoAssinatura {
 		var linha=linhas.getFirst();var assinaturaId=(UUID)linha[0];var gwId=(String)linha[2];var gwCliente=(String)linha[3];var pendente=(UUID)linha[4];
 		var periodicidadePendente=linha[5]==null?Periodicidade.MENSAL:Periodicidade.valueOf((String)linha[5]);
 		var resumo=assinaturas.atual();
-		if(resumo!=null&&resumo.status()==StatusAssinatura.ATIVA)throw new ExcecaoNegocio(CodigoErro.ASSINATURA_JA_ATIVA,"RN-ASS-06");
-		if(!gateway.disponivel())throw new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06");
 		var planoId=(UUID)plano[0];var escolhida=anual?Periodicidade.ANUAL:Periodicidade.MENSAL;
+		if(resumo!=null&&resumo.status()==StatusAssinatura.ATIVA)
+			return trocar(assinaturaId,gwId,planoId,dadosPlano,escolhida,anual?precoAnual:dadosPlano.precoMensal(),contexto.usuario().nome(),contexto.usuario().email(),gwCliente);
+		if(!gateway.disponivel())throw new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06");
 		if(gwId!=null){
 			// mesmo plano e mesma periodicidade: reaproveita a cobrança em aberto
 			if(planoId.equals(pendente)&&periodicidadePendente==escolhida){
@@ -73,9 +77,44 @@ public class ServicoAssinatura {
 		var u=contexto.usuario();
 		var criado=gateway.criarCheckout(new GatewayPagamento.DadosCheckout(assinaturaId,u.nome(),u.email(),dadosPlano.codigo(),dadosPlano.nome(),
 			anual?precoAnual:dadosPlano.precoMensal(),gwCliente,anual));
-		jdbc.update("update assinatura set gateway_assinatura_id=?,gateway_cliente_id=?,plano_pendente_id=?,periodicidade_pendente=? where id=?",
+		jdbc.update("update assinatura set gateway_assinatura_id=?,gateway_cliente_id=?,plano_pendente_id=?,periodicidade_pendente=?,troca_a_partir_de=null where id=?",
 			criado.assinaturaGatewayId(),criado.clienteId(),planoId,escolhida.name(),assinaturaId);
 		return new CheckoutResposta(criado.url());
+	}
+
+	/**
+	 * RN-ASS-10 (D-11): troca com a assinatura ativa. Subir (plano com preço mensal maior) vale já: cobrança cheia do plano novo, sem crédito
+	 * proporcional (ajuste manual do admin), e o plano muda quando o pagamento é confirmado. Descer, ou só mudar a periodicidade, vale no próximo
+	 * vencimento: as próximas cobranças da mesma assinatura do gateway mudam, e até lá vale o plano atual. Pedir o plano atual desfaz a troca agendada.
+	 */
+	private CheckoutResposta trocar(UUID assinaturaId,String gwId,UUID planoNovo,PlanoResposta dadosNovo,Periodicidade periodicidadeNova,BigDecimal valorNovo,
+			String nome,String email,String gwCliente) {
+		var atual=jdbc.queryForObject("select a.plano_id,a.periodicidade,a.fim_periodo_em,a.plano_pendente_id,p.preco_mensal,p.preco_anual,p.nome from assinatura a join plano p on p.id=a.plano_id where a.id=?",
+			(rs,n)->new Object[]{rs.getObject(1,UUID.class),Periodicidade.valueOf(rs.getString(2)),rs.getTimestamp(3),rs.getObject(4,UUID.class),rs.getBigDecimal(5),rs.getBigDecimal(6),rs.getString(7)},assinaturaId);
+		var planoAtual=(UUID)atual[0];var periodicidadeAtual=(Periodicidade)atual[1];var fim=(java.sql.Timestamp)atual[2];var agendado=(UUID)atual[3];
+		var precoMensalAtual=(BigDecimal)atual[4];
+		if(planoNovo.equals(planoAtual)&&periodicidadeNova==periodicidadeAtual){
+			if(agendado==null||gwId==null)throw new ExcecaoNegocio(CodigoErro.ASSINATURA_JA_ATIVA,"RN-ASS-06");
+			// desfaz a troca agendada: as próximas cobranças voltam ao plano atual
+			var valorAtual=periodicidadeAtual==Periodicidade.ANUAL&&atual[5]!=null?(BigDecimal)atual[5]:precoMensalAtual;
+			gateway.alterar(gwId,valorAtual,periodicidadeAtual==Periodicidade.ANUAL,"Dieta+ "+atual[6]);
+			jdbc.update("update assinatura set plano_pendente_id=null,periodicidade_pendente=null,troca_a_partir_de=null where id=?",assinaturaId);
+			return new CheckoutResposta(gateway.urlCobranca(gwId).orElse(null),null);
+		}
+		if(!gateway.disponivel())throw new ExcecaoNegocio(CodigoErro.PAGAMENTO_INDISPONIVEL,"RN-ASS-06");
+		if(dadosNovo.precoMensal().compareTo(precoMensalAtual)>0||gwId==null){
+			// subir: nova assinatura no gateway com a cobrança cheia; a antiga é cancelada (o período já pago continua valendo até o plano novo ser pago)
+			if(gwId!=null)gateway.cancelar(gwId);
+			var criado=gateway.criarCheckout(new GatewayPagamento.DadosCheckout(assinaturaId,nome,email,dadosNovo.codigo(),dadosNovo.nome(),valorNovo,gwCliente,periodicidadeNova==Periodicidade.ANUAL));
+			jdbc.update("update assinatura set gateway_assinatura_id=?,gateway_cliente_id=?,plano_pendente_id=?,periodicidade_pendente=?,troca_a_partir_de=null where id=?",
+				criado.assinaturaGatewayId(),criado.clienteId(),planoNovo,periodicidadeNova.name(),assinaturaId);
+			return new CheckoutResposta(criado.url(),null);
+		}
+		// descer (RN-ASS-08: convites acima do limite novo ficam bloqueados; nenhum vínculo é encerrado)
+		var aPartirDe=fim==null?java.time.LocalDate.now(relogio.withZone(java.time.ZoneOffset.UTC)):fim.toInstant().atZone(java.time.ZoneOffset.UTC).toLocalDate();
+		gateway.alterar(gwId,valorNovo,periodicidadeNova==Periodicidade.ANUAL,"Dieta+ "+dadosNovo.nome());
+		jdbc.update("update assinatura set plano_pendente_id=?,periodicidade_pendente=?,troca_a_partir_de=? where id=?",planoNovo,periodicidadeNova.name(),java.sql.Date.valueOf(aPartirDe),assinaturaId);
+		return new CheckoutResposta(null,aPartirDe);
 	}
 
 	/** Compatível com quem ainda chama só com o código (mensal). */

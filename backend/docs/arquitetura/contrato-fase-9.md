@@ -68,6 +68,7 @@ Endpoints em `integracao.md`. `GET /documentos/{id}/pdf` e `GET /eu/documentos/{
 - `GET /api/v1/planos` (pública): `PlanosPublicosResposta`, só planos à venda; sem nenhum valor fixo no código (os valores entram pelo admin, C-05).
 - `POST /assinatura/checkout`: `CheckoutPlanoRequisicao` (`planoCodigo`, `periodicidade` opcional, padrão `MENSAL`). O corpo antigo `{ "plano": "..." }` continua aceito por pelo menos 6 meses. Plano fora de venda ou sem preço anual: `422 PLANO_INDISPONIVEL`.
 - `GET /assinatura`: campos opcionais de `AssinaturaAmpliadaResposta` somados aos de `AssinaturaDetalheResposta`.
+- **Troca de plano com a assinatura ativa (BE-81b, RN-ASS-10):** o mesmo `POST /assinatura/checkout`. Subir (preço mensal maior) devolve a `url` da cobrança cheia do plano novo, que passa a valer quando o pagamento é confirmado. Descer, ou só mudar a periodicidade, não cobra agora: a resposta vem sem `url` e com `trocaAgendadaPara` (data), e `GET /assinatura` mostra `trocaAgendada` (`planoCodigo`, `periodicidade`, `aPartirDe`) até o vencimento. Pedir o plano e a periodicidade atuais desfaz a troca agendada; sem troca agendada, continua `409 ASSINATURA_JA_ATIVA`.
 - Planos decididos na G-21: Teste (30 dias, 5 pacientes), Básico R$ 29,90 (20), Consultório R$ 79,90 (80), Plus R$ 179,90 (sem limite), anual = 10x o mensal. Pagamento por PIX, cartão e boleto.
 
 ## Compatibilidade com o app 1.3.x
