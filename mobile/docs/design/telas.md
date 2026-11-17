@@ -110,3 +110,27 @@ Ainda **sem artboard** (pedir ao Design antes de implementar): micronutrientes e
 | Lista de substituição (tablet, lista-detalhe) | idem expandida | `T-Lista-Substituicao.dc.html` | **implementada** (MOB-55; ressalvas em divergencias.md) | 55 |
 | PDF da lista: porção pequena, média, grande | backend (BE-50b) | `PDF-Lista-Pequena`, `PDF-Lista-Media`, `PDF-Lista-Grande` | referência de layout | BE-50b |
 | PDF da lista com contagem de carboidratos | backend (BE-50b) | `PDF-Lista-Carboidratos.dc.html` | referência de layout | BE-50b |
+
+## Release 1.4.0 (ondas 24 a 27)
+
+Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4.0.md) (seção 4.1). **Todas faltando**: cada tela entra com o artboard da `DES-NN` aprovado no canvas, copiado para [artboards/](artboards/README.md), e o status muda aqui para "desenhada" no PR da própria DES (branch `feature/DES-NN-…`). O benchmark é referência de fluxo: textos, ícones, cores e layout são do Dieta+ ([padrao-ui.md](padrao-ui.md)). Estados de carregando, vazio, erro e sem internet seguem [componentes.md](componentes.md). A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOffline`.
+
+| Tela | Pacote | DES | Status | MOB |
+| --- | --- | --- | --- | --- |
+| Ficha: seção "Saúde e restrições" e selo no cabeçalho | `ui/nutri/paciente` | DES-16 | faltando | 82 |
+| Montador: alerta de intolerância e confirmação de alergia | `ui/nutri/dieta` | DES-16 | faltando | 83 |
+| Consulta: formulário (tipo, modalidade, link, orientação, observação) e ações de status | `ui/nutri/agenda` | DES-17 | faltando | 84 |
+| Agenda: visão do mês | `ui/nutri/agenda` | DES-17 | faltando | 85 |
+| Conta da nutri: preferência de lembrete | `ui/nutri/assinatura` (conta) | DES-17 | faltando | 86 |
+| Paciente: próxima consulta com "Entrar na consulta" e orientação | `ui/paciente/hoje` | DES-17 | faltando | 87 |
+| Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano" | `ui/paciente/hoje` | DES-18 | faltando | 88 |
+| Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | faltando | 89 |
+| Hoje com metas e água juntas; registro, sequência e progresso | `ui/paciente/hoje` | DES-19 | faltando | 90 |
+| Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | faltando | 91 |
+| Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | faltando | 92 |
+| "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | faltando | 93 |
+| Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | faltando | 94 |
+| "Documentos" do paciente | `ui/paciente/perfil` | DES-21 | faltando | 95 |
+| Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | faltando | 96 |
+
+Os pacotes são a proposta do PO; a DES e a tarefa MOB podem ajustar, dizendo no PR.
