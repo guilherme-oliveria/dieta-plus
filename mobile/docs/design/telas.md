@@ -127,8 +127,8 @@ Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4
 | Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | faltando | 89 |
 | Hoje com as metas (a água é uma delas, com desfazer e valor livre); registro, sequência e progresso | `ui/paciente/hoje` | DES-19 | faltando | 90, 99 |
 | Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | faltando | 91 |
-| Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | faltando | 92 |
-| "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | faltando | 93 |
+| Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | desenhada: `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html` | 92 |
+| "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | desenhada: `P-Suplementos.dc.html`, `P-Orientacoes.dc.html` | 93 |
 | Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | faltando | 94 |
 | "Documentos" do paciente | `ui/paciente/perfil` | DES-21 | faltando | 95 |
 | Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | faltando | 96 |

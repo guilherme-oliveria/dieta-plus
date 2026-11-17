@@ -39,6 +39,8 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `PDF-Avaliacao.dc.html` | PDF da avaliação (A4) |
 | `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | Nutri · Ficha, saúde e restrições (DES-16) |
 | `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | Nutri · Montador com alerta de restrição e confirmação de alergia (DES-16) |
+| `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html` | Nutri · Suplementos e orientações (DES-20) |
+| `P-Suplementos.dc.html`, `P-Orientacoes.dc.html` | Paciente · Suplementos e orientações (DES-20) |
 
 Fotos (PNG) dos artboards novos em [../evidencias/DES-08-10/](../evidencias/DES-08-10/). Os dados dos artboards novos são de exemplo (paciente Guilherme do PDF da nutri; criança fictícia).
 
@@ -47,3 +49,5 @@ Rodada DES-11 (01/11/2026): `P-Dieta-Macros`, `P-Refeicao-Macros`, `P-Lista-Subs
 **Índice por tarefa (qual artboard ler para cada MOB/BE): [INDICE-POR-TAREFA.md](INDICE-POR-TAREFA.md).**
 
 Rodada DES-16 (17/11/2026, release 1.4.0): saúde e restrições na ficha e alerta no montador. Fotos em [../evidencias/DES-16/](../evidencias/DES-16/). Paciente fictícia.
+
+Rodada DES-20 (17/11/2026, release 1.4.0): suplementos e orientações da nutri e do paciente. Fotos em [../evidencias/DES-20/](../evidencias/DES-20/).
