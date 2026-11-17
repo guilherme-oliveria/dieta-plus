@@ -61,7 +61,7 @@ Formato **RFC 9457 Problem Details** (`application/problem+json`), já nativo no
 - Os clientes decidem o que mostrar **pelo `codigo`**, nunca pelo texto.
 - `400` JSON inválido · `401` sem token/expirado (cliente tenta refresh uma vez) · `403` sem permissão · `404` não existe **ou não é seu** (não revelar existência) · `409` conflito de versão/duplicado · `422` regra de negócio · `429` limite de taxa · `5xx` erro do servidor (cliente pode repetir com a mesma `Idempotency-Key`).
 
-Códigos já definidos: `LOGIN_BLOQUEADO`, `CREDENCIAIS_INVALIDAS`, `EMAIL_NAO_CONFIRMADO`, `EMAIL_JA_CADASTRADO`, `TOKEN_INVALIDO`, `LIMITE_PACIENTES_ATINGIDO`, `ASSINATURA_INATIVA`, `CONVITE_INVALIDO`, `CONVITE_EXPIRADO`, `VINCULO_JA_EXISTE`, `DIETA_VAZIA`, `DIETA_NAO_EDITAVEL`, `ITEM_INVALIDO`, `PORCAO_INVALIDA`, `VALOR_FORA_DO_INTERVALO`, `DADO_INSUFICIENTE_CALCULO`, `PROTOCOLO_INVALIDO`, `JUSTIFICATIVA_OBRIGATORIA`, `QUESTIONARIO_FECHADO`, `CONSULTA_CANCELADA`, `ASSINATURA_JA_ATIVA`, `PAGAMENTO_INDISPONIVEL`, `EXPORTACAO_EM_ANDAMENTO`, `VINCULO_ATIVO`, `VERSAO_APP_OBSOLETA`, `CONFLITO_VERSAO`, `OBRIGATORIO`, `FORMATO_INVALIDO`, `CONSENTIMENTO_OBRIGATORIO`, `PERFIL_INVALIDO`, `RECURSO_NAO_ENCONTRADO`, `NAO_AUTENTICADO`, `ACESSO_NEGADO`, `TAXA_EXCEDIDA`, `NAO_IMPLEMENTADO`, `ERRO_INTERNO`, `METODO_NAO_PERMITIDO`, `TIPO_CONTEUDO_NAO_SUPORTADO`, `CHAVE_IDEMPOTENCIA_REUTILIZADA`. Novo código: adicione aqui e na classe `CodigoErro` do backend.
+Códigos já definidos: `LOGIN_BLOQUEADO`, `CREDENCIAIS_INVALIDAS`, `EMAIL_NAO_CONFIRMADO`, `EMAIL_JA_CADASTRADO`, `TOKEN_INVALIDO`, `LIMITE_PACIENTES_ATINGIDO`, `ASSINATURA_INATIVA`, `CONVITE_INVALIDO`, `CONVITE_EXPIRADO`, `VINCULO_JA_EXISTE`, `DIETA_VAZIA`, `DIETA_NAO_EDITAVEL`, `ITEM_INVALIDO`, `PORCAO_INVALIDA`, `VALOR_FORA_DO_INTERVALO`, `DADO_INSUFICIENTE_CALCULO`, `PROTOCOLO_INVALIDO`, `JUSTIFICATIVA_OBRIGATORIA`, `QUESTIONARIO_FECHADO`, `CONSULTA_CANCELADA`, `ASSINATURA_JA_ATIVA`, `PAGAMENTO_INDISPONIVEL`, `EXPORTACAO_EM_ANDAMENTO`, `VINCULO_ATIVO`, `VERSAO_APP_OBSOLETA`, `CONFLITO_VERSAO`, `OBRIGATORIO`, `FORMATO_INVALIDO`, `CONSENTIMENTO_OBRIGATORIO`, `PERFIL_INVALIDO`, `RECURSO_NAO_ENCONTRADO`, `NAO_AUTENTICADO`, `ACESSO_NEGADO`, `TAXA_EXCEDIDA`, `NAO_IMPLEMENTADO`, `ERRO_INTERNO`, `METODO_NAO_PERMITIDO`, `TIPO_CONTEUDO_NAO_SUPORTADO`, `CHAVE_IDEMPOTENCIA_REUTILIZADA`; da 1.4.0: `ALERGIA_NAO_CONFIRMADA` (422, RN-DIE-14), `TRANSICAO_STATUS_INVALIDA` (422, RN-AGE-03), `LINK_INVALIDO` (422, RN-AGE-04), `META_INVALIDA` (422, RN-MET-01), `DOCUMENTO_JA_ANULADO` (422, RN-DOC-02) e `PLANO_INDISPONIVEL` (422, RN-ASS-09). Novo código: adicione aqui e na classe `CodigoErro` do backend.
 
 Códigos acrescentados em BE-C1: `CONSENTIMENTO_OBRIGATORIO` (422, RN-VIN-04), `PERFIL_INVALIDO` (403), `RECURSO_NAO_ENCONTRADO` (404, inclusive recurso de outro dono), `NAO_AUTENTICADO` (401), `ACESSO_NEGADO` (403), `TAXA_EXCEDIDA` (429) e `NAO_IMPLEMENTADO` (501). `campos` é sempre lista; `regra`, `traceId` e `atual` podem ser nulos. Conflito de versão traz o registro vigente em `atual`. O ID de regra de `TOKEN_INVALIDO` depende da operação (confirmação ou recuperação); erros técnicos sem RN usam `regra: null`.
 
@@ -170,6 +170,26 @@ Resposta, um resultado por mutação, na mesma ordem:
 - Compatibilidade da migração 029: resultados antigos sem perfil/fingerprint permanecem armazenados, mas não podem ser autenticados para replay e retornam a mesma rejeição de reuso, sem reexecutar. O cliente deve reconciliar o estado da entidade antes de criar nova intenção com outro ID; não reenviar cegamente uma inclusão com novo ID. A ausência de `IDEMPOTENCIA_CHAVE` impede a escrita antes de executar a mutação (`ERRO_INTERNO`); não há fingerprint sem autenticação nem associação oportunista do legado ao perfil atual.
 - `APLICADA` → o app marca como enviada e atualiza `versao`. `CONFLITO` → guarda o `atual` e mostra a escolha à nutri ("manter o meu" reenvia com `versaoBase` = versão atual; "usar o do servidor" descarta a local). `REJEITADA` → desfaz localmente e mostra a mensagem do `codigo`.
 - Os endpoints REST normais continuam valendo para telas online e para o site; o sync é o caminho do app.
+
+### Release 1.4.0 (contratos das fases 9 e 10)
+
+Detalhe em [contrato-fase-9.md](contrato-fase-9.md); exemplos em `contrato/fase-9/` e `contrato/fase-10/`, vetores em `contrato/calculos/alertas-restricao.json` e `metas.json`. Tudo aditivo: campos novos opcionais, `/api/v1`.
+
+| Módulo | Endpoints novos | Quem |
+| --- | --- | --- |
+| pacientes | `restricoesSaude[]` opcional em `POST/PATCH /pacientes` e na coleção `pacientes` do sync (RN-SAU-01 e 02) | nutri |
+| dietas | `alertas[]` e `alergiaConfirmada` opcionais no item da dieta; `ALERGIA_NAO_CONFIRMADA` ao publicar (RN-DIE-14); `modelosDieta` na escrita do `/sync` (MOB-29b) | nutri |
+| agenda | `modalidade`, `linkOnline`, `orientacaoPaciente`, `observacaoInterna` e status `REALIZADA`/`FALTA` em `POST/PATCH /consultas` e no sync; `GET/PUT /eu/nutri/preferencias-agenda`; projeção do paciente em `GET /eu/consultas` (RN-AGE-03 a 05) | nutri / paciente |
+| rotina | `fomeAntes` e `sensacaoDepois` em `POST /eu/checkins`; `POST /eu/registros-fora-do-plano`; `humor` e `foraDoPlano` em `GET /pacientes/{id}/adesao`; `GET /eu/rotina` inclui os registros fora do plano | paciente / nutri |
+| metas | `GET/POST /pacientes/{id}/metas`, `PATCH /metas/{id}`, `GET/POST/PUT/DELETE /eu/nutri/modelos-meta`, `POST /pacientes/{id}/metas/de-modelo/{modeloId}`, `POST /eu/registros-meta`, `GET /pacientes/{id}/metas/cumprimento` (RN-MET) | nutri / paciente |
+| prescricoes | `GET/POST /pacientes/{id}/suplementos`, `PATCH /suplementos/{id}`, `GET/POST /pacientes/{id}/orientacoes`, `PATCH /orientacoes/{id}`, `GET/POST/PUT/DELETE /eu/nutri/modelos-orientacao` (RN-SUP, RN-ORI) | nutri |
+| relatorios | `incluirSuplementos` opcional em `GET /dietas/{id}/pdf` | nutri |
+| documentos | `GET/POST/PUT/DELETE /eu/nutri/modelos-documento`, `GET/POST /pacientes/{id}/documentos`, `POST /documentos/{id}/anular`, `GET /documentos/{id}/pdf`, `GET /eu/documentos`, `GET /eu/documentos/{id}/pdf`, `GET /api/v1/documentos/conferir/{codigo}` (pública) (RN-DOC) | nutri / paciente / público |
+| assinaturas | `GET /api/v1/planos` (pública); `POST /assinatura/checkout` aceita `planoCodigo` e `periodicidade`; `GET /assinatura` ganha `periodicidade`, `diasRestantesTeste`, `planosDisponiveis` e `exibePrecoEBotao` (RN-ASS-09 a 11) | público / nutri |
+
+Coleções novas do `/sync`: `registrosForaDoPlano` (paciente envia só `CRIAR`), `metas` (nutri escreve online; paciente só lê), `registrosMeta` (paciente envia só `CRIAR`), `prescricoesSuplemento`, `orientacoes` e `documentos` (metadados), todas puxadas pelos perfis indicados no contrato. As entidades novas da nutri (metas, suplementos, orientações e documentos) são **escritas online e lidas offline** (C-09). A coleção `agua` continua aceita por pelo menos 6 meses (RN-MET-05). Novos eventos de push (RN-NOT-01): "nova orientação" (genérico).
+
+Ações que exigem online, além das já listadas: emitir ou anular documento, criar e ajustar metas, prescrever suplemento e orientação.
 
 ### O que cada perfil sincroniza
 

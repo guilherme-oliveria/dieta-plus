@@ -29,14 +29,14 @@ Um usuário pode ter os perfis `NUTRICIONISTA` e `PACIENTE` na mesma conta (deci
 
 ## Assinatura e plano (RN-ASS)
 
-- **RN-ASS-01** Quem assina é a `organizacao` (no MVP, a própria nutri). Planos ficam na tabela `plano` (preço, limite de pacientes, duração do teste). Mudar preço não exige deploy.
-- **RN-ASS-02** Plano `TESTE`: até 5 pacientes ativos, por 30 dias `[SUPOSIÇÃO S1]`. Ao expirar, status `EXPIRADA`: a nutri só lê.
+- **RN-ASS-01** Quem assina é a `organizacao` (no MVP, a própria nutri). Planos ficam na tabela `plano` (preço, limite de pacientes, duração do teste). Mudar preço não exige deploy. **1.4.0 (RN-ASS-09):** o plano ganha preço anual, flag à venda e limite nulo (sem limite).
+- **RN-ASS-02** Plano `TESTE`: até 5 pacientes ativos, por 30 dias `[SUPOSIÇÃO S1]`. Ao expirar, status `EXPIRADA`: a nutri só lê. **1.4.0:** o aviso do fim do teste segue RN-ASS-11.
 - **RN-ASS-03** **Limite de pacientes**: conta como ocupado todo vínculo em `CONVIDADO` ou `ATIVO`. Criar convite acima do limite é recusado com `LIMITE_PACIENTES_ATINGIDO` (o 6º no Teste, o 21º no Básico). Encerrar um vínculo libera a vaga.
 - **RN-ASS-04** Status da assinatura: `TESTE`, `ATIVA`, `EM_ATRASO`, `CANCELADA`, `EXPIRADA`. Em `EM_ATRASO` a nutri continua editando por 7 dias de carência `[SUPOSIÇÃO S2]`; depois disso, e em `CANCELADA` ou `EXPIRADA`, a nutri fica **só leitura** (`ASSINATURA_INATIVA` em qualquer escrita).
 - **RN-ASS-05** O paciente **nunca** é punido pela assinatura da nutri: continua vendo a última dieta publicada, recebendo lembretes e fazendo check-in.
-- **RN-ASS-06** O app não vende nada. A contratação acontece no checkout hospedado do gateway (link enviado por e-mail e, no pós-MVP, pelo site) `[SUPOSIÇÃO S4]`.
-- **RN-ASS-07** O status só muda por: webhook do gateway (validado pela assinatura/token do gateway e processado uma única vez por `evento_id`), job diário de expiração, ou ação do admin (com log).
-- **RN-ASS-08** Downgrade para um plano com limite menor que os pacientes ativos é permitido, mas novos convites ficam bloqueados até ficar abaixo do limite. Nenhum vínculo é encerrado automaticamente.
+- **RN-ASS-06** O app não vende nada. A contratação acontece no checkout hospedado do gateway (link enviado por e-mail e, no pós-MVP, pelo site) `[SUPOSIÇÃO S4]`. **1.4.0:** o checkout recebe `planoCodigo` e `periodicidade`; formas de pagamento PIX, cartão e boleto (RN-ASS-10).
+- **RN-ASS-07** O status só muda por: webhook do gateway (validado pela assinatura/token do gateway e processado uma única vez por `evento_id`), job diário de expiração, ou ação do admin (com log). **1.4.0:** a renovação anual segue o mesmo caminho (webhook e job do ciclo).
+- **RN-ASS-08** Downgrade para um plano com limite menor que os pacientes ativos é permitido, mas novos convites ficam bloqueados até ficar abaixo do limite. Nenhum vínculo é encerrado automaticamente. **1.4.0:** também vale na troca para plano menor (RN-ASS-10).
 
 ## Vínculo nutri–paciente (RN-VIN)
 
@@ -75,7 +75,7 @@ Um usuário pode ter os perfis `NUTRICIONISTA` e `PACIENTE` na mesma conta (deci
 - **RN-DIE-10** A porção de cada grupo (Pão 70 ou 150 kcal etc.) é escolhida **uma vez por dieta** e vale para todos os itens por grupo; cada item traz exatamente uma origem (alimento, grupo ou produto). Publicar congela as porções escolhidas junto com a dieta (RN-DIE-03).
 - **RN-DIE-11** Refeições `ALTERNATIVA` (ex.: lanche 2ª opção) mostram o próprio total e a diferença para a refeição que substituem, e **não** entram no total do dia.
 - **RN-DIE-12** Item "à vontade" não tem quantidade nem kcal; o rodapé ("Além das refeições acima…") é texto da nutri, congelado na publicação.
-- **RN-DIE-13** Total de micronutriente soma só os itens que informam o nutriente; os demais ficam listados em `incompleto`. Nunca vira zero por falta de dado (RN-CAL-04). Os valores por porção dos grupos são as médias da planilha da Nut. Luciana e são provisórios; o app e o PDF citam a fonte.
+- **RN-DIE-13** Total de micronutriente soma só os itens que informam o nutriente; os demais ficam listados em `incompleto`. Nunca vira zero por falta de dado (RN-CAL-04). Os valores por porção dos grupos são as médias da planilha da Nut. Luciana e são provisórios; o app e o PDF citam a fonte. 
 
 ## Substituição pelo paciente (RN-SUB)
 
@@ -85,9 +85,9 @@ Um usuário pode ter os perfis `NUTRICIONISTA` e `PACIENTE` na mesma conta (deci
 
 ## Rotina do paciente (RN-ROT)
 
-- **RN-ROT-01** Check-in por refeição e por dia: `FEITO`, `TROCADO` (com alimento) ou `PULADO`. Um check-in por refeição/dia; o último vale. Pode ser feito até 3 dias depois. Data futura é recusada, com tolerância de 1 dia à frente do fuso do perfil (aparelho em outro fuso).
+- **RN-ROT-01** Check-in por refeição e por dia: `FEITO`, `TROCADO` (com alimento) ou `PULADO`. Um check-in por refeição/dia; o último vale. Pode ser feito até 3 dias depois. Data futura é recusada, com tolerância de 1 dia à frente do fuso do perfil (aparelho em outro fuso). **1.4.0:** o check-in aceita `fomeAntes` e `sensacaoDepois` (1 a 5, opcionais, BE-73); o paciente pode desligar a pergunta no perfil (preferência do aparelho).
 - **RN-ROT-02** Check-ins são do paciente, mas a nutri do vínculo ativo os vê (painel de adesão). São só de inclusão: nunca geram conflito de sync.
-- **RN-ROT-03** Água: meta padrão = 35 ml × peso mais recente (kg); a nutri pode sobrescrever na dieta. Registros de água e peso em casa seguem a mesma regra de inclusão.
+- **RN-ROT-03** Água: meta padrão = 35 ml × peso mais recente (kg); a nutri pode sobrescrever na dieta. Registros de água e peso em casa seguem a mesma regra de inclusão. **1.4.0 (D-07, RN-MET-05):** a água passa a ser uma meta de hábito (`AGUA`) com o mesmo padrão de 35 ml × peso; o caminho antigo (`POST /eu/agua` e coleção `agua`) segue aceito por pelo menos 6 meses.
 - **RN-ROT-04** Lista de compras: gerada no aparelho a partir da dieta em uso para N dias (padrão 7), somando gramas por alimento de referência. Itens marcados ficam só no aparelho no MVP.
 - **RN-ROT-05** Lembretes de refeição são **locais** (agendados no aparelho a partir da dieta em uso) e funcionam sem internet. Respeitam horário de silêncio e cada tipo pode ser desligado.
 
@@ -131,13 +131,13 @@ Origem: plano das planilhas da nutri (`plano-melhorias-planilhas.md`). Substitue
 
 ## Agenda de consultas (RN-AGE)
 
-- **RN-AGE-01** A nutri agenda consultas (data, hora, duração, tipo: primeira, retorno, online) para pacientes vinculados.
-- **RN-AGE-02** Lembrete de consulta: push + e-mail 24 h antes, para paciente e nutri.
-- **RN-FIN-01** Financeiro da consulta (G-20): a nutri lança, por consulta, o **comparecimento** (pendente, compareceu, faltou), o **valor** e a **forma de pagamento** (dinheiro, Pix, cartão, convênio, outro) e se está **pago**. Marcar como pago exige valor, forma e comparecimento diferente de pendente. É dado só da nutri: fica em tabela própria, **fora do sync e nunca chega ao paciente**; só online. Consulta cancelada não recebe lançamento (422 `CONSULTA_CANCELADA`) e vínculo encerrado só lê. O resumo do período (`GET /eu/nutri/financeiro`) soma o recebido e o a receber (compareceu e ainda não pago) das consultas não canceladas, por forma de pagamento. O tipo de atendimento já é o tipo da consulta (RN-AGE-01).
+- **RN-AGE-01** A nutri agenda consultas (data, hora, duração, tipo: primeira, retorno, online) para pacientes vinculados. **1.4.0:** ganha `modalidade` (RN-AGE-04), tipo `AVALIACAO` e os status de RN-AGE-03; `ONLINE` como tipo continua aceito na entrada e vira RETORNO + ONLINE (C-02).
+- **RN-AGE-02** Lembrete de consulta: push + e-mail 24 h antes, para paciente e nutri. **1.4.0:** a antecedência vem da preferência da nutri (RN-AGE-05); há e-mail de confirmação ao agendar.
+- **RN-FIN-01** Financeiro da consulta (G-20): a nutri lança, por consulta, o **comparecimento** (pendente, compareceu, faltou), o **valor** e a **forma de pagamento** (dinheiro, Pix, cartão, convênio, outro) e se está **pago**. Marcar como pago exige valor, forma e comparecimento diferente de pendente. É dado só da nutri: fica em tabela própria, **fora do sync e nunca chega ao paciente**; só online. Consulta cancelada não recebe lançamento (422 `CONSULTA_CANCELADA`) e vínculo encerrado só lê. O resumo do período (`GET /eu/nutri/financeiro`) soma o recebido e o a receber (compareceu e ainda não pago) das consultas não canceladas, por forma de pagamento. O tipo de atendimento já é o tipo da consulta (RN-AGE-01). **1.4.0:** o comparecimento deixa de ser lançado à parte e passa a ser derivado do status da consulta (REALIZADA = compareceu, FALTA = faltou, demais = pendente), fonte única (C-01).
 
 ## Notificações (RN-NOT)
 
-- **RN-NOT-01** Push só para: nova dieta, questionário enviado/respondido, consulta amanhã, paciente sem check-in há 3 dias (para a nutri), assinatura vencendo/recusada (para a nutri). O resto é local no aparelho.
+- **RN-NOT-01** Push só para: nova dieta, questionário enviado/respondido, consulta amanhã, paciente sem check-in há 3 dias (para a nutri), assinatura vencendo/recusada (para a nutri). O resto é local no aparelho. **1.4.0 (C-10):** acrescenta o push "nova orientação" (RN-ORI-01) e o e-mail de confirmação de consulta (RN-AGE-04); texto sempre genérico (RN-NOT-02).
 - **RN-NOT-02** Push nunca leva dado clínico no texto (ex.: "Você tem uma nova dieta", nunca "Dieta de 2509 kcal").
 - **RN-NOT-03** Cada usuário liga/desliga cada tipo e define horário de silêncio (padrão 22:00–07:00).
 
@@ -148,6 +148,52 @@ Origem: plano das planilhas da nutri (`plano-melhorias-planilhas.md`). Substitue
 - **RN-LGPD-03** O paciente pode pedir exclusão da conta: os dados pessoais são anonimizados; o prontuário de cada nutri é mantido pelo prazo legal, desvinculado da identidade quando a lei permitir.
 - **RN-LGPD-04** Exclusão de prontuário pela nutri é lógica (soft delete) até confirmar a retenção exigida pelo CFN `[SUPOSIÇÃO S6]`.
 - **RN-LGPD-05** Admin da plataforma não acessa dado clínico pela API. Suporte que precise disso exige autorização registrada do titular.
+
+## Release 1.4.0 (BE-C9 e BE-C10)
+
+Regras novas da release 1.4.0. Contrato em [`contrato-fase-9.md`](contrato-fase-9.md). Os números são os definidos no BE-C9.
+
+### Saúde e restrições (RN-SAU, RN-DIE-14)
+
+- **RN-SAU-01** A ficha do paciente tem itens de saúde de quatro tipos: `ALERGIA`, `INTOLERANCIA`, `CONDICAO` e `MEDICAMENTO`, cada um com nome, gravidade opcional (`LEVE`, `MODERADA`, `GRAVE`) e observação. A lista inteira é gravada junto com a ficha (coluna JSON `restricoes_saude`, mesmo padrão do `cadastro_ampliado`) e substitui a anterior. É dado clínico da nutri: **nunca** sai na projeção do paciente (REST e sync) e entra na exportação e na auditoria.
+- **RN-SAU-02** Só `ALERGIA` e `INTOLERANCIA` ligam marcadores de alimento (`marcadores[]`, códigos de `MarcadorAlimento`); marcador em condição ou medicamento é `ITEM_INVALIDO`. A anamnese em texto livre (RN-ANA-01) continua separada, sem migração automática (C-03).
+- **RN-DIE-14** Ao salvar uma dieta (REST e sync) o servidor calcula `alertas[]` por item: para cada restrição `ALERGIA` ou `INTOLERANCIA` da ficha, um alerta por marcador em comum com o alimento ou produto, na ordem da ficha (vetores em `contrato/calculos/alertas-restricao.json`). Intolerância só avisa (`exigeConfirmacao=false`). Alergia exige `alergiaConfirmada=true` no item; **publicar** dieta com item de alergia sem confirmação é recusado com `ALERGIA_NAO_CONFIRMADA` (422). Dieta nova nasce com as restrições da ficha em `restricoes` (reuso da RN-MOD-03). O marcador é sugestão: a conduta é da nutri.
+
+### Agenda (RN-AGE-03 a 05)
+
+- **RN-AGE-03** Status da consulta: `AGENDADA`, `REALIZADA`, `FALTA` e `CANCELADA`. Transições: AGENDADA → REALIZADA, FALTA ou CANCELADA; REALIZADA e FALTA podem se corrigir entre si; CANCELADA é final. Outra transição: `TRANSICAO_STATUS_INVALIDA`. Para o paciente, REALIZADA e FALTA aparecem como `ENCERRADA` (D-03).
+- **RN-AGE-04** `modalidade` (`PRESENCIAL` ou `ONLINE`) é separada de `tipo` (`PRIMEIRA`, `RETORNO`, `AVALIACAO`). Consulta ONLINE aceita `linkOnline` (só `https`, até 300 caracteres; outro: `LINK_INVALIDO`). `orientacaoPaciente` (até 2.000) é visível ao paciente; `observacaoInterna` nunca sai na projeção do paciente. O `.ics` leva a modalidade no título genérico, sem link nem orientação.
+- **RN-AGE-05** Preferência de lembrete da nutri (`GET/PUT /eu/nutri/preferencias-agenda`): antecedência `DUAS_HORAS`, `UM_DIA` (padrão) ou `DOIS_DIAS` e lembrete extra 1 h antes. Vale para a nutri e para os pacientes dela (D-08); cada usuário ainda desliga o tipo (RN-NOT-03).
+
+### Diário (RN-ROT-06)
+
+- **RN-ROT-06** Registro "comi fora do plano": texto de até 280 caracteres, refeição opcional, data e horário. Só inclusão, sem conflito, mesmas janelas de data do check-in (RN-SYN-03). Entra na exportação e na auditoria. A adesão da nutri traz `humor` (médias da semana) e `foraDoPlano`.
+
+### Metas de hábito (RN-MET)
+
+- **RN-MET-01** Tipos: `AGUA`, `ATIVIDADE_MIN`, `PASSOS`, `SONO_HORAS`, `FRUTAS_VERDURAS`, `SIM_NAO` (alvo 1) e `CONTADOR` (nome e unidade livres). Cada meta tem alvo, frequência `DIARIA` ou `SEMANAL` (N vezes, 1 a 7) e início e fim opcionais. Meta inválida: `META_INVALIDA`.
+- **RN-MET-02** Registro de meta é só inclusão, sem conflito, com as mesmas janelas de data do check-in. A nutri escreve metas online; o paciente só lê metas e envia registros.
+- **RN-MET-03** Cumprimento (vetores em `contrato/calculos/metas.json`): a janela é inclusiva e cortada pelo início e fim da meta; registros do mesmo dia somam; o dia cumpre com soma ≥ alvo. DIARIA: previstos = dias da janela. SEMANAL: semanas de segunda a domingo; previstos = N por semana; cumpridos = min(dias cumpridos, N) por semana; a semana cumpre com N dias. `percentual` com uma casa, meio para cima. Sequência atual conta unidades (dias ou semanas) cumpridas seguidas até a última; a unidade ainda aberta (hoje, ou a semana corrente) não quebra a sequência.
+- **RN-MET-04** Modelos de metas são da nutri, isolados por nutri, e aplicáveis a mais de um paciente (`POST /pacientes/{id}/metas/de-modelo/{modeloId}` cria as metas do modelo).
+- **RN-MET-05** A água é uma meta: todo paciente tem a meta `AGUA`, com alvo padrão de 35 ml × peso mais recente (`alvoPadrao=true`) que a nutri pode ajustar. Precedência do alvo: o da meta, depois o da dieta, depois o padrão. Os registros antigos de `registro_agua` são migrados; `POST /eu/agua` e a coleção `agua` continuam aceitos por pelo menos 6 meses e são lidos como registro da meta de água.
+
+### Suplementos e orientações (RN-SUP, RN-ORI)
+
+- **RN-SUP-01** Prescrição de suplemento por produto da nutri ou texto livre, com dose, forma, frequência, horários, início e fim. O servidor guarda **cópia congelada** de nome e dose; o paciente não recebe o catálogo de produtos (C-08).
+- **RN-SUP-02** A prescrição vale de `inicio` até `fim`; `encerrar` fecha na data de hoje. Nome e produto não mudam depois de criada. O paciente continua vendo o que recebeu com a assinatura da nutri inativa (RN-ASS-05).
+- **RN-ORI-01** Orientação avulsa tem título e texto em Markdown restrito (negrito, itálico e listas); HTML é descartado e nunca guardado. A nutri mantém modelos reutilizáveis. Nova orientação dispara push genérico (RN-NOT-01 e 02). Arquivar a tira do app sem apagar.
+
+### Documentos (RN-DOC)
+
+- **RN-DOC-01** Modelos de documento (`ATESTADO` e `DECLARACAO_COMPARECIMENTO`) com campos `{{paciente}}`, `{{data}}`, `{{horario}}`, `{{nutri}}`, `{{crn}}`. Os dois modelos do sistema são somente leitura (`ACESSO_NEGADO` ao editar); a nutri copia para editar (como na RN-MOD-01).
+- **RN-DOC-02** O documento emitido é imutável: guarda o texto final e o PDF. Corrigir é emitir outro; anular exige motivo, vai para a auditoria e, se já anulado, responde `DOCUMENTO_JA_ANULADO`. A declaração pode partir de consulta `REALIZADA`, já preenchida. Sem assinatura digitalizada na 1.4.0 (D-05).
+- **RN-DOC-03** Cada documento tem um código de conferência impresso (aleatório, único). A rota pública `GET /api/v1/documentos/conferir/{codigo}` responde só tipo, emissor, CRN, data e situação, com limite de requisições, **sem nenhum dado do paciente** (C-06, D-04), e cada consulta fica na auditoria.
+
+### Planos (RN-ASS-09 a 11)
+
+- **RN-ASS-09** `plano` ganha `preco_anual` (anual = 10x o mensal, decidido na G-21), `a_venda` e `limite_pacientes` nulo (sem limite). `GET /api/v1/planos` (público, com limite de requisições) lista só os à venda. Valores entram pelo admin, nunca por changeset. Plano fora de venda ou sem preço anual pedido no checkout: `PLANO_INDISPONIVEL`.
+- **RN-ASS-10** Troca de plano com assinatura ativa: subir vale na hora, com cobrança cheia do plano novo e sem crédito proporcional (ajuste manual do admin); descer só no próximo vencimento (D-11), com a RN-ASS-08. Formas de pagamento: PIX, cartão e boleto (`billingType` `UNDEFINED` do Asaas, também no anual); no PIX e no boleto a renovação depende de a nutri pagar a cobrança nova, com aviso antes do vencimento. A chave `exibePrecoEBotao` por plataforma esconde preço e botão de assinar no app quando a loja exigir (D-09).
+- **RN-ASS-11** Aviso do fim do teste no painel e por e-mail 7 dias e 1 dia antes, pelo job diário (`diasRestantesTeste` em `GET /assinatura`).
 
 ## Sincronização offline (RN-SYN)
 
