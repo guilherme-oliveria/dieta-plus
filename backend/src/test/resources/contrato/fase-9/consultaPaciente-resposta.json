@@ -1,0 +1,12 @@
+{
+  "id": "019b0000-0000-7000-8000-000000000002",
+  "inicio": "2026-11-25T14:00:00Z",
+  "duracaoMin": 50,
+  "tipo": "RETORNO",
+  "modalidade": "ONLINE",
+  "lugar": "Consulta online",
+  "linkOnline": "https://meet.example.com/abc-defg",
+  "orientacaoPaciente": "Traga o diário alimentar.",
+  "status": "AGENDADA",
+  "versao": 1
+}

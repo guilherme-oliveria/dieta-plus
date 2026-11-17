@@ -1,0 +1,15 @@
+{
+  "itens": [
+    {
+      "id": "019b0000-0000-7000-8000-000000000005",
+      "pacienteId": "019b0000-0000-7000-8000-000000000006",
+      "tipo": "PASSOS",
+      "alvo": 8000.0,
+      "frequencia": "SEMANAL",
+      "vezesPorSemana": 5,
+      "versao": 1,
+      "criadoEm": "2026-11-20T12:00:00Z",
+      "atualizadoEm": "2026-11-20T12:00:00Z"
+    }
+  ]
+}

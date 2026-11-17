@@ -1,0 +1,14 @@
+{
+  "periodicidade": "ANUAL",
+  "diasRestantesTeste": 7,
+  "exibePrecoEBotao": true,
+  "planosDisponiveis": [
+    {
+      "codigo": "CONSULTORIO",
+      "nome": "Consultório",
+      "precoMensal": 79.9,
+      "precoAnual": 799.0,
+      "limitePacientes": 80
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "itens": [
+    {
+      "codigo": "CONSULTORIO",
+      "nome": "Consultório",
+      "precoMensal": 79.9,
+      "precoAnual": 799.0,
+      "limitePacientes": 80
+    },
+    {
+      "codigo": "PLUS",
+      "nome": "Plus",
+      "precoMensal": 179.9,
+      "precoAnual": 1799.0,
+      "limitePacientes": null
+    }
+  ]
+}
