@@ -202,3 +202,24 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
 - A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
 - A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.
+
+## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
+
+- Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
+- O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
+
+## MOB-87 · Paciente: próxima consulta (18/11/2026)
+
+Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
+
+- o título com o selo da modalidade;
+- "Hoje, 15:00", "Amanhã, 15:00" ou a data;
+- "Retorno · 50 min";
+- o local, quando presencial;
+- "Entrar na consulta" com a explicação, só quando a consulta é online e o link é `https`;
+- a "Orientação da nutri".
+
+O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
+
+- A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
+- O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.

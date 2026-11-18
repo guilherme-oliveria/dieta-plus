@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 072-documentos-sync-conferencia
+      author: dietamais
+      comment: "BE-79 (H-06, RN-DOC-03). Diário do sync da coleção DOCUMENTOS (metadados, nutri e paciente) e registro de cada conferência pública, sem dado do paciente."
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION documento_emitido_diario_sync() RETURNS trigger LANGUAGE plpgsql AS $$
+              BEGIN
+                PERFORM registrar_mudanca_sync('NUTRICIONISTA',NEW.nutricionista_id,'DOCUMENTOS',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                PERFORM registrar_mudanca_sync('PACIENTE',NEW.paciente_id,'DOCUMENTOS',NEW.id,NEW.nutricionista_id,NEW.paciente_id);
+                RETURN NEW;
+              END;
+              $$;
+        - sql:
+            sql: >-
+              CREATE TRIGGER documento_emitido_diario_sync AFTER INSERT OR UPDATE ON documento_emitido FOR EACH ROW EXECUTE FUNCTION documento_emitido_diario_sync();
+        # Documentos emitidos antes do trigger (BE-78 já na develop) entram no diário uma vez.
+        - sql:
+            sql: >-
+              UPDATE documento_emitido SET seq=nextval('seq_sync');
+        - createTable:
+            tableName: conferencia_documento
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: documento_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_conferencia_documento, references: documento_emitido(id), deleteCascade: true } }
+              - column: { name: encontrado, type: boolean, constraints: { nullable: false } }
+              - column: { name: ip, type: varchar(64) }
+              - column: { name: ocorrido_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - createIndex:
+            tableName: conferencia_documento
+            indexName: ix_conferencia_documento_documento
+            columns:
+              - column: { name: documento_id }

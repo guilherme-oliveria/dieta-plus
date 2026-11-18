@@ -145,4 +145,15 @@ class AgendaTest {
         val meia = consultaFalsa(paciente, hora(9, 30), 50)
         assertEquals(listOf(8, 11), linhasDoDia(listOf(meia), quarta, fuso, agora = hora(7)).filterIsInstance<LinhaDoDia.Livre>().map { it.hora })
     }
+
+    // MOB-87: visão do paciente
+    @Test fun consultaDoPacienteResolveLegadoLinkELocalSemObservacao() {
+        val legado = consultaFalsa(paciente, hora(14), tipo = TipoConsulta.ONLINE, lugar = "https://meet.exemplo.invalid/x").copy(observacaoInterna = "só a nutri")
+        val v = consultaDoPaciente(legado, fuso)
+        assertEquals(TipoConsulta.RETORNO, v.tipo); assertEquals(ModalidadeConsulta.ONLINE, v.modalidade); assertEquals("https://meet.exemplo.invalid/x", v.link); assertNull(v.lugar)
+        val presencial = consultaFalsa(paciente, hora(14), lugar = "Sala 2").copy(modalidade = ModalidadeConsulta.PRESENCIAL, linkOnline = "https://meet.exemplo.invalid/y", orientacaoPaciente = "  ")
+        val p = consultaDoPaciente(presencial, fuso)
+        assertNull(p.link); assertEquals("Sala 2", p.lugar); assertNull(p.orientacao)
+        assertNull(consultaDoPaciente(legado.copy(lugar = "http://inseguro.invalid"), fuso).link)
+    }
 }
