@@ -212,3 +212,12 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
+
+## MOB-93 · Paciente: suplementos e orientações (18/11/2026)
+
+Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba Dieta, por um cartão de atalho ("Suplementos · 3 em uso", "Orientações · 1 nova") que só aparece quando a nutri já prescreveu ou orientou algo. O push "nova orientação" abre a aba Dieta com as Orientações. Divergências:
+
+- O lembrete do suplemento toca todo dia nos horários prescritos: a frequência é texto livre ("3 vezes por semana") e o app não a interpreta. O paciente desliga por suplemento em "Lembrar no horário". O texto da notificação é genérico ("Hora do seu suplemento"), sem nome nem dose.
+- O selo "Nova" marca a orientação que o paciente ainda não abriu **neste aparelho**: a marca de lida não vai para o servidor.
+- As orientações anteriores abrem com "Ler" e fecham com "Recolher", em vez de abrir uma tela própria.
+- Na web, o paciente ainda não vê Suplementos e Orientações: o backend só entrega essas coleções pelo `/sync`, que a web não usa. Precisa de `GET /eu/suplementos` e `GET /eu/orientacoes` (fica para uma tarefa do backend).

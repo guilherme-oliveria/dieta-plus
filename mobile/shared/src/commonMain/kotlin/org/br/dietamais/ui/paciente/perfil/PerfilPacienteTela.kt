@@ -93,6 +93,7 @@ private fun Interruptor(rotulo: String, marcado: Boolean, aoMudar: (Boolean) -> 
 private fun rotuloTipo(t: TipoNotificacao): StringResource = when (t) {
     TipoNotificacao.NOVA_DIETA -> Res.string.perfil_tipo_nova_dieta
     TipoNotificacao.QUESTIONARIO_ENVIADO -> Res.string.perfil_tipo_questionario_enviado
+    TipoNotificacao.NOVA_ORIENTACAO -> Res.string.perfil_tipo_nova_orientacao
     else -> Res.string.perfil_tipo_consulta_amanha
 }
 
