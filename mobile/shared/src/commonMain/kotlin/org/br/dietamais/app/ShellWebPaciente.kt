@@ -101,7 +101,10 @@ fun ShellWebPaciente(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (and
                 androidx.compose.runtime.LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoSair() }
                 PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
                     perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink),
-                    extras = { PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
+                    extras = {
+                    // MOB-95: documentos emitidos pela nutri
+                    org.br.dietamais.ui.paciente.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel>(viewModelStoreOwner = dono), koinInject())
+                    PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
             })
     }
 }

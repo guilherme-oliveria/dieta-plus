@@ -10,6 +10,7 @@ class CaminhoPdfTest {
     @Test fun dietaEAvaliacaoMantemOCaminho() {
         assertEquals("dietas/$id/pdf", caminhoPdf(RecursoPdf.DIETA, id))
         assertEquals("avaliacoes/$id/pdf", caminhoPdf(RecursoPdf.AVALIACAO, id))
+        assertEquals("documentos/$id/pdf", caminhoPdf(RecursoPdf.DOCUMENTO, id))
     }
 
     @Test fun listaUsaOTamanhoPedido() {

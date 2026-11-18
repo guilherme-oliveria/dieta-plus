@@ -4,7 +4,7 @@ import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.*
 import kotlin.uuid.Uuid
 
-enum class RecursoPdf { DIETA, AVALIACAO, LISTA }
+enum class RecursoPdf { DIETA, AVALIACAO, LISTA, DOCUMENTO }
 
 /** MOB-73: versões do PDF da lista de substituição (valores do parâmetro `tamanho`, BE-50b). */
 enum class TamanhoListaPdf { PEQUENA, MEDIA, GRANDE, CARBOIDRATOS }
@@ -30,4 +30,6 @@ internal fun caminhoPdf(recurso: RecursoPdf, id: Uuid, tamanho: TamanhoListaPdf 
     RecursoPdf.DIETA -> "dietas/$id/pdf"
     RecursoPdf.AVALIACAO -> "avaliacoes/$id/pdf"
     RecursoPdf.LISTA -> "dietas/$id/pdf-lista?tamanho=${tamanho.name}"
+    // MOB-94/95: o PDF gravado na emissão (nutri: `documentos/{id}/pdf`; paciente: `eu/documentos/{id}/pdf`, BE-79)
+    RecursoPdf.DOCUMENTO -> "documentos/$id/pdf"
 }

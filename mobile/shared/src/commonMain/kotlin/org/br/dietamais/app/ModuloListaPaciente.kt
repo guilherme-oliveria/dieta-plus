@@ -88,6 +88,8 @@ fun moduloLembretes(notificacao: org.br.dietamais.plataforma.NotificacaoLocal?) 
     single<org.br.dietamais.data.repositorio.PortaVinculosLocais> { org.br.dietamais.data.repositorio.VinculosLocaisRepositorio(get()) }
     single<org.br.dietamais.data.repositorio.PortaCalendario> { org.br.dietamais.data.repositorio.CalendarioRepositorio(get()) }
     viewModel { org.br.dietamais.ui.paciente.perfil.PerfilPacienteViewModel(get(), get(), get()) }
+    single<org.br.dietamais.data.repositorio.PortaDocumentosPaciente> { org.br.dietamais.data.repositorio.DocumentosPacienteRepositorio(get()) }
+    viewModel { org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel(get()) }
     single<org.br.dietamais.data.repositorio.PortaCompras> { org.br.dietamais.data.repositorio.ComprasRepositorio(get()) }
     viewModel { org.br.dietamais.ui.paciente.compras.ComprasViewModel(get(), get(), get(), { getString(Res.string.compras_titulo_texto) }) }
     if (notificacao != null) {

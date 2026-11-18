@@ -46,4 +46,6 @@ fun moduloWebPaciente(ambiente: AmbienteWeb) = module {
     viewModel { EvolucaoViewModel(get(), get<PortaRotina>()) }
     viewModel { ComprasViewModel(get(), get(), get(), { getString(Res.string.compras_titulo_texto) }) }
     viewModel { PerfilPacienteViewModel(get(), get(), get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaDocumentosPaciente> { org.br.dietamais.data.online.DocumentosPacienteOnline(get()) }
+    viewModel { org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel(get(), conectividade = online) }
 }

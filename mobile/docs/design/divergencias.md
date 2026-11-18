@@ -212,3 +212,10 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
+
+## MOB-95 · Paciente: documentos (18/11/2026)
+
+Artboard: `P-Documentos`. Os documentos aparecem num cartão "Documentos" no Perfil, que só existe quando a nutri já emitiu algum. A lista vem do banco local (coleção `documentos` do sync) no app e de `GET /eu/documentos` na web; "Abrir PDF" usa o link assinado e fica desabilitado sem internet. Divergências:
+
+- A linha não mostra o nome da nutri ("17/11/2026 · Nut. Marina" no artboard): os metadados do documento do paciente (BE-79) não trazem quem emitiu.
+- O documento anulado mostra só o selo "Anulado", sem o botão do PDF.
