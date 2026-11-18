@@ -122,7 +122,11 @@ export async function conferirAcessibilidade(page: Page, tela: string) {
   await page.waitForTimeout(1200);
   const { violations } = await new AxeBuilder({ page }).analyze();
   const nossas = violations.filter((v) => !DO_COMPOSE.has(v.id));
-  expect(nossas.map((v) => `${v.id} (${v.nodes.length}): ${v.help}`), `axe em "${tela}"`).toEqual([]);
+  // O nó de cada violação vai na mensagem: sem ele, o CI só diz a regra e não qual elemento falhou.
+  expect(
+    nossas.map((v) => `${v.id} (${v.nodes.length}): ${v.help} → ${v.nodes.map((n) => `${n.target.join(" ")} ${n.html.slice(0, 160)}`).join(" | ")}`),
+    `axe em "${tela}"`,
+  ).toEqual([]);
   // Toda tela tem ao menos um título (heading) e nenhum botão, campo ou aba fica sem nome acessível.
   const resumo = await page.evaluate(() => {
     const semNome: string[] = [];
