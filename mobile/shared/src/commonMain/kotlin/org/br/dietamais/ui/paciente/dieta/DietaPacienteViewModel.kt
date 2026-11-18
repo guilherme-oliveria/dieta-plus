@@ -14,6 +14,10 @@ import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.StatusCheckin
 import org.br.dietamais.data.remoto.dto.TrocaCheckin
 import org.br.dietamais.data.repositorio.*
+import org.br.dietamais.dominio.metas.aguaGravadaMl
+import org.br.dietamais.dominio.metas.alvoAguaMl
+import org.br.dietamais.dominio.metas.metaAguaAtual
+import org.br.dietamais.dominio.metas.progressoMeta
 import org.br.dietamais.dominio.rotina.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -72,14 +76,17 @@ class DietaPacienteViewModel(private val repositorio: PortaDietaPaciente, privat
         val p = pendente?.takeIf { it.dia == dia && it.dietaId == dieta?.dietaId }
         val doDia = if (p == null) gravados else gravados + (p.refeicaoId to p.status)
         val peso = registros.pesos.maxByOrNull { it.registradoEm }?.pesoKg
-        val aguaGravada = registros.agua.filter { it.registradoEm.toLocalDateTime(fuso).date == dia }.sumOf { it.ml }
+        // MOB-99 (RN-MET-05): a água vem da meta de água quando ela existe, com sequência e semana como as outras metas
+        val metaAgua = metaAguaAtual(registros.metas, hoje)
+        val aguaGravada = aguaGravadaMl(metaAgua, registros.registrosMeta, registros.agua, registros.aguaNaFila, dia, fuso)
         val aguaDoDia = totalAguaMl(aguaGravada, aguaPendente.map { it.first }.filter { it.registradoEm.toLocalDateTime(fuso).date == dia })
         val mudou = dieta?.id != e.dieta?.id
         val grupos = dieta?.let { gruposListaPaciente(it.listaSubstituicao, it.refeicoes) }.orEmpty()
         e.copy(carregado = true, dieta = dieta, refeicoes = dieta?.let { refeicoesOrdenadas(it.refeicoes) }.orEmpty(),
             proxima = if (dia == hoje) dieta?.let { proximaRefeicao(it.refeicoes.filter { r -> r.id !in doDia }, agora.time) } else null,
             alternativas = if (porNutri.size > 1) porNutri else emptyList(), versaoSelecao = dados.emUso?.versao ?: 0,
-            hoje = hoje, dia = dia, dias = dias, checkins = doDia, podeDesfazer = pendente != null, podeDesfazerAgua = aguaPendente.isNotEmpty(), aguaMl = aguaDoDia, metaAguaMl = metaAguaMl(peso),
+            hoje = hoje, dia = dia, dias = dias, checkins = doDia, podeDesfazer = pendente != null, podeDesfazerAgua = aguaPendente.isNotEmpty(), aguaMl = aguaDoDia, metaAguaMl = alvoAguaMl(metaAgua, peso),
+            progressoAgua = metaAgua?.let { progressoMeta(it, registros.registrosMeta, hoje) },
             gruposLista = grupos, buscaLista = if (mudou) "" else e.buscaLista,
             grupoListaFiltro = e.grupoListaFiltro.takeIf { !mudou && grupos.any { g -> g.id == it } },
             grupoListaAberto = if (mudou) grupos.firstOrNull()?.id else e.grupoListaAberto.takeIf { id -> grupos.any { it.id == id } },
