@@ -49,8 +49,13 @@ class ConsultaRepositorio(private val api: ApiDieta, private val banco: BancoDie
         val id = requisicao.id ?: novoIdLocal()
         val pedido = requisicao.copy(id = id)
         val agoraLocal = agora()
-        val otimista = ConsultaResposta(id, pedido.pacienteId, pedido.pacienteId, pedido.inicio, pedido.duracaoMin, pedido.tipo, pedido.lugar?.takeIf { it.isNotEmpty() },
-            StatusConsulta.AGENDADA, 1, agoraLocal, agoraLocal)
+        // C-02: o tipo legado ONLINE vira Retorno + Online, como o servidor grava
+        val legadoOnline = pedido.tipo == TipoConsulta.ONLINE
+        val modalidade = pedido.modalidade ?: if (legadoOnline) ModalidadeConsulta.ONLINE else ModalidadeConsulta.PRESENCIAL
+        val otimista = ConsultaResposta(id, pedido.pacienteId, pedido.pacienteId, pedido.inicio, pedido.duracaoMin, if (legadoOnline) TipoConsulta.RETORNO else pedido.tipo,
+            pedido.lugar?.takeIf { it.isNotEmpty() }, StatusConsulta.AGENDADA, 1, agoraLocal, agoraLocal, modalidade,
+            pedido.linkOnline?.takeIf { it.isNotEmpty() && modalidade == ModalidadeConsulta.ONLINE }, pedido.orientacaoPaciente?.takeIf { it.isNotEmpty() },
+            pedido.observacaoInterna?.takeIf { it.isNotEmpty() })
         escrita.criar("consultas", id, JsonContrato.encodeToJsonElement(pedido).jsonObject, JsonContrato.encodeToString(otimista))
         return otimista
     }
@@ -62,7 +67,11 @@ class ConsultaRepositorio(private val api: ApiDieta, private val banco: BancoDie
             ?.let { JsonContrato.decodeFromString<ConsultaResposta>(it) } ?: throw ErroApi("RECURSO_NAO_ENCONTRADO", null, emptyList(), 404, null, null)
         val nova = atual.copy(inicio = requisicao.inicio ?: atual.inicio, duracaoMin = requisicao.duracaoMin ?: atual.duracaoMin, tipo = requisicao.tipo ?: atual.tipo,
             lugar = if (requisicao.lugar == null) atual.lugar else requisicao.lugar.ifEmpty { null }, status = requisicao.status ?: atual.status,
-            versao = versao + 1, atualizadoEm = agora())
+            versao = versao + 1, atualizadoEm = agora(), modalidade = requisicao.modalidade ?: atual.modalidade,
+            linkOnline = (if (requisicao.linkOnline == null) atual.linkOnline else requisicao.linkOnline.ifEmpty { null })
+                .takeIf { (requisicao.modalidade ?: atual.modalidade) == ModalidadeConsulta.ONLINE },
+            orientacaoPaciente = if (requisicao.orientacaoPaciente == null) atual.orientacaoPaciente else requisicao.orientacaoPaciente.ifEmpty { null },
+            observacaoInterna = if (requisicao.observacaoInterna == null) atual.observacaoInterna else requisicao.observacaoInterna.ifEmpty { null })
         escrita.atualizar("consultas", id, versao, JsonContrato.encodeToJsonElement(requisicao).jsonObject, JsonContrato.encodeToString(nova))
         return nova
     }

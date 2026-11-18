@@ -75,6 +75,39 @@ class AgendaTest {
     @Test fun remarcarPreencheOFormularioNoFusoLocal() {
         val c = consultaFalsa(paciente, Instant.parse("2026-10-29T17:30:00Z"), 45, TipoConsulta.ONLINE, lugar = "https://meet.exemplo.invalid/x", versao = 3)
         val f = formularioDe(c, fuso)
-        assertEquals(FormularioConsulta(c.id, 3, paciente, "29/10/2026", "14:30", "45", TipoConsulta.ONLINE, "https://meet.exemplo.invalid/x"), f)
+        // C-02 (MOB-84): o tipo legado ONLINE abre como Retorno + Online, com o link antigo que estava em `lugar`
+        assertEquals(FormularioConsulta(c.id, 3, paciente, "29/10/2026", "14:30", "45", TipoConsulta.RETORNO, "https://meet.exemplo.invalid/x",
+            modalidade = ModalidadeConsulta.ONLINE, link = "https://meet.exemplo.invalid/x"), f)
+    }
+
+    @Test fun remarcarTrazModalidadeLinkETextosDaConsulta() {
+        val c = consultaFalsa(paciente, Instant.parse("2026-10-29T17:30:00Z"), 50, TipoConsulta.AVALIACAO).copy(modalidade = ModalidadeConsulta.ONLINE,
+            linkOnline = "https://meet.exemplo.invalid/y", orientacaoPaciente = "Venha em jejum", observacaoInterna = "Revisar adesão")
+        val f = formularioDe(c, fuso)
+        assertEquals(TipoConsulta.AVALIACAO, f.tipo); assertEquals(ModalidadeConsulta.ONLINE, f.modalidade); assertEquals("https://meet.exemplo.invalid/y", f.link)
+        assertEquals("Venha em jejum", f.orientacao); assertEquals("Revisar adesão", f.observacao)
+        assertEquals(ModalidadeConsulta.PRESENCIAL, formularioDe(consultaFalsa(paciente, c.inicio), fuso).modalidade)
+    }
+
+    @Test fun linkSoHttpsComHostEAte300Caracteres() {
+        assertTrue(linkValido("https://meet.google.com/abc-defg-hij")); assertTrue(linkValido(" https://zoom.us/j/1 "))
+        assertFalse(linkValido("http://meet.google.com/abc")); assertFalse(linkValido("meet.google.com/abc")); assertFalse(linkValido("https://"))
+        assertFalse(linkValido("https://exemplo.invalid/a b")); assertFalse(linkValido("https://exemplo.invalid/" + "a".repeat(300)))
+        val base = FormularioConsulta(pacienteId = paciente, data = "29/10/2026", hora = "14:30")
+        assertEquals(setOf(ErroConsulta.LINK), validarFormulario(base.copy(modalidade = ModalidadeConsulta.ONLINE, link = "http://x.invalid"), fuso, agoraFalso).erros)
+        assertTrue(validarFormulario(base.copy(modalidade = ModalidadeConsulta.ONLINE), fuso, agoraFalso).erros.isEmpty()) // link é opcional
+        assertTrue(validarFormulario(base.copy(link = "http://x.invalid"), fuso, agoraFalso).erros.isEmpty()) // presencial ignora o link
+    }
+
+    @Test fun statusRealizadaEFaltaSeguemAsTransicoes() {
+        val agendada = consultaFalsa(paciente, agoraFalso)
+        assertTrue(podeMarcar(agendada, StatusConsulta.REALIZADA)); assertTrue(podeMarcar(agendada, StatusConsulta.FALTA))
+        assertTrue(podeMarcar(agendada.copy(status = StatusConsulta.REALIZADA), StatusConsulta.FALTA))
+        assertFalse(podeMarcar(agendada.copy(status = StatusConsulta.REALIZADA), StatusConsulta.REALIZADA))
+        assertTrue(podeMarcar(agendada.copy(status = StatusConsulta.FALTA), StatusConsulta.REALIZADA))
+        assertFalse(podeMarcar(agendada.copy(status = StatusConsulta.CANCELADA), StatusConsulta.REALIZADA))
+        assertFalse(podeMarcar(agendada, StatusConsulta.CANCELADA))
+        assertEquals(ComparecimentoConsulta.COMPARECEU, comparecimentoDoStatus(StatusConsulta.REALIZADA))
+        assertEquals(ComparecimentoConsulta.FALTOU, comparecimentoDoStatus(StatusConsulta.FALTA)); assertNull(comparecimentoDoStatus(StatusConsulta.AGENDADA))
     }
 }
