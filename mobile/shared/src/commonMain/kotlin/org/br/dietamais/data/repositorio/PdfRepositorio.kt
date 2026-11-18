@@ -4,7 +4,7 @@ import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.*
 import kotlin.uuid.Uuid
 
-/** `DIETA_COM_SUPLEMENTOS`: PDF da dieta com o bloco dos suplementos em uso (BE-77, MOB-92; só a nutri). */
+/** `DIETA_COM_SUPLEMENTOS`: PDF da dieta com o bloco dos suplementos em uso (BE-77, MOB-92; só a nutri). `DOCUMENTO`: atestado ou declaração (MOB-94). */
 enum class RecursoPdf { DIETA, DIETA_COM_SUPLEMENTOS, AVALIACAO, LISTA, DOCUMENTO }
 
 /** MOB-73: versões do PDF da lista de substituição (valores do parâmetro `tamanho`, BE-50b). */
