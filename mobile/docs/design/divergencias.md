@@ -215,6 +215,13 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
 - Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
 - Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
+## MOB-88 · Fome, sensação e fora do plano (18/11/2026)
+
+- Artboards `P-Refeicao-Humor`, `P-Fora-Plano` e `P-Perfil-Preferencias` (DES-18). As duas folhas usam `AlertDialog` (centralizado), não folha de baixo: é o padrão de diálogo do app hoje e funciona igual nos 3 tamanhos.
+- A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
+- O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
+- Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
+
 ## MOB-89 · Humor e fora do plano na adesão (18/11/2026)
 
 - Artboard `A-Adesao-Humor` (DES-18). O app ainda não tem a aba "Adesão" do artboard: o cartão "Adesão · últimos 7 dias" entra no Resumo da ficha, abaixo da última avaliação. Uma aba própria fica para quando houver mais conteúdo de adesão (metas da MOB-91).
