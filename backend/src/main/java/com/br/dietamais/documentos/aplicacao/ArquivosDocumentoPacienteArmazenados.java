@@ -20,7 +20,9 @@ public class ArquivosDocumentoPacienteArmazenados implements ArquivosDocumentoPa
 		this.documentos=documentos;this.armazenamento=armazenamento;this.usuario=usuario;this.auditoria=auditoria;
 	}
 	@Override public List<ArquivoDocumento> doPaciente(UUID paciente){
-		var organizacao=ContextoSegundoPlano.atual().map(ContextoUsuario::organizacaoId).orElseGet(()->usuario.obter().organizacaoId());
+		// em segundo plano (exportação) o contexto do paciente não tem organização: fica nula, sem cair no usuário da requisição, que não existe
+		var fundo=ContextoSegundoPlano.atual();
+		UUID organizacao=fundo.isPresent()?fundo.get().organizacaoId():usuario.obter().organizacaoId();
 		var arquivos=new ArrayList<ArquivoDocumento>();
 		for(var m:documentos.metadadosDoPaciente(paciente)){
 			if(m.pdfChave()==null)continue;
