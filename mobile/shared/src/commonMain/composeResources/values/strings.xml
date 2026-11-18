@@ -1916,4 +1916,13 @@
     <string name="pacmeta_letra_sex">S</string>
     <string name="pacmeta_letra_sab">S</string>
     <string name="pacmeta_letra_dom">D</string>
+    <string name="lembrete_meta_titulo">Dieta+</string>
+    <string name="lembrete_meta_corpo">Hora de registrar sua meta. Toque para ver.</string>
+    <string name="pacmeta_lembrete">Lembrete neste aparelho</string>
+    <string name="pacmeta_lembrete_e">%1$s e %2$s</string>
+    <string name="pacmeta_lembrete_mudar">Mudar horários</string>
+    <string name="pacmeta_lembrete_rotulo">Horários (até %1$d, ex.: 9:00, 13:00)</string>
+    <string name="pacmeta_lembrete_invalido">Use de 1 a %1$d horários, como 9:00, 13:00.</string>
+    <string name="pacmeta_lembrete_salvar">Salvar horários</string>
+    <string name="pacmeta_lembrete_silencio">Os lembretes não tocam no seu horário de silêncio.</string>
 </resources>

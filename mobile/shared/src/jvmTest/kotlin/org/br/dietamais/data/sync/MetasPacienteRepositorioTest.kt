@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.br.dietamais.data.local.BancoDieta
 import org.br.dietamais.data.remoto.JsonContrato
 import org.br.dietamais.data.remoto.dto.*
@@ -45,5 +46,18 @@ class MetasPacienteRepositorioTest {
         assertFailsWith<IllegalArgumentException> { repo.registrar(Uuid.random(), LocalDate(2026, 11, 17), 100_001.0, agora) }
         assertTrue(FilaMutacoes(banco).pendentes().isEmpty())
         assertTrue(repo.observar().first().registros.isEmpty())
+    }
+
+    // ---- MOB-90b
+    @Test fun lembreteDaMetaFicaSoNoAparelhoEForaDaFila() = comBanco { banco ->
+        val repo = MetasPacienteRepositorio(banco)
+        val meta = Uuid.random(); val outra = Uuid.random()
+        assertTrue(repo.observarLembretes().first().isEmpty())
+        repo.definirLembrete(meta, listOf(LocalTime(17, 0), LocalTime(9, 0), LocalTime(9, 0)))
+        repo.definirLembrete(outra, listOf(LocalTime(20, 30)))
+        assertEquals(mapOf(meta to listOf(LocalTime(9, 0), LocalTime(17, 0)), outra to listOf(LocalTime(20, 30))), repo.observarLembretes().first())
+        repo.definirLembrete(meta, emptyList())
+        assertEquals(setOf(outra), repo.observarLembretes().first().keys)
+        assertTrue(FilaMutacoes(banco).pendentes().isEmpty())
     }
 }

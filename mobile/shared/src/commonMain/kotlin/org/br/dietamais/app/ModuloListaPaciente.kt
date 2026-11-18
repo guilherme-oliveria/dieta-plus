@@ -107,8 +107,9 @@ fun moduloLembretes(notificacao: org.br.dietamais.plataforma.NotificacaoLocal?) 
                 val modelo = getString(Res.string.lembrete_corpo)
                 org.br.dietamais.dominio.rotina.TextosLembrete(getString(Res.string.lembrete_titulo), { nome: String -> modelo.replace("%1\$s", nome) },
                     org.br.dietamais.dominio.rotina.RotulosAcoes(getString(Res.string.comi), getString(Res.string.troquei), getString(Res.string.pulei)),
-                    getString(Res.string.lembrete_suplemento_titulo), getString(Res.string.lembrete_suplemento_corpo))
-            }, prescricoes = getOrNull())
+                    getString(Res.string.lembrete_suplemento_titulo), getString(Res.string.lembrete_suplemento_corpo),
+                    getString(Res.string.lembrete_meta_titulo), getString(Res.string.lembrete_meta_corpo))
+            }, prescricoes = getOrNull(), metas = getOrNull())
         }
     }
 }

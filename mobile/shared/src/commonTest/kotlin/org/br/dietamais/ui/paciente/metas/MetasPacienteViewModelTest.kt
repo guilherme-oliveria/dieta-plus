@@ -4,6 +4,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.repositorio.DadosMetasPaciente
@@ -31,6 +32,12 @@ class MetasPacienteViewModelTest {
         val recusas = MutableSharedFlow<Unit>(extraBufferCapacity = 4)
         override val falhas: Flow<Unit> = recusas
         override fun observar() = dados
+        val lembretes = MutableStateFlow<Map<Uuid, List<LocalTime>>>(emptyMap())
+        override fun observarLembretes() = lembretes
+        override fun definirLembrete(metaId: Uuid, horarios: List<LocalTime>) {
+            if (falha) throw IllegalStateException("falha simulada")
+            lembretes.value = if (horarios.isEmpty()) lembretes.value - metaId else lembretes.value + (metaId to horarios)
+        }
         override fun registrar(metaId: Uuid, data: LocalDate, valor: Double, agora: Instant) {
             if (falha) throw IllegalStateException("falha simulada")
             val r = RegistroMetaResposta(Uuid.random(), metaId, data, valor, agora)
@@ -115,5 +122,34 @@ class MetasPacienteViewModelTest {
     @Test fun lerValorAceitaVirgulaEPonto() {
         assertEquals(1.5, lerValorMeta("1,5")); assertEquals(1.5, lerValorMeta("1.5"))
         assertNull(lerValorMeta("0")); assertNull(lerValorMeta("")); assertNull(lerValorMeta("100001"))
+    }
+
+    // ---- MOB-90b
+    @Test fun ligarLembreteUsaOsHorariosDoTipoEEditarValida() = runTest {
+        val caminhada = meta(TipoMeta.ATIVIDADE_MIN)
+        val porta = Porta(DadosMetasPaciente(listOf(caminhada)))
+        val vm = criar(porta)
+        vm.alternarLembrete(caminhada.id, true)
+        assertEquals(listOf(LocalTime(20, 0)), vm.estado.value.lembretes[caminhada.id])
+        vm.editarHorarios(caminhada.id)
+        assertEquals("20:00", vm.estado.value.textoHorarios)
+        vm.mudarTextoHorarios("7h, 25:00"); vm.salvarHorarios()
+        assertTrue(vm.estado.value.erroHorarios); assertEquals(listOf(LocalTime(20, 0)), porta.lembretes.value[caminhada.id])
+        vm.mudarTextoHorarios("18:30, 7h"); vm.salvarHorarios()
+        assertNull(vm.estado.value.editandoHorarios)
+        assertEquals(listOf(LocalTime(7, 0), LocalTime(18, 30)), vm.estado.value.lembretes[caminhada.id])
+        vm.alternarLembrete(caminhada.id, false)
+        assertNull(vm.estado.value.lembretes[caminhada.id])
+        // meta que não está na semana não liga
+        vm.alternarLembrete(Uuid.random(), true)
+        assertTrue(porta.lembretes.value.isEmpty())
+    }
+
+    @Test fun falhaAoGuardarOLembreteMostraErro() = runTest {
+        val caminhada = meta(TipoMeta.ATIVIDADE_MIN)
+        val porta = Porta(DadosMetasPaciente(listOf(caminhada))).apply { falha = true }
+        val vm = criar(porta)
+        vm.alternarLembrete(caminhada.id, true)
+        assertEquals(MensagemMetasPaciente.ERRO, vm.estado.value.erro)
     }
 }

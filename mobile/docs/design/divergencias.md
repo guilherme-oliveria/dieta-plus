@@ -295,3 +295,13 @@ Artboards: `P-Hoje-Metas` e `P-Metas-Semana`. "Metas de hoje" fica no Hoje logo 
 - Botão rápido por tipo: "+ 10 min" (atividade), "+ 1000 passos", "+ 1 h" (sono), "+ 1 porção" (frutas e verduras) e "+ 1" no contador. Metas do tipo "outra" só têm "Outro valor".
 - Só a meta sim ou não tem "Cumpri hoje"; as outras não têm desfazer (o registro é só inclusão, RN-MET-02). O desfazer do artboard fica na água (MOB-99).
 - Na web as metas não aparecem: a web do paciente é online-only e ainda não há leitura de metas fora do sync.
+
+## MOB-90b · Lembrete local por meta (18/11/2026)
+
+Artboard: `P-Metas-Semana` ("Lembrete neste aparelho"). Divergências:
+
+- O artboard não mostra como escolher os horários. Ao ligar, a meta recebe horários sugeridos (água: 9:00, 13:00 e 17:00; as outras: 20:00), e "Mudar horários" abre um campo de texto ("9:00, 13:00"), com até 4 horários.
+- O aviso do rodapé não traz as horas do silêncio ("22:00 às 7:00"): diz só que os lembretes não tocam no horário de silêncio, que o paciente ajusta em Notificações.
+- Além do silêncio, o lembrete não toca no dia em que a meta diária já foi cumprida, nem no resto da semana em que a semanal já está completa.
+- O texto da notificação é genérico ("Hora de registrar sua meta"), sem o nome nem o valor da meta, e a notificação não tem os botões de refeição.
+
