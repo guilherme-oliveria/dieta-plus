@@ -314,3 +314,18 @@ Artboard: `P-Metas-Semana` ("Lembrete neste aparelho"). Divergências:
 - Além do silêncio, o lembrete não toca no dia em que a meta diária já foi cumprida, nem no resto da semana em que a semanal já está completa.
 - O texto da notificação é genérico ("Hora de registrar sua meta"), sem o nome nem o valor da meta, e a notificação não tem os botões de refeição.
 
+## MOB-96 · Assinatura: comparar planos (18/11/2026)
+
+Artboards: `A-Assinatura-Planos`, `A-Assinatura-Ativa`, `A-Assinatura-Sem-Preco` e `A-Painel-Fim-Teste` (DES-22). O cartão "Minha assinatura" da Conta mostra:
+
+- "Teste grátis · Faltam N dias" (de `diasRestantesTeste`), ou plano e periodicidade com a próxima cobrança;
+- o uso das vagas com barra, que fica laranja a partir de 90% com "Perto do limite";
+- a alternância Mensal/Anual, com "N meses grátis" calculado dos preços que o servidor mandou;
+- um cartão por plano (preço, equivalente mensal do anual, limite ou "Pacientes sem limite") e um só botão: "Assinar X mensal/anual", "Mudar para X" ou "Manter o plano X" quando há troca agendada.
+
+Nenhum preço fica no app. Sem a chave `exibePrecoEBotao` (D-09), aparecem só os nomes e limites e "A assinatura é gerenciada fora deste aplicativo", sem `if (plataforma)`. O painel avisa nos últimos 7 dias do teste, com "Ver planos" levando à Conta; o aviso `/assinatura` do servidor (BE-82) também abre a Conta. Divergências:
+
+- A próxima cobrança não traz a forma de pagamento ("· PIX" no artboard): o `GET /assinatura` não informa.
+- Sem a chave, os planos aparecem um por linha ("Básico: até 20 pacientes") em vez da frase corrida do artboard, que não fica boa com quantidade variável de planos.
+- No anual, plano sem preço anual aparece como "Só no plano mensal" e não pode ser escolhido para assinar; o artboard não mostra esse caso.
+- O aviso do painel conta dias de calendário no fuso do aparelho (0 = "termina hoje", 1 = "amanhã").

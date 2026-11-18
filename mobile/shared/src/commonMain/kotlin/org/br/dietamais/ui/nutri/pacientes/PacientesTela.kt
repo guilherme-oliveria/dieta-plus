@@ -48,7 +48,7 @@ fun PacientesTela(estado: EstadoPacientes, aoBusca: (String) -> Unit, aoFiltro: 
             item(key = "cabecalho") {
                 Column(Modifier.padding(top = Dimens.margemCompacta), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
                     Text(stringResource(Res.string.aba_pacientes), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-                    estado.assinatura?.let { Text(stringResource(Res.string.pacientes_uso_plano, it.pacientesOcupados, it.limitePacientes), style = MaterialTheme.typography.bodySmall) }
+                    estado.assinatura?.let { Text(textoUsoPlano(it), style = MaterialTheme.typography.bodySmall) }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                         BotaoPrincipal(stringResource(Res.string.pacientes_novo), aoNovo, habilitado = !estado.atualizando && !estado.envioEmAndamento)
                         BotaoTexto(stringResource(Res.string.pacientes_atualizar), aoAtualizar, carregando = estado.atualizando)

@@ -40,7 +40,7 @@ import org.br.dietamais.ui.paciente.compras.AcoesCompras
 import org.br.dietamais.ui.paciente.compras.ComprasTela
 import org.br.dietamais.ui.paciente.compras.ComprasViewModel
 import org.br.dietamais.ui.nutri.assinatura.AcoesPerfilNutri
-import org.br.dietamais.ui.nutri.assinatura.AcoesAssinatura
+import org.br.dietamais.ui.nutri.assinatura.acoesAssinatura
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
 import org.br.dietamais.ui.nutri.assinatura.ContaNutriTela
@@ -124,7 +124,8 @@ fun FluxoAutenticacao(viewModel: AutenticacaoViewModel = koinViewModel(), convit
                             verticalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                             estado.erro?.let { MensagemAutenticacaoTexto(it, alerta = true) }
                             teste?.let {
-                                Text(stringResource(Res.string.auth_assinatura_teste, it.limitePacientes, it.fimPeriodoEm.toString().substringBefore('T')),
+                                val fim = it.fimPeriodoEm.toString().substringBefore('T')
+                                Text(it.limitePacientes?.let { l -> stringResource(Res.string.auth_assinatura_teste, l, fim) } ?: stringResource(Res.string.auth_assinatura_teste_sem_limite, fim),
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -317,7 +318,7 @@ private fun NavegacaoNutri() {
                 val estadoLembrete by lembrete.estado.collectAsState()
                 LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
                 org.br.dietamais.ui.nutri.documentos.ModelosDocumentoRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel>(viewModelStoreOwner = dono))
-                AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
+                AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                 val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                 val estadoPriv by priv.estado.collectAsState()
                 PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = false)

@@ -20,6 +20,8 @@ class DestinoAvisoTest {
 
     @Test fun nutriVaiParaAgendaOuFicha() {
         assertEquals(DestinoAviso.Agenda, destinoDaRota(PerfilNavegacao.NUTRICIONISTA, "/agenda"))
+        assertEquals(DestinoAviso.Conta, destinoDaRota(PerfilNavegacao.NUTRICIONISTA, "/assinatura"))
+        assertEquals(DestinoAviso.Nenhum, destinoDaRota(PerfilNavegacao.PACIENTE, "/assinatura"))
         assertEquals(DestinoAviso.Paciente(ficha), destinoDaRota(PerfilNavegacao.NUTRICIONISTA, "/pacientes/$ficha"))
     }
 

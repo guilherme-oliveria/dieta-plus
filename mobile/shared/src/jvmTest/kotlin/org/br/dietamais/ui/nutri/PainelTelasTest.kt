@@ -39,4 +39,19 @@ class PainelTelasTest {
         onNodeWithText("Nenhum questionário respondido nos últimos 7 dias.").assertIsDisplayed()
         onNodeWithText("Sem conexão: mostrando o que está salvo no aparelho.").assertIsDisplayed()
     }
+
+    @Test fun avisaFimDoTesteEVerPlanos() = runSkikoComposeUiTest(size = Size(390f, 1400f)) {
+        val assinatura = AssinaturaResumoResposta(Uuid.random(), "TESTE", StatusAssinatura.TESTE, 5, 4, Instant.parse("2026-11-18T12:00:00Z"))
+        var planos = 0
+        setContent { DietaTheme { PainelTela(EstadoPainel(ResumoPainel(emptyList(), emptyList(), emptyList(), assinatura, diasFimTeste = 1)), AcoesPainel(aoVerPlanos = { planos++ }), fuso) } }
+        onNodeWithText("Seu teste termina amanhã.").assertIsDisplayed()
+        onNodeWithText("Ver planos").performClick(); assertEquals(1, planos)
+    }
+
+    @Test fun planoSemLimiteNaoMostraBarra() = runSkikoComposeUiTest(size = Size(390f, 1400f)) {
+        val assinatura = AssinaturaResumoResposta(Uuid.random(), "Plus", StatusAssinatura.ATIVA, null, 120, Instant.parse("2026-12-01T00:00:00Z"))
+        setContent { DietaTheme { PainelTela(EstadoPainel(ResumoPainel(emptyList(), emptyList(), emptyList(), assinatura)), AcoesPainel(), fuso) } }
+        onNodeWithText("120 pacientes · sem limite").assertIsDisplayed()
+        onNodeWithText("Seu teste termina", substring = true).assertDoesNotExist()
+    }
 }
