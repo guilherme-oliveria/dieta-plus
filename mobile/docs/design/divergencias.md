@@ -208,6 +208,14 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
 - O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
 
+## MOB-91 · Metas do paciente e modelos de metas (18/11/2026)
+
+- Artboards `A-Metas-Paciente`, `A-Meta-Nova` e `A-Modelos-Meta` (DES-19). A aba "Metas" entra na ficha logo depois do Resumo. As abas "Adesão" e "Saúde" do artboard vêm de outras tarefas (MOB-89 pôs a adesão no Resumo; MOB-82 traz Saúde).
+- O título da meta de atividade é o tipo ("Atividade (min)"), não "Caminhada": o backend só aceita nome em "Sim ou não" e "Contador" (RN-MET-01).
+- "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
+- Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
+- Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
+
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 
 Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
