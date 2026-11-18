@@ -156,6 +156,7 @@ private fun navegarParaAviso(controlador: NavHostController, destino: DestinoAvi
         DestinoAviso.Hoje -> RotaPaciente.Hoje
         DestinoAviso.Dieta -> RotaPaciente.Dieta
         DestinoAviso.Agenda -> RotaNutri.Agenda
+        DestinoAviso.Conta -> RotaNutri.Conta
         is DestinoAviso.Paciente -> resolverVinculo(destino.fichaId)?.let { RotaNutri.FichaPaciente(destino.fichaId, it) } ?: RotaNutri.Pacientes
         DestinoAviso.Nenhum -> return
     }

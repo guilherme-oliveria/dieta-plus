@@ -34,7 +34,7 @@ import org.br.dietamais.ui.nutri.listapaciente.ListaPacienteViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import org.br.dietamais.ui.auth.acoesPrivacidade
-import org.br.dietamais.ui.nutri.assinatura.AcoesAssinatura
+import org.br.dietamais.ui.nutri.assinatura.acoesAssinatura
 import org.br.dietamais.ui.nutri.assinatura.AcoesPerfilNutri
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
@@ -121,7 +121,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                         val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
                         val estadoLembrete by lembrete.estado.collectAsState()
                         LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
-                        AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
+                        AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                         val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                         val estadoPriv by priv.estado.collectAsState()
                         PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = false)
