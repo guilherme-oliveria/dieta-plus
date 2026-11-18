@@ -26,14 +26,18 @@ class PortaConsultasFalsa(inicial: List<ConsultaResposta> = emptyList()) : Porta
     override suspend fun atualizar(de: Instant, ate: Instant) { atualizacoes++; falha?.let { throw it } }
     override suspend fun criar(requisicao: CriarConsultaRequisicao): ConsultaResposta {
         falha?.let { throw it }; criada = requisicao
-        return ConsultaResposta(requisicao.id!!, requisicao.pacienteId, Uuid.random(), requisicao.inicio, requisicao.duracaoMin, requisicao.tipo, requisicao.lugar, StatusConsulta.AGENDADA, 1, agoraFalso, agoraFalso)
+        return ConsultaResposta(requisicao.id!!, requisicao.pacienteId, Uuid.random(), requisicao.inicio, requisicao.duracaoMin, requisicao.tipo, requisicao.lugar, StatusConsulta.AGENDADA, 1, agoraFalso, agoraFalso,
+            requisicao.modalidade, requisicao.linkOnline, requisicao.orientacaoPaciente, requisicao.observacaoInterna)
             .also { dados.value = dados.value + it }
     }
     override suspend fun alterar(id: Uuid, versao: Long, requisicao: AtualizarConsultaRequisicao): ConsultaResposta {
         falha?.let { throw it }; alterada = Triple(id, versao, requisicao)
         val atual = dados.value.first { it.id == id }
         val nova = atual.copy(inicio = requisicao.inicio ?: atual.inicio, duracaoMin = requisicao.duracaoMin ?: atual.duracaoMin, tipo = requisicao.tipo ?: atual.tipo,
-            lugar = requisicao.lugar?.ifEmpty { null } ?: atual.lugar, status = requisicao.status ?: atual.status, versao = versao + 1)
+            lugar = requisicao.lugar?.ifEmpty { null } ?: atual.lugar, status = requisicao.status ?: atual.status, versao = versao + 1,
+            modalidade = requisicao.modalidade ?: atual.modalidade, linkOnline = requisicao.linkOnline?.ifEmpty { null } ?: atual.linkOnline,
+            orientacaoPaciente = if (requisicao.orientacaoPaciente == null) atual.orientacaoPaciente else requisicao.orientacaoPaciente.ifEmpty { null },
+            observacaoInterna = if (requisicao.observacaoInterna == null) atual.observacaoInterna else requisicao.observacaoInterna.ifEmpty { null })
         dados.value = dados.value.map { if (it.id == id) nova else it }
         return nova
     }
