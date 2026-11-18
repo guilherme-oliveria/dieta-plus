@@ -3,7 +3,6 @@ package com.br.dietamais.documentos.aplicacao;
 import com.br.dietamais.comum.api.*;
 import com.br.dietamais.documentos.api.*;
 import com.br.dietamais.documentos.infra.DocumentoStore;
-import com.br.dietamais.relatorios.api.PdfResposta;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
