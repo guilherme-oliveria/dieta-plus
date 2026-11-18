@@ -77,7 +77,7 @@ fun FormularioConsultaTela(estado: EstadoAgenda, acoes: AcoesFormularioConsulta)
                             erro = erros.firstOrNull { it == ErroConsulta.LINK }?.let { textoErroConsulta(it) },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri))
                         Text(stringResource(Res.string.agenda_form_link_ajuda), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else CampoTexto(stringResource(Res.string.agenda_form_local), form.lugar, acoes.aoLugar, Modifier.fillMaxWidth(), habilitado = habilitado)
+                    } else CampoTexto(stringResource(Res.string.agenda_form_local), form.lugar, acoes.aoLugar, Modifier.fillMaxWidth().testTag("consulta-local"), habilitado = habilitado)
                     CampoTexto(stringResource(Res.string.agenda_form_orientacao), form.orientacao, acoes.aoOrientacao, Modifier.fillMaxWidth().testTag("consulta-orientacao"),
                         habilitado = habilitado, singleLine = false)
                     Text(stringResource(Res.string.agenda_form_orientacao_ajuda, form.orientacao.length, LIMITE_TEXTO_CONSULTA), style = MaterialTheme.typography.bodySmall,

@@ -35,7 +35,7 @@ class AgendaStatusTelasTest {
         var escolhida: ModalidadeConsulta? = null
         val estado = EstadoAgenda(dia, pacientes = listOf(ana), formulario = FormularioConsulta())
         setContent { DietaTheme { FormularioConsultaTela(estado, AcoesFormularioConsulta(aoModalidade = { escolhida = it })) } }
-        onNodeWithTag("consulta-link").assertDoesNotExist(); onNodeWithText("Local (opcional)").assertExists()
+        onNodeWithTag("consulta-link").assertDoesNotExist(); onNodeWithTag("consulta-local").assertExists()
         onNodeWithText("Online").performClick(); assertEquals(ModalidadeConsulta.ONLINE, escolhida)
     }
 
