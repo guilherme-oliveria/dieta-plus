@@ -12,7 +12,7 @@ import org.br.dietamais.data.repositorio.*
 enum class MensagemPerfil { SEM_CONEXAO, CONFLITO, HORARIO_INVALIDO, SILENCIO_IGUAL, ERRO, SALVO, LINK_REVOGADO }
 
 data class EstadoPerfilPaciente(
-    val lembretes: Boolean = true, val tipos: List<PreferenciaTipo> = emptyList(), val silencioAtivo: Boolean = true,
+    val lembretes: Boolean = true, val perguntaHumor: Boolean = true, val tipos: List<PreferenciaTipo> = emptyList(), val silencioAtivo: Boolean = true,
     val inicio: String = "22:00", val fim: String = "07:00", val versao: Long = 0, val alterado: Boolean = false,
     val nutris: List<VinculoResposta> = emptyList(), val calendario: CalendarioTokenResposta? = null,
     val carregando: Boolean = false, val enviando: Boolean = false, val semConexao: Boolean = false,
@@ -27,6 +27,7 @@ class PerfilPacienteViewModel(private val preferencias: PortaPreferencias, priva
 
     init {
         viewModelScope.launch(dispatcher) { preferencias.observarLembretes().catch { }.collect { v -> atual.update { it.copy(lembretes = v) } } }
+        viewModelScope.launch(dispatcher) { preferencias.observarPerguntaHumor().catch { }.collect { v -> atual.update { it.copy(perguntaHumor = v) } } }
         viewModelScope.launch(dispatcher) { vinculos.observarVinculos().catch { }.collect { v -> atual.update { it.copy(nutris = v) } } }
         viewModelScope.launch(dispatcher) { preferencias.observar().catch { }.collect { p -> if (p != null && !atual.value.alterado) aplicar(p) } }
         conectividade?.let { fluxo -> viewModelScope.launch(dispatcher) { fluxo.collect { online -> atual.update { it.copy(semConexao = !online) } } } }
@@ -40,6 +41,8 @@ class PerfilPacienteViewModel(private val preferencias: PortaPreferencias, priva
     fun recarregar() { executar(carregar = true) { aplicar(preferencias.atualizar()) } }
 
     fun mudarLembretes(ativo: Boolean) { try { preferencias.definirLembretes(ativo) } catch (_: Exception) { atual.update { it.copy(erro = MensagemPerfil.ERRO) } } }
+    /** MOB-88: preferência do aparelho para a pergunta de fome e sensação. */
+    fun mudarPerguntaHumor(ativo: Boolean) { try { preferencias.definirPerguntaHumor(ativo) } catch (_: Exception) { atual.update { it.copy(erro = MensagemPerfil.ERRO) } } }
     fun mudarTipo(tipo: TipoNotificacao, ativo: Boolean) = atual.update { e -> e.copy(tipos = e.tipos.map { if (it.tipo == tipo) it.copy(ativo = ativo) else it }, alterado = true, aviso = null) }
     fun mudarSilencioAtivo(ativo: Boolean) = atual.update { it.copy(silencioAtivo = ativo, alterado = true, aviso = null) }
     fun mudarInicio(v: String) = atual.update { it.copy(inicio = v.take(5), alterado = true, aviso = null) }

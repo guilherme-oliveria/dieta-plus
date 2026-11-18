@@ -234,7 +234,11 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             Column(Modifier.fillMaxSize()) {
                 AnamnesePacienteRota(anamnese)
                 ProximaConsultaRota(koinViewModel<ConsultasPacienteViewModel>(viewModelStoreOwner = dono))
-                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua), Modifier.weight(1f))
+                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua,
+                    aoFome = vm::escolherFome, aoSensacao = vm::escolherSensacao, aoSalvarHumor = vm::salvarHumor, aoPularHumor = vm::pularHumor,
+                    aoAbrirFora = vm::abrirForaDoPlano, aoTextoFora = vm::mudarTextoFora, aoRefeicaoFora = vm::mudarRefeicaoFora,
+                    aoHoraFora = vm::mudarHoraFora, aoRegistrarFora = vm::registrarForaDoPlano, aoFecharFora = vm::fecharForaDoPlano,
+                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f))
             }
             TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
         },
@@ -257,7 +261,7 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             val estadoPriv by priv.estado.collectAsState()
             LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoContaExcluida() }
             PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
-                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink),
+                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink, perfil::mudarPerguntaHumor),
                 extras = { PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
         })
 }
