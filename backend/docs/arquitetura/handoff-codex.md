@@ -9,7 +9,7 @@ Escrito em 01/11/2026 pelo agente executor (Claude) ao passar as tarefas restant
 3. Antes do PR: `JAVA_HOME=<jdk25> ./gradlew build`. Sem Docker, os testes Testcontainers não sobem: escreva-os assim mesmo e confie no CI. Se o Maven Central responder 429, use `--max-workers=1`.
 4. Revisão: o fluxo de QA do `AGENTS.md` vale (você abre o PR e não aprova nem mescla o próprio trabalho). Se o Guilherme tiver dispensado o QA, ele avisa no prompt.
 5. Mudou contrato ou regra? Escreva no PR para espelhar `contrato-fase-*`, `regras-de-negocio` e `integracao` nas cópias do `dieta-mobile` (oficial é esta).
-6. **Release:** cada marco vira `release/X.Y.Z` a partir da `develop` (M8 = 1.2.0 avaliação do adulto, M9 = 1.3.0 dieta por porções e modelos, M10 = 1.4.0 crianças, exames e anamnese). Quando todas as tarefas de um marco estiverem `[x]`: abra `release/X.Y.Z`, ajuste versão e `CHANGELOG`, rode o build e abra o PR `release/X.Y.Z → main` para o Guilherme aprovar. **Nunca** faça merge na `main` nem edite `.github/`.
+6. **Release:** cada marco vira `release/X.Y.Z` a partir da `develop` (M8 = 1.2.0 avaliação do adulto, M9 e M10 = 1.3.0 dieta por porções, modelos, crianças, exames e anamnese, M11 = 1.4.0 as sete histórias do benchmark). Quando todas as tarefas de um marco estiverem `[x]`: abra `release/X.Y.Z`, ajuste versão e `CHANGELOG`, rode o build e abra o PR `release/X.Y.Z → main` para o Guilherme aprovar. **Nunca** faça merge na `main` nem edite `.github/`.
 
 ## O que já está implementado (na `develop`)
 

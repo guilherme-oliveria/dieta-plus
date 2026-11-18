@@ -12,6 +12,22 @@ Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [S
 - Texto do termo de consentimento do paciente (`CONSENTIMENTO_VERSAO` e `CONSENTIMENTO_TEXTO`) e política de privacidade.
 - Provedor de e-mail transacional, projeto Firebase (push) e conta do gateway de pagamento (Asaas): o código está pronto e desligado sem as credenciais.
 
+## [1.4.0] — M11: as sete histórias do benchmark (H-01 a H-07)
+
+Changesets 057 a 072. Campos novos são opcionais e o app 1.3.x continua funcionando contra esta versão. Critérios de aceite em `docs/arquitetura/funcionalidades-mvp.md` (F-22 a F-28) e regras na seção "Release 1.4.0" de `regras-de-negocio.md`.
+
+- BE-C9 e BE-C10 Contratos da release (`contrato-fase-9.md` e `contrato-fase-10.md`): records, códigos de erro novos (`ALERGIA_NAO_CONFIRMADA`, `TRANSICAO_STATUS_INVALIDA`, `LINK_INVALIDO`, `META_INVALIDA`, `DOCUMENTO_JA_ANULADO`, `PLANO_INDISPONIVEL` e outros), regras RN-SAU, RN-MET, RN-SUP, RN-ORI, RN-DOC e RN-ASS-09 a 11 e os vetores `alertas-restricao.json` e `metas.json`.
+- H-01 Saúde e restrições. BE-68 itens de saúde na ficha (alergia, intolerância, condição, medicamento), nunca na projeção do paciente. BE-69 marcadores novos (amendoim, frutos do mar, ovo, soja e outros) com sugestão inicial por nome. BE-70 `alertas[]` por item ao salvar a dieta e recusa de publicar com alergia sem confirmação (`alergiaConfirmada`); dieta nova nasce com as restrições da ficha.
+- H-02 Consulta. BE-71 status (`AGENDADA`, `REALIZADA`, `FALTA`, `CANCELADA`) com transições validadas, `modalidade` separada do tipo (o tipo antigo `ONLINE` vira Retorno + Online), `linkOnline` só `https`, `orientacaoPaciente` e `observacaoInterna`. BE-72 preferência de lembrete da nutri (`/eu/nutri/preferencias-agenda`), e-mail de confirmação ao agendar e lembrete com o link.
+- H-03 Diário. BE-73 `fomeAntes` e `sensacaoDepois` no check-in e registro "comi fora do plano" (só inclusão), com médias e lista na adesão da nutri.
+- H-04 Metas. BE-74a metas de hábito e registros (só inclusão, no `/sync`) com cumprimento e sequência no servidor. BE-74b modelos de metas da nutri e aplicação a pacientes. BE-86 água como tipo de meta, com alvo padrão de 35 ml × peso mais recente, migração de `registro_agua` e o caminho antigo `POST /eu/agua` ainda aceito.
+- H-05 Suplementos e orientações. BE-75 prescrição de suplemento com cópia congelada de nome e dose. BE-76 orientações avulsas em Markdown restrito (HTML descartado), modelos e push genérico. BE-77 `incluirSuplementos` no PDF da dieta.
+- H-06 Documentos. BE-78 modelos (atestado e declaração do sistema, somente leitura), emissão imutável com PDF, anulação com motivo. BE-79 conferência pública por código, sem dado do paciente e com limite de requisições, e lista do paciente.
+- H-07 Planos. BE-80 `preco_anual`, `a_venda`, limite sem teto, `GET /api/v1/planos` público e edição pelo admin. BE-81a checkout com `planoCodigo` e `periodicidade` (PIX, cartão e boleto) e renovação anual pelo webhook. BE-81b troca de plano (subir na hora, descer no vencimento). BE-82 aviso do fim do teste no painel e por e-mail 7 dias e 1 dia antes.
+- BE-83 `modelosDieta` na escrita do `/sync` (base da MOB-29b).
+- BE-84 Exportação e exclusão de conta (LGPD) cobrindo as entidades novas, e testes de isolamento de todos os endpoints novos.
+- BE-85 Fechamento: versão 1.4.0, F-22 a F-28, validade real dos links assinados em `integracao.md` e correção dos documentos que chamavam o M10 de 1.4.0 (o M10 saiu na 1.3.0, junto com o M9).
+
 ## [1.3.0] — M9 e M10: necessidades, protocolos, crianças, exames e anamnese (16/11/2026)
 
 - BE-55b: avaliação infantil/adolescente com entradas opcionais e resultados calculados pelo servidor, snapshot dos cortes OMS/Frisancho, intervalos de percentil/Z sem interpolação e compartilhamento por seção em REST/sync. Changeset 048: persistência pediátrica e precisão da estatura. G-16 permanece pendente: o corte inconsistente de AMBc masculino de quatro anos é preservado, sem classificação, sem correção da referência.
