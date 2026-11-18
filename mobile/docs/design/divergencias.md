@@ -204,3 +204,19 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 - "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
 - Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
 - Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
+
+## MOB-87 · Paciente: próxima consulta (18/11/2026)
+
+Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
+
+- o título com o selo da modalidade;
+- "Hoje, 15:00", "Amanhã, 15:00" ou a data;
+- "Retorno · 50 min";
+- o local, quando presencial;
+- "Entrar na consulta" com a explicação, só quando a consulta é online e o link é `https`;
+- a "Orientação da nutri".
+
+O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
+
+- A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
+- O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.

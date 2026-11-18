@@ -110,4 +110,15 @@ class AgendaTest {
         assertEquals(ComparecimentoConsulta.COMPARECEU, comparecimentoDoStatus(StatusConsulta.REALIZADA))
         assertEquals(ComparecimentoConsulta.FALTOU, comparecimentoDoStatus(StatusConsulta.FALTA)); assertNull(comparecimentoDoStatus(StatusConsulta.AGENDADA))
     }
+
+    // MOB-87: visão do paciente
+    @Test fun consultaDoPacienteResolveLegadoLinkELocalSemObservacao() {
+        val legado = consultaFalsa(paciente, hora(14), tipo = TipoConsulta.ONLINE, lugar = "https://meet.exemplo.invalid/x").copy(observacaoInterna = "só a nutri")
+        val v = consultaDoPaciente(legado, fuso)
+        assertEquals(TipoConsulta.RETORNO, v.tipo); assertEquals(ModalidadeConsulta.ONLINE, v.modalidade); assertEquals("https://meet.exemplo.invalid/x", v.link); assertNull(v.lugar)
+        val presencial = consultaFalsa(paciente, hora(14), lugar = "Sala 2").copy(modalidade = ModalidadeConsulta.PRESENCIAL, linkOnline = "https://meet.exemplo.invalid/y", orientacaoPaciente = "  ")
+        val p = consultaDoPaciente(presencial, fuso)
+        assertNull(p.link); assertEquals("Sala 2", p.lugar); assertNull(p.orientacao)
+        assertNull(consultaDoPaciente(legado.copy(lugar = "http://inseguro.invalid"), fuso).link)
+    }
 }
