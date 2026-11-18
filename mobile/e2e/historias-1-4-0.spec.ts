@@ -14,7 +14,7 @@
 // tem teste de API no backend) e o humor depois do "Comi" (o diálogo já abre no fluxo-completo.spec.ts).
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import {
-  botao, buscarPaciente, clicar, conferirAcessibilidade, digitar, entrar, NUTRI_EXEMPLO, SENHA_EXEMPLO, tocar, tocarAba, veTexto,
+  botao, buscarPaciente, campo, clicar, conferirAcessibilidade, digitar, entrar, NUTRI_EXEMPLO, SENHA_EXEMPLO, tocar, tocarAba, veTexto,
 } from "./apoio.ts";
 
 const sufixo = Date.now().toString(36);
@@ -185,7 +185,9 @@ test("H-03: a paciente registra o que comeu fora do plano", async ({ page }) => 
   await entrar(page, MARIA.email);
   await expect(page.getByRole("heading", { name: "Hoje" })).toBeAttached({ timeout: 30_000 });
   await tocar(page, "Comi algo fora do plano");
-  await veTexto(page, "O que você comeu?");
+  // O rótulo do CampoTexto não sai como texto no DOM: é o nome acessível do próprio campo.
+  await expect(page.getByRole("heading", { name: "Comi algo fora do plano" }).first()).toBeAttached({ timeout: 20_000 });
+  await expect(campo(page, "O que você comeu?").first()).toBeAttached({ timeout: 20_000 });
   await digitar(page, "O que você comeu?", `Pipoca ${sufixo}`);
   await conferirAcessibilidade(page, "Comi algo fora do plano");
   const registrou = page.waitForResponse((r) => r.url().includes("/registros-fora-do-plano") && r.request().method() === "POST", { timeout: 30_000 });
