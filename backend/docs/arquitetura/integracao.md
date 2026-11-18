@@ -221,7 +221,7 @@ Ações que **exigem online** (o app desabilita o botão sem conexão): login/ca
 
 ## Arquivos
 
-- PDFs e fotos ficam num storage compatível com S3 (MinIO em dev). O backend devolve **URL pré-assinada** de 5 min; nada de arquivo público.
+- PDFs e fotos ficam num storage compatível com S3 (MinIO em dev). O backend devolve **URL pré-assinada** de curta duração; nada de arquivo público. Validade hoje: 10 min nos PDFs (dieta, avaliação, lista de substituição e documentos emitidos); na exportação LGPD, até 15 min na URL devolvida por `GET /eu/exportacao` (nunca além do vencimento do arquivo, 24 h) e 5 min no redirecionamento do link do e-mail.
 - Upload (foto do prato, P2): `POST /api/v1/eu/fotos` devolve URL pré-assinada de upload.
 
 ## Versionamento do contrato

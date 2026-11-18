@@ -5,7 +5,7 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Serializable(with = TipoAvisoSerializer::class)
-enum class TipoAviso { NOVA_DIETA, QUESTIONARIO_ENVIADO, CONSULTA_AMANHA, QUESTIONARIO_RESPONDIDO, PACIENTE_SEM_CHECKIN, ASSINATURA, OUTRO }
+enum class TipoAviso { NOVA_DIETA, QUESTIONARIO_ENVIADO, CONSULTA_AMANHA, QUESTIONARIO_RESPONDIDO, PACIENTE_SEM_CHECKIN, ASSINATURA, NOVA_ORIENTACAO, OUTRO }
 object TipoAvisoSerializer : EnumComOutro<TipoAviso>("TipoAviso", TipoAviso.entries.toTypedArray(), TipoAviso.OUTRO)
 
 /** Título e corpo vêm do servidor, sem dado clínico (RN-NOT-02). [rota] é o destino da navegação, quando houver. */
