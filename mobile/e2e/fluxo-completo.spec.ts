@@ -138,6 +138,10 @@ test("paciente vê o Hoje com a dieta e marca Comi", async ({ browser }) => {
   await veTexto(page, /Como foi: café da manhã\?/);
   await tocar(page, "Pular");
   expect((await comi).status()).toBeLessThan(300);
+  // depois que o diálogo fecha, a árvore de semantics do DOM fica presa nele (limitação do Compose web, ver o topo):
+  // abre a página de novo, e o "Feita" vem do que o backend gravou
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Hoje" })).toBeAttached({ timeout: 30_000 });
   await veTexto(page, "Feita");
   await expect(botao(page, "Comi")).toHaveCount(0);
   await ctx.close();
