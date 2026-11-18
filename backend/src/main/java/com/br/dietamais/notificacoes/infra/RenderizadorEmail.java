@@ -47,6 +47,14 @@ public class RenderizadorEmail {
 			contexto.setVariable("prazo",email.token().equals("1")?"1 dia":email.token()+" dias");
 			return new MensagemEmail(email.destinatario(),"Seu teste do Dieta+ está acabando",engine.process("email/fim-teste",contexto));
 		}
+		if(email.tipo()==TipoEmail.CONSULTA_AGENDADA) { // BE-72, RN-NOT-02: data, hora e o link da sala online; nada do motivo da consulta
+			var contexto=new Context(Locale.forLanguageTag("pt-BR"));
+			var quando=email.inicio().atZone(java.time.ZoneId.of("America/Sao_Paulo"));
+			contexto.setVariable("data",quando.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+			contexto.setVariable("hora",quando.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+			contexto.setVariable("link",email.link());
+			return new MensagemEmail(email.destinatario(),"Sua consulta foi agendada no Dieta+",engine.process("email/consulta-agendada",contexto));
+		}
 		boolean confirma=email.tipo()==TipoEmail.CONFIRMAR_EMAIL;
 		String link=UriComponentsBuilder.fromUriString(confirma?confirmacao:redefinicao).queryParam("token",email.token()).build().encode().toUriString();
 		var contexto=new Context(Locale.forLanguageTag("pt-BR"));

@@ -4,6 +4,7 @@ import com.br.dietamais.agenda.api.*;
 import com.br.dietamais.agenda.infra.ConsultaStore;
 import com.br.dietamais.agenda.infra.ConsultaStore.Dados;
 import com.br.dietamais.comum.api.*;
+import com.br.dietamais.notificacoes.api.*;
 import com.br.dietamais.pacientes.api.*;
 import java.time.Clock;
 import java.time.Duration;
@@ -21,9 +22,9 @@ public class GerenciarConsultas {
 	static final Duration HORIZONTE=Duration.ofDays(730);
 	static final Duration JANELA_MAXIMA=Duration.ofDays(366);
 	private final ConsultaStore consultas;private final ConsultarFichaParaLista fichas;private final UsuarioAtual usuario;private final GuardaEscritaNutri guarda;
-	private final AuditoriaClinica auditoria;private final GeradorIds ids;private final Clock relogio;private final JsonMapper mapper;
-	public GerenciarConsultas(ConsultaStore consultas,ConsultarFichaParaLista fichas,UsuarioAtual usuario,GuardaEscritaNutri guarda,AuditoriaClinica auditoria,GeradorIds ids,Clock relogio,JsonMapper mapper){
-		this.consultas=consultas;this.fichas=fichas;this.usuario=usuario;this.guarda=guarda;this.auditoria=auditoria;this.ids=ids;this.relogio=relogio;this.mapper=mapper;
+	private final AuditoriaClinica auditoria;private final GeradorIds ids;private final Clock relogio;private final JsonMapper mapper;private final EnfileirarEmail emails;
+	public GerenciarConsultas(ConsultaStore consultas,ConsultarFichaParaLista fichas,UsuarioAtual usuario,GuardaEscritaNutri guarda,AuditoriaClinica auditoria,GeradorIds ids,Clock relogio,JsonMapper mapper,EnfileirarEmail emails){
+		this.consultas=consultas;this.fichas=fichas;this.usuario=usuario;this.guarda=guarda;this.auditoria=auditoria;this.ids=ids;this.relogio=relogio;this.mapper=mapper;this.emails=emails;
 	}
 
 	/** Janela padrão: de ontem até 90 dias adiante. {@code paciente} (id da ficha) restringe a um paciente e confere a posse. */
@@ -57,7 +58,9 @@ public class GerenciarConsultas {
 		var link=link(limpar(r.linkOnline()),modalidade);
 		var dados=new Dados(r.inicio(),r.duracaoMin(),tipo,limpar(r.lugar()),StatusConsulta.AGENDADA,modalidade,link,limpar(r.orientacaoPaciente()),limpar(r.observacaoInterna()));
 		if(!consultas.inserir(id,ficha.vinculoId(),nutri,ficha.pacienteId(),dados,agora))throw new ExcecaoNegocio(CodigoErro.CONFLITO_VERSAO,"RN-SYN-02");
-		var criada=propria(id,nutri,false);auditoria.escrita(referencia(criada,contexto));return criada;
+		var criada=propria(id,nutri,false);auditoria.escrita(referencia(criada,contexto));
+		confirmarPorEmail(criada,agora);
+		return criada;
 	}
 
 	@Transactional
@@ -90,6 +93,16 @@ public class GerenciarConsultas {
 			r.orientacaoPaciente()!=null?limpar(r.orientacaoPaciente()):atual.orientacaoPaciente(),r.observacaoInterna()!=null?limpar(r.observacaoInterna()):atual.observacaoInterna());
 		consultas.atualizar(id,nutri,dados,agora);
 		var nova=propria(id,nutri,false);auditoria.escrita(referencia(nova,contexto));return nova;
+	}
+
+	/**
+	 * BE-72 (RN-AGE-02, C-10): e-mail de confirmação ao agendar, com data, hora e, na consulta online, o link da sala.
+	 * Vai na mesma transação (fila cifrada); expira no início da consulta. Consulta já começando não gera e-mail.
+	 */
+	private void confirmarPorEmail(ConsultaResposta c,Instant agora){
+		if(!c.inicio().isAfter(agora))return;
+		consultas.emailParaConfirmacao(c.pacienteId()).ifPresent(email->
+			emails.enfileirar(new EmailTransacional(TipoEmail.CONSULTA_AGENDADA,email,null,c.inicio(),c.inicio(),c.linkOnline())));
 	}
 
 	/** [de, ate): padrão de ontem até 90 dias adiante; no máximo 366 dias por consulta. */

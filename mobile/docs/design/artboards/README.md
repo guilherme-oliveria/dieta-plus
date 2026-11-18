@@ -48,6 +48,9 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `A-Metas-Paciente.dc.html`, `A-Meta-Nova.dc.html`, `A-Modelos-Meta.dc.html` | Nutri · Metas, nova meta e modelos (DES-19) |
 | `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html` | Nutri · Suplementos e orientações (DES-20) |
 | `P-Suplementos.dc.html`, `P-Orientacoes.dc.html` | Paciente · Suplementos e orientações (DES-20) |
+| `A-Documentos-Paciente.dc.html`, `A-Documento-Emitir.dc.html`, `A-Documento-Anular.dc.html`, `A-Modelos-Documento.dc.html` | Nutri · Documentos (DES-21) |
+| `P-Documentos.dc.html` | Paciente · Documentos sem internet (DES-21) |
+| `PDF-Declaracao.dc.html`, `W-Conferir-Documento.dc.html` | PDF da declaração (A4) e página pública de conferência (DES-21) |
 | `A-Assinatura-Planos.dc.html`, `A-Assinatura-Ativa.dc.html`, `A-Assinatura-Sem-Preco.dc.html`, `A-Painel-Fim-Teste.dc.html` | Nutri · Assinatura, troca de plano e aviso do fim do teste (DES-22) |
 
 Fotos (PNG) dos artboards novos em [../evidencias/DES-08-10/](../evidencias/DES-08-10/). Os dados dos artboards novos são de exemplo (paciente Guilherme do PDF da nutri; criança fictícia).
@@ -65,5 +68,7 @@ Rodada DES-18 (17/11/2026, release 1.4.0): fome antes e sensação depois no reg
 Rodada DES-19 (17/11/2026, release 1.4.0): metas de hábito, com a água como uma delas. Fotos em [../evidencias/DES-19/](../evidencias/DES-19/).
 
 Rodada DES-20 (17/11/2026, release 1.4.0): suplementos e orientações da nutri e do paciente. Fotos em [../evidencias/DES-20/](../evidencias/DES-20/).
+
+Rodada DES-21 (17/11/2026, release 1.4.0): documentos (atestado e declaração de comparecimento). Nutri, CRN e código são fictícios. Fotos em [../evidencias/DES-21/](../evidencias/DES-21/).
 
 Rodada DES-22 (17/11/2026, release 1.4.0): assinatura com mensal/anual e os planos Básico, Consultório e Plus. Fotos em [../evidencias/DES-22/](../evidencias/DES-22/).

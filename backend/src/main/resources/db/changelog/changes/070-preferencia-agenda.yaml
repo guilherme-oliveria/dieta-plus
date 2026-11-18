@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 070-preferencia-agenda
+      author: dietamais
+      comment: "BE-72 (RN-AGE-05, D-08): antecedência do lembrete escolhida pela nutri, que vale também para os pacientes dela. Sem linha = UM_DIA e sem lembrete extra."
+      changes:
+        - createTable:
+            tableName: preferencia_agenda
+            columns:
+              - column: { name: nutricionista_id, type: uuid, constraints: { primaryKey: true, nullable: false, foreignKeyName: fk_preferencia_agenda_nutri, references: nutricionista(id), deleteCascade: true } }
+              - column: { name: antecedencia, type: varchar(20), defaultValue: UM_DIA, constraints: { nullable: false } }
+              - column: { name: lembrete_extra_uma_hora, type: boolean, defaultValueBoolean: false, constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+        - sql:
+            sql: ALTER TABLE preferencia_agenda ADD CONSTRAINT ck_preferencia_agenda_antecedencia CHECK (antecedencia IN ('DUAS_HORAS','UM_DIA','DOIS_DIAS'))

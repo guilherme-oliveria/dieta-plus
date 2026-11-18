@@ -1,0 +1,5 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><title>Consulta agendada</title></head>
+<body><p>Sua nutricionista agendou uma consulta para <strong th:text="${data}">01/12/2026</strong> às <strong th:text="${hora}">14:00</strong> (horário de Brasília).</p>
+<p th:if="${link}">A consulta é online. Na hora marcada, entre pela sala: <a th:href="${link}" th:text="${link}">link da consulta</a></p>
+<p>Os detalhes e as orientações para a consulta estão no aplicativo Dieta+.</p></body></html>
