@@ -6,6 +6,8 @@ import kotlin.uuid.Uuid
 sealed interface DestinoAviso {
     data object Hoje : DestinoAviso
     data object Dieta : DestinoAviso
+    /** MOB-93: aba Dieta com as Orientações abertas (push "nova orientação"). */
+    data object Orientacoes : DestinoAviso
     data object Agenda : DestinoAviso
     /** [fichaId] é o id da ficha na rota `/pacientes/{id}`. */
     data class Paciente(val fichaId: String) : DestinoAviso
@@ -22,6 +24,7 @@ fun destinoDaRota(perfil: PerfilNavegacao, rota: String?): DestinoAviso {
     return when (perfil) {
         PerfilNavegacao.PACIENTE -> when (primeiro) {
             "dieta" -> DestinoAviso.Dieta
+            "orientacoes" -> DestinoAviso.Orientacoes
             "questionarios", "agenda" -> DestinoAviso.Hoje // o questionário e a próxima consulta aparecem no Hoje
             else -> DestinoAviso.Nenhum
         }

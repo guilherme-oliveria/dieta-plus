@@ -7,12 +7,12 @@ import org.br.dietamais.ui.paciente.substituicao.*
 
 /** Conteúdo instalado exclusivamente na aba Dieta dos shells nativo e web. */
 @Composable
-fun DietaPacienteRota(vm: DietaPacienteViewModel, pdf: @Composable (EstadoDietaPaciente) -> Unit = {}) {
+fun DietaPacienteRota(vm: DietaPacienteViewModel, pdf: @Composable (EstadoDietaPaciente) -> Unit = {}, extras: @Composable () -> Unit = {}) {
     val estado by vm.estado.collectAsState()
     val ciclo by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
     RetornoDietaPaciente(estado, vm::fecharLista, { vm.abrirRefeicao(null) }, vm::cancelarTroca, ativo = ciclo == Lifecycle.State.RESUMED)
     DietaPacienteTela(estado, vm::abrirRefeicao, vm::escolher, pdf = pdf, aoAbrirLista = vm::abrirLista,
         acoesLista = AcoesListaPaciente(vm::fecharLista, vm::buscarNaLista, vm::filtrarGrupoLista, vm::expandirGrupoLista, vm::tentarNovamente),
-        aoTrocar = vm::abrirTroca, aoMarcar = vm::marcar, aoTrocarRefeicao = vm::abrirTroca, aoDesfazer = vm::desfazerCheckin)
+        aoTrocar = vm::abrirTroca, aoMarcar = vm::marcar, aoTrocarRefeicao = vm::abrirTroca, aoDesfazer = vm::desfazerCheckin, extras = extras)
     TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
 }
