@@ -18,6 +18,7 @@ import org.br.dietamais.data.repositorio.DadosMetasPaciente
 import org.br.dietamais.data.repositorio.PortaMetasPaciente
 import org.br.dietamais.data.repositorio.VALOR_MAXIMO_REGISTRO_META
 import org.br.dietamais.dominio.metas.ProgressoMeta
+import org.br.dietamais.dominio.metas.metaAguaAtual
 import org.br.dietamais.dominio.metas.metaValeEm
 import org.br.dietamais.dominio.metas.progressoMeta
 import org.br.dietamais.dominio.metas.segundaDe
@@ -64,9 +65,11 @@ class MetasPacienteViewModel(private val porta: PortaMetasPaciente, private val 
     private fun recalcular() = atual.update { e ->
         val hoje = hojeLocal(); val segunda = segundaDe(hoje)
         val semana = (0..6).map { segunda.plus(DatePeriod(days = it)) }
-        val metas = dados.metas.filter { it.tipo != TipoMeta.AGUA && it.tipo != TipoMeta.OUTRO }.sortedBy { it.criadoEm }
+        // MOB-99: a água entra na semana como as outras metas (uma só, a que o cartão de água usa); no Hoje ela fica no próprio cartão
+        val agua = metaAguaAtual(dados.metas, hoje)
+        val metas = (listOfNotNull(agua) + dados.metas.filter { it.tipo != TipoMeta.AGUA && it.tipo != TipoMeta.OUTRO }.sortedBy { it.criadoEm })
         val daSemana = metas.filter { m -> semana.any { metaValeEm(m, it) } }.map { progressoMeta(it, dados.registros, hoje) }
-        e.copy(carregado = true, hojeData = hoje, semana = daSemana, hoje = daSemana.filter { metaValeEm(it.meta, hoje) },
+        e.copy(carregado = true, hojeData = hoje, semana = daSemana, hoje = daSemana.filter { it.meta.tipo != TipoMeta.AGUA && metaValeEm(it.meta, hoje) },
             outroValor = e.outroValor?.takeIf { id -> daSemana.any { it.meta.id == id } })
     }
 
