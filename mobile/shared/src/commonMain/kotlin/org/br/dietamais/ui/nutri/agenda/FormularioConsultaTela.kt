@@ -111,13 +111,15 @@ fun ConfirmarCancelamentoDialog(estado: EstadoAgenda, aoConfirmar: () -> Unit, a
 }
 
 @Composable
-fun AgendaRota(viewModel: AgendaViewModel, financeiro: FinanceiroViewModel = org.koin.compose.viewmodel.koinViewModel<FinanceiroViewModel>()) {
+fun AgendaRota(viewModel: AgendaViewModel, financeiro: FinanceiroViewModel = org.koin.compose.viewmodel.koinViewModel<FinanceiroViewModel>(),
+    documentos: org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel = org.koin.compose.viewmodel.koinViewModel()) {
     val estado by viewModel.estado.collectAsState()
     val estadoFinanceiro by financeiro.estado.collectAsState()
     LaunchedEffect(Unit) { viewModel.abrir(); financeiro.carregarResumo() }
     val abrirFinanceiro: (Uuid) -> Unit = { id -> estado.consultas.firstOrNull { it.id == id }?.let { financeiro.abrir(it, estado.nomeDo(it.pacienteId)) } }
     AgendaTela(estado, AcoesAgenda(viewModel::mudarModo, viewModel::anterior, viewModel::proximo, viewModel::hoje, { viewModel.nova() }, viewModel::remarcar, viewModel::pedirCancelamento, viewModel::recarregar, abrirFinanceiro,
-        aoMarcar = viewModel::marcar, aoDia = viewModel::irPara, aoNovaEm = viewModel::novaEm),
+        aoMarcar = viewModel::marcar, aoDia = viewModel::irPara, aoNovaEm = viewModel::novaEm,
+        aoDeclaracao = { id -> estado.consultas.firstOrNull { it.id == id }?.let { documentos.emitirDaConsulta(it, estado.nomeDo(it.pacienteId).orEmpty()) } }),
         rodape = { ResumoFinanceiroCard(estadoFinanceiro) })
     FinanceiroTela(estadoFinanceiro, AcoesFinanceiro(financeiro::mudarComparecimento, financeiro::mudarValor, financeiro::mudarForma, financeiro::mudarPago, financeiro::salvar, financeiro::fechar))
     FormularioConsultaTela(estado, AcoesFormularioConsulta(viewModel::mudarPaciente, viewModel::mudarData, viewModel::mudarHora, viewModel::mudarDuracao, viewModel::mudarTipo,
@@ -125,4 +127,6 @@ fun AgendaRota(viewModel: AgendaViewModel, financeiro: FinanceiroViewModel = org
     // o financeiro muda o status no servidor quando lança comparecimento (RN-FIN-01): traz a agenda de novo
     LaunchedEffect(estadoFinanceiro.aviso) { if (estadoFinanceiro.aviso == MensagemFinanceiro.SALVO) viewModel.recarregar() }
     ConfirmarCancelamentoDialog(estado, viewModel::confirmarCancelamento, viewModel::desistirDoCancelamento)
+    val estadoDocumentos by documentos.estado.collectAsState()
+    org.br.dietamais.ui.nutri.documentos.FolhasDocumento(documentos, estadoDocumentos)
 }

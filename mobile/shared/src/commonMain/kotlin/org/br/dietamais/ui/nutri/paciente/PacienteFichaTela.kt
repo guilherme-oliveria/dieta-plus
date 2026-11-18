@@ -53,9 +53,10 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                             AbaFicha.DIETA -> Res.string.aba_dieta
                             AbaFicha.LISTA -> Res.string.pacientes_lista
                             AbaFicha.ANAMNESE -> Res.string.pacientes_anamnese
+                            AbaFicha.DOCUMENTOS -> Res.string.pacientes_documentos
                         })) }) }
                 }
-                if (estado.abaFicha == AbaFicha.SAUDE || estado.abaFicha == AbaFicha.METAS || estado.abaFicha == AbaFicha.PRESCRICOES || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
+                if (estado.abaFicha == AbaFicha.SAUDE || estado.abaFicha == AbaFicha.METAS || estado.abaFicha == AbaFicha.PRESCRICOES || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO || estado.abaFicha == AbaFicha.DOCUMENTOS) abaConteudo(estado.abaFicha, paciente)
                 else if (estado.abaFicha != AbaFicha.RESUMO) EstadoVazio()
                 else {
                     // Atalhos dentro do Resumo (abaixo das abas): acima delas, ao trocar de aba a faixa sumia e as abas pulavam de lugar.
