@@ -42,7 +42,7 @@ fun AnamneseNutriTela(estado: EstadoAnamneseNutri, acoes: AcoesAnamneseNutri) {
         MensagensAnamnese(estado.erro, estado.aviso)
         Text(stringResource(Res.string.anamnese_enviar_titulo), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         if (estado.modelos.isEmpty()) Text(stringResource(Res.string.anamnese_sem_modelos), style = MaterialTheme.typography.bodyMedium)
-        estado.modelos.forEach { LinhaModelo(it, stringResource(Res.string.anamnese_enviar), !estado.enviando && !estado.semConexao) { acoes.aoEnviar(it.id) } }
+        estado.modelos.forEach { LinhaModelo(it, stringResource(Res.string.anamnese_enviar), estado.podeEnviar(it.id), it.id in estado.pendentes) { acoes.aoEnviar(it.id) } }
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno), verticalAlignment = Alignment.CenterVertically) {
             BotaoTexto(stringResource(Res.string.anamnese_gerenciar_modelos), { acoes.aoGerenciar(true) })
             BotaoTexto(stringResource(Res.string.anamnese_atualizar), acoes.aoAtualizar, habilitado = !estado.atualizando && !estado.semConexao)
@@ -57,12 +57,13 @@ fun AnamneseNutriTela(estado: EstadoAnamneseNutri, acoes: AcoesAnamneseNutri) {
 }
 
 @Composable
-private fun LinhaModelo(modelo: ModeloQuestionarioResposta, rotuloAcao: String, habilitado: Boolean, aoAcionar: () -> Unit) {
+private fun LinhaModelo(modelo: ModeloQuestionarioResposta, rotuloAcao: String, habilitado: Boolean, pendente: Boolean, aoAcionar: () -> Unit) {
     CardDieta(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMinimo)) {
                 Text(modelo.nome, style = MaterialTheme.typography.titleSmall)
                 if (modelo.padrao) ChipStatus(EstiloStatus.INFO, texto = stringResource(Res.string.anamnese_modelo_padrao))
+                if (pendente) ChipStatus(EstiloStatus.INFO, texto = stringResource(Res.string.dieta_pendente_envio))
             }
             BotaoContornado(rotuloAcao, aoAcionar, habilitado = habilitado)
         }
@@ -136,8 +137,8 @@ fun ModelosAnamneseTela(estado: EstadoAnamneseNutri, acoes: AcoesAnamneseNutri) 
         Text(stringResource(Res.string.anamnese_modelos_titulo), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
         if (estado.semConexao) FaixaOffline()
         MensagensAnamnese(estado.erro, estado.aviso)
-        BotaoPrincipal(stringResource(Res.string.anamnese_novo_modelo), acoes.aoNovoModelo, habilitado = !estado.semConexao)
-        estado.modelos.forEach { LinhaModelo(it, stringResource(Res.string.anamnese_editar), !estado.semConexao) { acoes.aoEditarModelo(it.id) } }
+        BotaoPrincipal(stringResource(Res.string.anamnese_novo_modelo), acoes.aoNovoModelo, habilitado = estado.podeEditarModelos)
+        estado.modelos.forEach { LinhaModelo(it, stringResource(Res.string.anamnese_editar), estado.podeEditarModelos, it.id in estado.pendentes) { acoes.aoEditarModelo(it.id) } }
     }
 }
 

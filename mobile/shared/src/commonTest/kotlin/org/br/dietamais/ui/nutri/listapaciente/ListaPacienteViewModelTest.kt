@@ -98,4 +98,41 @@ class ListaPacienteViewModelTest {
         vm.abrir(paciente); advanceUntilIdle(); vm.pedirCopia(Uuid.random()); vm.confirmarCopia(); advanceUntilIdle()
         assertEquals(MensagemLista.VINCULO_ENCERRADO, vm.estado.value.erro)
     }
+
+    /** MOB-29c: fonte que grava a lista no aparelho; [pendente] = ajuste ainda não aceito pelo servidor. */
+    private class NoAparelho(val l: Lista) : PortaListaPaciente by l {
+        var pendente = false
+        override val escritaOffline: Boolean get() = true
+        override fun pendenteDeEnvio(pacienteId: Uuid) = pendente
+        override suspend fun salvar(pacienteId: Uuid, versao: Long, requisicao: AtualizarListaSubstituicaoRequisicao) = l.salvar(pacienteId, versao, requisicao).also { pendente = true }
+    }
+
+    @Test fun semRedeSalvaNoAparelhoENaoCopia() = runTest {
+        val lista = Lista(ListaSubstituicaoResposta(paciente, 3, listOf(a1), emptyList(), emptyList()), listOf(a2)); val fonte = NoAparelho(lista)
+        val vm = ListaPacienteViewModel(fonte, Catalogo(listOf(a1, a2), grupo), StandardTestDispatcher(testScheduler), conectividade = flowOf(false))
+        vm.abrir(paciente); runCurrent()
+        // a lista veio do aparelho: continua sem conexão
+        assertTrue(vm.estado.value.semConexao); assertTrue(vm.estado.value.podeEditar); assertFalse(vm.estado.value.podeCopiar)
+        vm.adicionar(a2.id); vm.salvar(); runCurrent()
+        assertEquals(listOf(a2.id), lista.salvos.single().adicionados)
+        assertEquals(MensagemLista.SALVO_NO_APARELHO, vm.estado.value.aviso); assertTrue(vm.estado.value.pendenteEnvio)
+        vm.escolherOrigem(true); vm.pedirCopia(Uuid.random()); vm.confirmarCopia(); runCurrent()
+        assertTrue(lista.copias.isEmpty())
+    }
+
+    @Test fun comAjusteNaFilaCopiarFicaBloqueadoMesmoComRede() = runTest {
+        val lista = Lista(ListaSubstituicaoResposta(paciente, 3, listOf(a1), emptyList(), emptyList())); val fonte = NoAparelho(lista); fonte.pendente = true
+        val vm = ListaPacienteViewModel(fonte, Catalogo(listOf(a1, a2), grupo), StandardTestDispatcher(testScheduler), conectividade = flowOf(true))
+        vm.abrir(paciente); runCurrent()
+        assertTrue(vm.estado.value.pendenteEnvio); assertFalse(vm.estado.value.podeCopiar); assertTrue(vm.estado.value.podeEditar)
+    }
+
+    @Test fun semEscritaOfflineSemRedeNaoSalva() = runTest {
+        val lista = Lista(ListaSubstituicaoResposta(paciente, 3, listOf(a1), emptyList(), emptyList()))
+        val rede = MutableStateFlow(true)
+        val vm = ListaPacienteViewModel(lista, Catalogo(listOf(a1, a2), grupo), StandardTestDispatcher(testScheduler), conectividade = rede)
+        vm.abrir(paciente); runCurrent(); rede.value = false; runCurrent()
+        vm.remover(a1.id); vm.salvar(); runCurrent()
+        assertTrue(lista.salvos.isEmpty()); assertFalse(vm.estado.value.podeEditar)
+    }
 }

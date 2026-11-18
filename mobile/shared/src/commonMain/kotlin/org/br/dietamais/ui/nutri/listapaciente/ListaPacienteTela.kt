@@ -17,11 +17,12 @@ import kotlin.uuid.Uuid
 fun ListaPacienteTela(estado: EstadoListaPaciente, aoBusca: (String) -> Unit = {}, aoRemover: (Uuid) -> Unit = {},
     aoAdicionar: (Uuid) -> Unit = {}, aoSalvar: () -> Unit = {}, aoDescartar: () -> Unit = {}, aoRecarregar: () -> Unit = {},
     acoesCopia: AcoesCopiaLista = AcoesCopiaLista()) {
-    val habilitado = !estado.semConexao && !estado.carregando && !estado.enviando
+    val habilitado = estado.podeEditar
     Column(Modifier.fillMaxWidth().testTag("lista-paciente"), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
         Text(stringResource(Res.string.lista_titulo), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         Text(stringResource(Res.string.lista_descricao), style = MaterialTheme.typography.bodySmall)
         if (estado.semConexao) FaixaOffline()
+        if (estado.pendenteEnvio) ChipStatus(EstiloStatus.INFO, texto = stringResource(Res.string.dieta_pendente_envio))
         estado.erro?.let { Text(textoMensagemLista(it), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
         estado.aviso?.let { Text(textoMensagemLista(it), style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
@@ -32,7 +33,7 @@ fun ListaPacienteTela(estado: EstadoListaPaciente, aoBusca: (String) -> Unit = {
                 BotaoPrincipal(stringResource(Res.string.lista_salvar), aoSalvar, habilitado = habilitado && estado.pendente, carregando = estado.enviando)
                 BotaoTexto(stringResource(Res.string.lista_descartar), aoDescartar, habilitado = habilitado && estado.pendente)
             }
-            if (estado.origens.isNotEmpty()) SecaoCopiarLista(estado, acoesCopia, habilitado)
+            if (estado.origens.isNotEmpty()) SecaoCopiarLista(estado, acoesCopia, estado.podeCopiar)
             Text(stringResource(Res.string.lista_na_lista), style = MaterialTheme.typography.labelLarge)
             if (estado.efetiva.isEmpty()) EstadoVazio(mensagem = stringResource(Res.string.lista_vazia))
             estado.efetiva.forEach { alimento ->
@@ -83,6 +84,7 @@ fun textoMensagemLista(mensagem: MensagemLista): String = stringResource(when (m
     MensagemLista.ASSINATURA_INATIVA -> Res.string.pacientes_erro_assinatura
     MensagemLista.NAO_ENCONTRADO -> Res.string.lista_nao_encontrada
     MensagemLista.SALVO -> Res.string.lista_salva
+    MensagemLista.SALVO_NO_APARELHO -> Res.string.lista_salva_no_aparelho
     MensagemLista.COPIADA -> Res.string.lista_copiada
     MensagemLista.VINCULO_ENCERRADO -> Res.string.lista_vinculo_encerrado
     MensagemLista.ERRO -> Res.string.erro_padrao

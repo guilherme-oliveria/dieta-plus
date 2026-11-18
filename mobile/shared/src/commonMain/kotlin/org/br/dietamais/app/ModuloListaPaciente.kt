@@ -40,14 +40,25 @@ fun moduloAvaliacoes(ambiente: AmbienteDieta?) = module {
         aoNavegar = org.br.dietamais.app.SolicitacoesNavegacao::pedir) }
     single<org.br.dietamais.data.repositorio.PortaPendencias> { org.br.dietamais.data.repositorio.PendenciasRepositorio(get(), aoMudar = { ambiente?.solicitarLeitura() }) }
     viewModel { org.br.dietamais.ui.pendencias.PendenciasViewModel(get()) }
-    single<org.br.dietamais.data.repositorio.PortaAnamnese> { org.br.dietamais.data.repositorio.AnamneseRepositorio(get(), get(), aoEnfileirar = { ambiente?.solicitarLeitura() }) }
+    // MOB-29c: modelos de questionário gravam no aparelho e na fila; enviar ao paciente segue online
+    single<org.br.dietamais.data.repositorio.PortaAnamnese> {
+        val banco = get<org.br.dietamais.data.local.BancoDieta>()
+        org.br.dietamais.data.repositorio.ModelosQuestionarioOffline(
+            org.br.dietamais.data.repositorio.AnamneseRepositorio(get(), banco, aoEnfileirar = { ambiente?.solicitarLeitura() }), banco,
+            aoAlterar = { ambiente?.solicitarLeitura() })
+    }
     viewModel { org.br.dietamais.ui.nutri.anamnese.AnamneseNutriViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     viewModel { org.br.dietamais.ui.paciente.anamnese.AnamnesePacienteViewModel(get(), sincronizar = { ambiente?.sincronizarEscritasAgora(); Unit },
         conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
 }
 
 fun moduloListaPaciente(ambiente: AmbienteDieta?) = module {
-    single<PortaListaPaciente> { ListaPacienteRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), get<org.br.dietamais.data.local.BancoDieta>()) }
+    // MOB-29c: salvar a lista grava no aparelho e na fila; copiar de outro paciente segue online
+    single<PortaListaPaciente> {
+        val banco = get<org.br.dietamais.data.local.BancoDieta>()
+        org.br.dietamais.data.repositorio.ListaPacienteOffline(ListaPacienteRepositorio(get<org.br.dietamais.data.remoto.ApiDieta>(), banco), banco,
+            aoAlterar = { ambiente?.solicitarLeitura() })
+    }
     viewModel { ListaPacienteViewModel(get(), get(), pacientes = getOrNull(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
 }
 

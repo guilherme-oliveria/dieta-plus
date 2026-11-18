@@ -28,6 +28,10 @@ interface PortaAnamnese {
     suspend fun atualizarModelos()
     suspend fun criarModelo(requisicao: SalvarModeloRequisicao): ModeloQuestionarioResposta
     suspend fun salvarModelo(id: Uuid, versao: Long, requisicao: SalvarModeloRequisicao): ModeloQuestionarioResposta
+    /** MOB-29c: criar e salvar modelo gravam no aparelho e na fila (enviar questionário continua online). */
+    val escritaOffline: Boolean get() = false
+    /** Modelos com mudança ainda não aceita pelo servidor: não podem ir para o paciente antes do envio. */
+    fun modelosPendentes(): Set<Uuid> = emptySet()
 
     /** Nutri: passe o id da ficha. Paciente: nulo. Mais recentes primeiro. */
     fun observarQuestionarios(pacienteId: Uuid?): Flow<List<QuestionarioResposta>>
@@ -136,6 +140,8 @@ class AnamneseRepositorio(private val api: ApiDieta, private val banco: BancoDie
 
     private fun guardar(colecao: String, id: Uuid, versao: Long, json: String) {
         val sessao = banco.sessaoQueries.atual().executeAsOneOrNull() ?: return
+        // edição local ainda não aceita (MOB-29c) vale mais que o estado do servidor
+        if (banco.mutacaoPendenteQueries.abertaDoRegistro(sessao.usuario_id, sessao.perfil, colecao, id.toString()).executeAsOne() > 0) return
         val atual = banco.registroSyncQueries.revisao(sessao.usuario_id, sessao.perfil, colecao, id.toString()).executeAsOneOrNull()
         if (atual != null && atual > versao) return
         banco.registroSyncQueries.salvar(sessao.usuario_id, sessao.perfil, colecao, id.toString(), versao, 0, json)

@@ -15,7 +15,7 @@ class AnamneseNutriViewModelTest {
     private val paciente = Uuid.random()
     private fun modelo(nome: String = "Padrão", padrao: Boolean = true) = ModeloQuestionarioResposta(Uuid.random(), nome, padrao,
         listOf(BlocoQuestionario("Hábitos", listOf(perguntaFalsa("Fuma?", TipoPergunta.ESCOLHA_UNICA, true, listOf("Sim", "Não"))))), 1, instanteFalso, instanteFalso)
-    private fun TestScope.vm(p: PortaAnamneseFalsa, online: Boolean = true) = AnamneseNutriViewModel(p, StandardTestDispatcher(testScheduler), flowOf(online))
+    private fun TestScope.vm(p: org.br.dietamais.data.repositorio.PortaAnamnese, online: Boolean = true) = AnamneseNutriViewModel(p, StandardTestDispatcher(testScheduler), flowOf(online))
     private fun erro(codigo: String) = ErroApi(codigo, null, emptyList(), 400, null, null)
 
     @Test fun abreCarregaModelosEQuestionariosDoPaciente() = runTest {
@@ -86,5 +86,45 @@ class AnamneseNutriViewModelTest {
         vm.mudarPergunta(vm.estado.value.editor!!.blocos[0].perguntas[0].id) { it.copy(texto = "p") }
         p.falha = erro("FORMATO_INVALIDO"); vm.salvarModelo(); advanceUntilIdle()
         assertNotNull(vm.estado.value.editor); assertEquals(MensagemAnamnese.MODELO_INVALIDO, vm.estado.value.erro)
+    }
+
+    /** MOB-29c: fonte que grava modelos no aparelho; o que ainda não foi ao servidor fica em [pendentes]. */
+    private class NoAparelho(val p: PortaAnamneseFalsa) : org.br.dietamais.data.repositorio.PortaAnamnese by p {
+        val pendentes = mutableSetOf<Uuid>()
+        override val escritaOffline: Boolean get() = true
+        override fun modelosPendentes(): Set<Uuid> = pendentes.toSet()
+        override suspend fun criarModelo(requisicao: SalvarModeloRequisicao) = p.criarModelo(requisicao).also { pendentes += it.id }
+    }
+
+    @Test fun semRedeOModeloSeCriaNoAparelhoMasNaoVaiAoPaciente() = runTest {
+        val p = PortaAnamneseFalsa(); p.falha = FalhaComunicacao(); val fonte = NoAparelho(p)
+        val vm = vm(fonte, online = false); vm.abrir(paciente); advanceUntilIdle()
+        p.falha = null
+        assertTrue(vm.estado.value.semConexao); assertTrue(vm.estado.value.podeEditarModelos)
+        vm.gerenciarModelos(true); vm.novoModelo(); vm.mudarNome("Esportivo"); vm.mudarBloco(0, "Treino"); vm.adicionarPergunta(0)
+        val pergunta = vm.estado.value.editor!!.blocos[0].perguntas.single()
+        vm.mudarPergunta(pergunta.id) { it.copy(texto = "Treina?") }
+        vm.salvarModelo(); advanceUntilIdle()
+        val criado = assertNotNull(p.modeloCriado)
+        assertEquals(MensagemAnamnese.MODELO_NO_APARELHO, vm.estado.value.aviso); assertTrue(vm.estado.value.semConexao)
+        val id = assertNotNull(criado.id)
+        assertEquals(setOf(id), vm.estado.value.pendentes); assertFalse(vm.estado.value.podeEnviar(id))
+    }
+
+    @Test fun modeloAindaNaFilaNaoEhEnviadoAoPaciente() = runTest {
+        val m = modelo("Meu", false); val p = PortaAnamneseFalsa(listOf(m)); val fonte = NoAparelho(p); fonte.pendentes += m.id
+        val vm = vm(fonte); vm.abrir(paciente); advanceUntilIdle()
+        vm.enviar(m.id); advanceUntilIdle()
+        assertNull(p.enviado); assertEquals(MensagemAnamnese.MODELO_PENDENTE, vm.estado.value.erro)
+        fonte.pendentes.clear(); vm.enviar(m.id); advanceUntilIdle()
+        assertEquals(m.id, p.enviado?.modeloId)
+    }
+
+    @Test fun semEscritaOfflineSemRedeNaoEditaModelos() = runTest {
+        // a recarga que dá certo prova que há rede; a conexão cai depois
+        val rede = kotlinx.coroutines.flow.MutableStateFlow(true)
+        val vm = AnamneseNutriViewModel(PortaAnamneseFalsa(), StandardTestDispatcher(testScheduler), rede); vm.abrir(paciente); advanceUntilIdle()
+        rede.value = false; advanceUntilIdle()
+        assertFalse(vm.estado.value.podeEditarModelos)
     }
 }

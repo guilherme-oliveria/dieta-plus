@@ -14,7 +14,7 @@ import kotlin.uuid.Uuid
 /** Aba Anamnese da ficha (MOB-24): enviar um modelo ao paciente, ler respostas e editar os modelos da nutri. */
 class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     conectividade: Flow<Boolean>? = null) : ViewModel() {
-    private val atual = MutableStateFlow(EstadoAnamneseNutri())
+    private val atual = MutableStateFlow(EstadoAnamneseNutri(escritaOffline = anamnese.escritaOffline, pendentes = anamnese.modelosPendentes()))
     val estado = atual.asStateFlow()
     private var leituraModelos: Job? = null
     private var leituraQuestionarios: Job? = null
@@ -23,14 +23,15 @@ class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val di
     init {
         conectividade?.let { fluxo -> viewModelScope.launch(dispatcher) { fluxo.collect { online -> atual.update { it.copy(semConexao = !online) } } } }
         leituraModelos = viewModelScope.launch(dispatcher) {
-            anamnese.observarModelos().catch { atual.update { e -> e.copy(erro = MensagemAnamnese.ERRO) } }.collect { lista -> atual.update { it.copy(modelos = lista) } }
+            anamnese.observarModelos().catch { atual.update { e -> e.copy(erro = MensagemAnamnese.ERRO) } }
+                .collect { lista -> atual.update { it.copy(modelos = lista, pendentes = anamnese.modelosPendentes()) } }
         }
     }
 
     fun abrir(pacienteId: Uuid) {
         if (atual.value.pacienteId == pacienteId) return
         leituraQuestionarios?.cancel(); operacao?.cancel()
-        atual.update { EstadoAnamneseNutri(pacienteId = pacienteId, modelos = it.modelos, semConexao = it.semConexao) }
+        atual.update { EstadoAnamneseNutri(pacienteId = pacienteId, modelos = it.modelos, semConexao = it.semConexao, escritaOffline = it.escritaOffline, pendentes = anamnese.modelosPendentes()) }
         leituraQuestionarios = viewModelScope.launch(dispatcher) {
             anamnese.observarQuestionarios(pacienteId).catch { atual.update { e -> e.copy(erro = MensagemAnamnese.ERRO) } }.collect { lista -> atual.update { it.copy(questionarios = lista) } }
         }
@@ -55,6 +56,8 @@ class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val di
     fun enviar(modeloId: Uuid) {
         val paciente = atual.value.pacienteId ?: return
         if (atual.value.enviando || atual.value.semConexao) return
+        // o servidor só conhece o modelo depois que a fila o enviar
+        if (modeloId in anamnese.modelosPendentes()) { atual.update { it.copy(erro = MensagemAnamnese.MODELO_PENDENTE, aviso = null) }; return }
         atual.update { it.copy(enviando = true, erro = null, aviso = null) }
         operacao = viewModelScope.launch(dispatcher) {
             try { anamnese.enviar(paciente, EnviarQuestionarioRequisicao(novoIdLocal(), modeloId)); atual.update { it.copy(aviso = MensagemAnamnese.ENVIADO, semConexao = false) } }
@@ -88,7 +91,7 @@ class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val di
 
     fun salvarModelo() {
         val e = atual.value; val editor = e.editor ?: return
-        if (e.enviando || e.semConexao) return
+        if (!e.podeEditarModelos) return
         val validacao = editor.validar()
         if (!validacao.valido) { atual.update { it.copy(validacao = validacao) }; return }
         atual.update { it.copy(enviando = true, erro = null, aviso = null, validacao = ValidacaoModelo()) }
@@ -96,7 +99,11 @@ class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val di
             try {
                 val requisicao = editor.paraRequisicao()
                 if (editor.id == null) anamnese.criarModelo(requisicao) else anamnese.salvarModelo(editor.id, checkNotNull(editor.versao), requisicao)
-                atual.update { it.copy(editor = null, aviso = MensagemAnamnese.MODELO_SALVO, semConexao = false) }
+                val pendentes = anamnese.modelosPendentes()
+                // com escrita offline, salvar não prova que há rede: o aviso diz se o modelo ficou no aparelho
+                if (anamnese.escritaOffline) atual.update { it.copy(editor = null, pendentes = pendentes,
+                    aviso = if (pendentes.isEmpty()) MensagemAnamnese.MODELO_SALVO else MensagemAnamnese.MODELO_NO_APARELHO) }
+                else atual.update { it.copy(editor = null, aviso = MensagemAnamnese.MODELO_SALVO, semConexao = false) }
             }
             catch (c: CancellationException) { throw c }
             catch (falha: Exception) { apresentar(falha) }
@@ -109,6 +116,7 @@ class AnamneseNutriViewModel(private val anamnese: PortaAnamnese, private val di
     private fun apresentar(falha: Throwable) {
         val mensagem = when (falha) {
             is FalhaComunicacao -> MensagemAnamnese.SEM_CONEXAO
+            is org.br.dietamais.data.repositorio.ModeloQuestionarioPendente -> MensagemAnamnese.MODELO_PENDENTE
             is ErroApi -> when (falha.codigo) {
                 "CONFLITO_VERSAO" -> MensagemAnamnese.CONFLITO
                 "FORMATO_INVALIDO" -> MensagemAnamnese.MODELO_INVALIDO

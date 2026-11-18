@@ -759,6 +759,8 @@
     <string name="anamnese_msg_modelo_invalido">O modelo tem problemas. Revise as perguntas, as opções e as condições.</string>
     <string name="anamnese_msg_erro">Não foi possível concluir. Tente novamente.</string>
     <string name="anamnese_msg_modelo_salvo">Modelo salvo.</string>
+    <string name="anamnese_msg_modelo_no_aparelho">Modelo salvo no aparelho. Ele vai para o servidor quando houver conexão.</string>
+    <string name="anamnese_msg_modelo_pendente">Este modelo ainda não foi enviado ao servidor. Envie ao paciente depois que ele sincronizar.</string>
     <string name="anamnese_msg_enviado">Questionário enviado ao paciente.</string>
     <string name="anamnese_msg_fechado">Este questionário já foi enviado e não pode mais ser alterado.</string>
     <string name="anamnese_msg_pendentes">Suas respostas ainda estão sendo sincronizadas. Tente de novo em instantes.</string>
@@ -1569,6 +1571,7 @@
     <string name="lista_copiar_confirmar">Copiar</string>
     <string name="lista_copiar_desistir">Manter a atual</string>
     <string name="lista_copiada">Lista copiada.</string>
+    <string name="lista_salva_no_aparelho">Lista salva no aparelho. Ela vai para o servidor quando houver conexão.</string>
     <string name="lista_vinculo_encerrado">Vínculo encerrado: a lista só pode ser lida.</string>
     <string name="pacientes_ampliado_abrir">Mais dados do cadastro</string>
     <string name="pacientes_ampliado_fechar">Menos dados do cadastro</string>
