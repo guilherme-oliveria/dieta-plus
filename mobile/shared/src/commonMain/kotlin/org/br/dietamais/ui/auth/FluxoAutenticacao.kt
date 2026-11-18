@@ -267,7 +267,10 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoContaExcluida() }
             PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
                 perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink, perfil::mudarPerguntaHumor),
-                extras = { PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
+                extras = {
+                    // MOB-95: documentos emitidos pela nutri
+                    org.br.dietamais.ui.paciente.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel>(viewModelStoreOwner = dono), koinInject())
+                    PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
         })
 }
 

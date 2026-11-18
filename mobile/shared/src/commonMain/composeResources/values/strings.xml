@@ -1915,4 +1915,8 @@
     <string name="doc_msg_modelo_salvo">Modelo salvo.</string>
     <string name="doc_msg_modelo_excluido">Modelo excluído.</string>
     <string name="agenda_emitir_declaracao">Emitir declaração</string>
+    <string name="pac_doc_titulo">Documentos</string>
+    <string name="pac_doc_sem_internet">Sem internet. Você vê a lista, mas o PDF só abre conectado.</string>
+    <string name="pac_doc_abrir">Abrir PDF</string>
+    <string name="pac_doc_anulado">Anulado</string>
 </resources>
