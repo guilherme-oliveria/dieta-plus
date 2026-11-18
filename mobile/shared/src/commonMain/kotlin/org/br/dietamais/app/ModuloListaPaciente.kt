@@ -10,6 +10,8 @@ import org.br.dietamais.recursos.compras_titulo_texto
 import org.br.dietamais.recursos.comi
 import org.br.dietamais.recursos.lembrete_corpo
 import org.br.dietamais.recursos.lembrete_titulo
+import org.br.dietamais.recursos.lembrete_suplemento_corpo
+import org.br.dietamais.recursos.lembrete_suplemento_titulo
 import org.br.dietamais.recursos.pulei
 import org.br.dietamais.recursos.troquei
 import org.jetbrains.compose.resources.getString
