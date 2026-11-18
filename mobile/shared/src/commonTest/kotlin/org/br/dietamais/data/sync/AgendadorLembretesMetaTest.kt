@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.repositorio.*
+import org.br.dietamais.dominio.metas.planejarLembretesMeta
 import org.br.dietamais.dominio.rotina.Lembrete
 import org.br.dietamais.dominio.rotina.RotulosAcoes
 import org.br.dietamais.dominio.rotina.TextosLembrete
@@ -45,8 +46,8 @@ class AgendadorLembretesMetaTest {
         override suspend fun salvar(requisicao: AtualizarPreferenciasRequisicao) = throw UnsupportedOperationException()
     }
     private class Notificacao : NotificacaoLocal {
-        var agendados: List<Lembrete>? = null; var cancelou = 0
-        override suspend fun permitido() = true
+        var agendados: List<Lembrete>? = null; var cancelou = 0; var consultas = 0
+        override suspend fun permitido(): Boolean { consultas++; return true }
         override suspend fun pedirPermissao() = true
         override suspend fun agendar(lembretes: List<Lembrete>, textos: TextosLembrete) { agendados = lembretes }
         override suspend fun cancelarTudo() { cancelou++; agendados = null }
@@ -58,7 +59,8 @@ class AgendadorLembretesMetaTest {
         override fun observarLembretes() = lembretes
     }
 
-    private fun textos() = TextosLembrete("Dieta+", { it }, RotulosAcoes("Comi", "Troquei", "Pulei"), tituloMeta = "Dieta+", corpoMeta = "Hora da sua meta")
+    private var textosPedidos = 0
+    private fun textos(): TextosLembrete { textosPedidos++; return TextosLembrete("Dieta+", { it }, RotulosAcoes("Comi", "Troquei", "Pulei"), tituloMeta = "Dieta+", corpoMeta = "Hora da sua meta") }
 
     @Test fun agendaAMetaComOTextoGenericoECancelaAoDesligar() = runTest {
         val notificacao = Notificacao()
@@ -67,7 +69,10 @@ class AgendadorLembretesMetaTest {
         backgroundScope.launch { agendador.executar() }
         advanceUntilIdle()
         // a meta acaba amanhã: hoje e amanhã às 20h, nada depois
-        val l = assertNotNull(notificacao.agendados)
+        assertEquals(2, planejarLembretesMeta(listOf(meta), emptyList(), metas.lembretes.value, relogio.now(), TimeZone.UTC).size, "planejador")
+        assertTrue(notificacao.consultas > 0, "o agendador não chegou a conferir a permissão")
+        assertTrue(textosPedidos > 0, "o agendador parou antes de montar os textos (cancelou ${notificacao.cancelou} vez(es))")
+        val l = assertNotNull(notificacao.agendados, "nada agendado (cancelou ${notificacao.cancelou} vez(es))")
         assertEquals(listOf(Instant.parse("2026-11-17T20:00:00Z"), Instant.parse("2026-11-18T20:00:00Z")), l.map { it.quando })
         assertTrue(l.all { it.titulo == "Dieta+" && it.corpo == "Hora da sua meta" && it.dietaId == null })
         metas.lembretes.value = emptyMap(); advanceUntilIdle()
