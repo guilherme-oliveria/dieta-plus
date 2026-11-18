@@ -21,6 +21,9 @@ class PerfilPacienteViewModelTest {
         override fun observar() = cache
         override fun observarLembretes() = lembretes
         override fun definirLembretes(ativo: Boolean) { lembretes.value = ativo }
+        val humor = MutableStateFlow(true)
+        override fun observarPerguntaHumor() = humor
+        override fun definirPerguntaHumor(ativo: Boolean) { humor.value = ativo }
         override suspend fun atualizar() = servidor.also { cache.value = it }
         override suspend fun salvar(requisicao: AtualizarPreferenciasRequisicao): PreferenciasNotificacaoResposta {
             falha?.let { throw it }; enviado = requisicao
@@ -78,5 +81,12 @@ class PerfilPacienteViewModelTest {
         val cal = Cal(); val vm = vm(Prefs(padrao), cal); advanceUntilIdle()
         vm.gerarLink(); advanceUntilIdle(); assertNotNull(vm.estado.value.calendario)
         vm.revogarLink(); advanceUntilIdle(); assertNull(vm.estado.value.calendario); assertEquals(1, cal.revogados)
+    }
+
+    @Test fun perguntaDeHumorEPreferenciaLocalEFuncionaOffline() = runTest {
+        val prefs = Prefs(padrao); val vm = vm(prefs, online = false); advanceUntilIdle()
+        assertTrue(vm.estado.value.perguntaHumor)
+        vm.mudarPerguntaHumor(false); advanceUntilIdle()
+        assertFalse(vm.estado.value.perguntaHumor); assertFalse(prefs.humor.value); assertNull(vm.estado.value.erro)
     }
 }

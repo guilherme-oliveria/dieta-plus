@@ -16,6 +16,9 @@ interface PortaPreferencias {
     /** Lembretes locais de refeição ligados? (padrão: sim). Só existe no aparelho. */
     fun observarLembretes(): Flow<Boolean>
     fun definirLembretes(ativo: Boolean)
+    /** MOB-88: perguntar fome e sensação depois de "Comi"? (padrão: sim). Só existe no aparelho. */
+    fun observarPerguntaHumor(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(true)
+    fun definirPerguntaHumor(ativo: Boolean) {}
     suspend fun atualizar(): PreferenciasNotificacaoResposta
     suspend fun salvar(requisicao: AtualizarPreferenciasRequisicao): PreferenciasNotificacaoResposta
 }
@@ -31,6 +34,14 @@ class PreferenciasRepositorio(private val api: ApiDieta, private val banco: Banc
     override fun definirLembretes(ativo: Boolean) {
         val s = banco.sessaoQueries.atual().executeAsOneOrNull() ?: throw SessaoAlterada()
         banco.registroSyncQueries.salvar(s.usuario_id, s.perfil, "preferencias-locais", "lembretes", 0, 0, ativo.toString())
+    }
+
+    /** Coleção própria: `preferencias-locais` é lida inteira pelos lembretes. */
+    override fun observarPerguntaHumor(): Flow<Boolean> = banco.registroSyncQueries.daSessao("preferencias-humor").asFlow().mapToList(Dispatchers.Default).map { it.firstOrNull() != "false" }
+
+    override fun definirPerguntaHumor(ativo: Boolean) {
+        val s = banco.sessaoQueries.atual().executeAsOneOrNull() ?: throw SessaoAlterada()
+        banco.registroSyncQueries.salvar(s.usuario_id, s.perfil, "preferencias-humor", "perguntar", 0, 0, ativo.toString())
     }
 
     override suspend fun atualizar(): PreferenciasNotificacaoResposta {

@@ -40,7 +40,7 @@ fun moduloWebPaciente(ambiente: AmbienteWeb) = module {
     single<PortaPreferencias> { PreferenciasOnline(get()) }
     single<PortaVinculosLocais> { VinculosOnline(get()) }
     single<PortaCalendario> { CalendarioRepositorio(get()) }
-    viewModel { DietaPacienteViewModel(get(), get(), conectividade = online) }
+    viewModel { DietaPacienteViewModel(get(), get(), conectividade = online, perguntarHumor = get<PortaPreferencias>().observarPerguntaHumor()) }
     viewModel { AnamnesePacienteViewModel(get(), conectividade = online) }
     viewModel { ConsultasPacienteViewModel(get()) }
     viewModel { EvolucaoViewModel(get(), get<PortaRotina>()) }

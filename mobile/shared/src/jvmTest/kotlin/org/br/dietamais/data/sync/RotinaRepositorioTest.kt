@@ -42,4 +42,20 @@ class RotinaRepositorioTest {
         assertFailsWith<IllegalArgumentException> { repo.registrarCheckin(Uuid.random(), Uuid.random(), LocalDate(2026, 10, 28), StatusCheckin.FEITO, listOf(TrocaCheckin(Uuid.random(), Uuid.random())), agora) }
         assertTrue(FilaMutacoes(banco).pendentes().isEmpty())
     }
+
+    @Test fun humorEForaDoPlanoEntramNaFilaComOContrato() = comBanco { banco ->
+        val repo = RotinaRepositorio(banco)
+        val refeicao = Uuid.random()
+        repo.registrarCheckin(Uuid.random(), refeicao, LocalDate(2026, 10, 28), StatusCheckin.FEITO, emptyList(), agora, 4, null)
+        repo.registrarForaDoPlano(LocalDate(2026, 10, 28), "  Pão de queijo ", refeicao, agora)
+        val fila = FilaMutacoes(banco).pendentes()
+        assertEquals(listOf("checkins", "registrosForaDoPlano"), fila.map { it.entidade })
+        assertEquals("4", fila[0].dados["fomeAntes"].toString())
+        assertEquals("\"Pão de queijo\"", fila[1].dados["texto"].toString())
+        assertEquals("\"$refeicao\"", fila[1].dados["refeicaoId"].toString())
+        assertEquals(4, repo.observar().first().checkins.single().fomeAntes)
+        assertFailsWith<IllegalArgumentException> { repo.registrarForaDoPlano(LocalDate(2026, 10, 28), "   ", null, agora) }
+        assertFailsWith<IllegalArgumentException> { repo.registrarCheckin(Uuid.random(), refeicao, LocalDate(2026, 10, 28), StatusCheckin.FEITO, emptyList(), agora, 6, null) }
+        assertEquals(2, FilaMutacoes(banco).pendentes().size)
+    }
 }

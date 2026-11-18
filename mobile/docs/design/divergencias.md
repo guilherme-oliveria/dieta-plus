@@ -196,3 +196,10 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
 - O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
+
+## MOB-88 · Fome, sensação e fora do plano (18/11/2026)
+
+- Artboards `P-Refeicao-Humor`, `P-Fora-Plano` e `P-Perfil-Preferencias` (DES-18). As duas folhas usam `AlertDialog` (centralizado), não folha de baixo: é o padrão de diálogo do app hoje e funciona igual nos 3 tamanhos.
+- A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
+- O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
+- Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.

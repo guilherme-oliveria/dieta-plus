@@ -80,7 +80,8 @@ fun moduloDietaPaciente(ambiente: AmbienteDieta?) = module {
     single<org.br.dietamais.data.repositorio.PortaDietaPaciente> { org.br.dietamais.data.repositorio.DietaPacienteRepositorio(get(), get()) }
     single<org.br.dietamais.data.repositorio.PortaRotina> { org.br.dietamais.data.repositorio.RotinaRepositorio(get()) }
     viewModel { org.br.dietamais.ui.paciente.dieta.DietaPacienteViewModel(get(), get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL },
-        aoGravar = { ambiente?.solicitarLeitura() }) }
+        aoGravar = { ambiente?.solicitarLeitura() },
+        perguntarHumor = getOrNull<org.br.dietamais.data.repositorio.PortaPreferencias>()?.observarPerguntaHumor() ?: kotlinx.coroutines.flow.flowOf(true)) }
 }
 
 fun moduloLembretes(notificacao: org.br.dietamais.plataforma.NotificacaoLocal?) = module {
