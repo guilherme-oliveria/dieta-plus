@@ -1,6 +1,7 @@
 package org.br.dietamais.ui.nutri.avaliacao
 
 import androidx.compose.runtime.Composable
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.br.dietamais.data.remoto.dto.ClassificacaoImc
@@ -83,10 +84,11 @@ fun textoMensagemAvaliacao(mensagem: MensagemAvaliacao): String = stringResource
 })
 
 /** dd/mm/aaaa no fuso do aparelho. */
-fun textoData(instante: Instant): String {
-    val data = instante.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    return "${data.day.toString().padStart(2, '0')}/${data.month.ordinal.plus(1).toString().padStart(2, '0')}/${data.year}"
-}
+fun textoData(instante: Instant): String = textoData(instante.toLocalDateTime(TimeZone.currentSystemDefault()).date)
+
+/** dd/mm/aaaa. */
+fun textoData(data: LocalDate): String =
+    "${data.day.toString().padStart(2, '0')}/${data.month.ordinal.plus(1).toString().padStart(2, '0')}/${data.year}"
 
 /** Variação com sinal e vírgula: +1,5 / -4 / 0. */
 fun textoVariacao(delta: Double): String = when {

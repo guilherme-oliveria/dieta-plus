@@ -9,6 +9,8 @@ sealed interface DestinoAviso {
     /** MOB-93: aba Dieta com as Orientações abertas (push "nova orientação"). */
     data object Orientacoes : DestinoAviso
     data object Agenda : DestinoAviso
+    /** Conta da nutri, onde fica a assinatura (aviso de fim do teste, BE-82). */
+    data object Conta : DestinoAviso
     /** [fichaId] é o id da ficha na rota `/pacientes/{id}`. */
     data class Paciente(val fichaId: String) : DestinoAviso
     data object Nenhum : DestinoAviso
@@ -30,6 +32,7 @@ fun destinoDaRota(perfil: PerfilNavegacao, rota: String?): DestinoAviso {
         }
         PerfilNavegacao.NUTRICIONISTA -> when {
             primeiro == "agenda" -> DestinoAviso.Agenda
+            primeiro == "assinatura" -> DestinoAviso.Conta
             primeiro == "pacientes" && partes.size == 2 && runCatching { Uuid.parse(partes[1]) }.isSuccess -> DestinoAviso.Paciente(partes[1])
             else -> DestinoAviso.Nenhum
         }
