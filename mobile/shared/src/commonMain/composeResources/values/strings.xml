@@ -827,6 +827,14 @@
     <string name="agenda_dia_dom">dom</string>
     <string name="agenda_prox_titulo">Próxima consulta</string>
     <string name="agenda_prox_quando">%1$s às %2$s · %3$s</string>
+    <!-- MOB-87 -->
+    <string name="agenda_prox_hoje">Hoje, %1$s</string>
+    <string name="agenda_prox_amanha">Amanhã, %1$s</string>
+    <string name="agenda_prox_data">%1$s, %2$s</string>
+    <string name="agenda_prox_tipo_duracao">%1$s · %2$d min</string>
+    <string name="agenda_prox_entrar">Entrar na consulta</string>
+    <string name="agenda_prox_entrar_ajuda">Abre a chamada pelo link que a nutri cadastrou.</string>
+    <string name="agenda_prox_orientacao">Orientação da nutri</string>
     <string name="pendencias_motivo">Motivo: %1$s</string>
     <string name="pendencias_codigo_LIMITE_PACIENTES_ATINGIDO">o limite de pacientes do plano foi atingido</string>
     <string name="pendencias_codigo_ASSINATURA_INATIVA">a assinatura não está ativa</string>

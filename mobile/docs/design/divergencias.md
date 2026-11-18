@@ -196,3 +196,19 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
 - O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
+
+## MOB-87 · Paciente: próxima consulta (18/11/2026)
+
+Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
+
+- o título com o selo da modalidade;
+- "Hoje, 15:00", "Amanhã, 15:00" ou a data;
+- "Retorno · 50 min";
+- o local, quando presencial;
+- "Entrar na consulta" com a explicação, só quando a consulta é online e o link é `https`;
+- a "Orientação da nutri".
+
+O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
+
+- A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
+- O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.

@@ -108,8 +108,10 @@ class AgendaTelasTest {
     @Test fun pacienteVeAProximaConsultaNoHojeESomeSemConsulta() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
         var lista by androidx.compose.runtime.mutableStateOf(listOf(consulta))
         setContent { DietaTheme { ProximaConsultaCard(lista, agoraFalso, fuso) } }
-        onNodeWithText("Próxima consulta").assertIsDisplayed(); onNodeWithText("28/10/2026 às 14:30 · Online").assertIsDisplayed()
-        onNodeWithText("https://meet.exemplo.invalid/x").assertIsDisplayed()
+        // tipo legado "Online" vira Retorno + Online (C-02); o link vira o botão "Entrar na consulta" (MOB-87)
+        onNodeWithText("Próxima consulta").assertIsDisplayed(); onNodeWithText("Hoje, 14:30").assertIsDisplayed(); onNodeWithText("Retorno · 50 min").assertIsDisplayed()
+        onNodeWithText("Online").assertIsDisplayed(); onNodeWithText("Entrar na consulta").assertIsDisplayed()
+        onNodeWithText("https://meet.exemplo.invalid/x").assertDoesNotExist()
         lista = listOf(consulta.copy(status = StatusConsulta.CANCELADA))
         onNodeWithText("Próxima consulta").assertDoesNotExist()
     }
