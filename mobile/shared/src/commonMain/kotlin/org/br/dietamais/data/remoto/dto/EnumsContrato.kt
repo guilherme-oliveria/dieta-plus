@@ -32,3 +32,7 @@ object StatusVinculoSerializer : EnumComOutro<StatusVinculo>("StatusVinculo", St
 @Serializable(with = SexoSerializer::class)
 enum class Sexo { FEMININO, MASCULINO, OUTRO, NAO_INFORMADO }
 object SexoSerializer : EnumComOutro<Sexo>("Sexo", Sexo.entries.toTypedArray(), Sexo.OUTRO)
+
+@Serializable(with = PeriodicidadeSerializer::class)
+enum class Periodicidade { MENSAL, ANUAL, OUTRO }
+object PeriodicidadeSerializer : EnumComOutro<Periodicidade>("Periodicidade", Periodicidade.entries.toTypedArray(), Periodicidade.OUTRO)

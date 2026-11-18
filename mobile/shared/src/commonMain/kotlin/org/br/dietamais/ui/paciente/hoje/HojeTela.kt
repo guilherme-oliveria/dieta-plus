@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.contentDescription
@@ -22,15 +23,22 @@ import org.br.dietamais.ui.comum.*
 import org.br.dietamais.ui.nutri.agenda.nomeDiaSemana
 import org.br.dietamais.ui.nutri.dieta.formatar
 import org.br.dietamais.ui.paciente.dieta.EstadoDietaPaciente
+import org.br.dietamais.ui.paciente.metas.textoSemana
+import org.br.dietamais.ui.paciente.metas.textoSequencia
 import org.br.dietamais.ui.theme.Dimens
 import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
 
-class AcoesHoje(val aoMudarDia: (LocalDate) -> Unit, val aoMarcar: (Uuid, StatusCheckin) -> Unit, val aoTrocar: (Uuid) -> Unit, val aoBeberAgua: (Int) -> Unit, val aoDesfazer: () -> Unit = {}, val aoDesfazerAgua: () -> Unit = {})
+class AcoesHoje(val aoMudarDia: (LocalDate) -> Unit, val aoMarcar: (Uuid, StatusCheckin) -> Unit, val aoTrocar: (Uuid) -> Unit, val aoBeberAgua: (Int) -> Unit, val aoDesfazer: () -> Unit = {}, val aoDesfazerAgua: () -> Unit = {},
+    val aoFome: (Int) -> Unit = {}, val aoSensacao: (Int) -> Unit = {}, val aoSalvarHumor: () -> Unit = {}, val aoPularHumor: () -> Unit = {},
+    val aoAbrirFora: () -> Unit = {}, val aoTextoFora: (String) -> Unit = {}, val aoRefeicaoFora: (Uuid?) -> Unit = {}, val aoHoraFora: (String) -> Unit = {},
+    val aoRegistrarFora: () -> Unit = {}, val aoFecharFora: () -> Unit = {}, val aoDesfazerFora: () -> Unit = {})
 
 /** Aba Hoje: dia, próxima refeição com Comi/Troquei/Pulei, demais refeições e água (MOB-14, 15, 17). */
 @Composable
-fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier = Modifier) {
+fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier = Modifier,
+    /** MOB-90: "Metas de hoje", logo antes do cartão de água (no app; a web ainda não lê metas). */
+    metas: @Composable () -> Unit = {}) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.paddingCard),
         verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
         Text(stringResource(Res.string.aba_hoje), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
@@ -41,6 +49,7 @@ fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier =
             estado.dieta == null -> EstadoVazio(mensagem = stringResource(Res.string.pac_sem_dieta))
             else -> {
                 if (estado.podeDesfazer) AvisoDesfazer(stringResource(Res.string.pac_checkin_registrado), stringResource(Res.string.pac_desfazer), acoes.aoDesfazer)
+                if (estado.podeDesfazerFora) AvisoDesfazer(stringResource(Res.string.fora_registrado), stringResource(Res.string.pac_desfazer), acoes.aoDesfazerFora)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                     estado.dias.forEach { d ->
                         val extenso = descricaoDia(d)
@@ -74,10 +83,16 @@ fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier =
                         }
                     }
                 }
+                // MOB-88: registro rápido do que saiu do plano, sem julgamento
+                BotaoContornado(stringResource(Res.string.fora_abrir), acoes.aoAbrirFora, Modifier.fillMaxWidth())
+                metas()
                 CardAgua(estado, acoes)
             }
         }
     }
+    estado.humor?.let { FolhaHumor(it, acoes.aoFome, acoes.aoSensacao, acoes.aoSalvarHumor, acoes.aoPularHumor) }
+    estado.foraDoPlano?.let { FolhaForaDoPlano(it, estado.errosForaDoPlano, estado.refeicoes, acoes.aoTextoFora, acoes.aoRefeicaoFora,
+        acoes.aoHoraFora, acoes.aoRegistrarFora, acoes.aoFecharFora) }
 }
 
 @Composable
@@ -109,9 +124,17 @@ private fun CardAgua(estado: EstadoDietaPaciente, acoes: AcoesHoje) {
     var tentou by remember { mutableStateOf(false) }
     val valor = lerMlAgua(texto)
     CardDieta(Modifier.fillMaxWidth()) {
-        Text(stringResource(Res.string.pac_agua_titulo), style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text(stringResource(Res.string.pac_agua_titulo), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            // MOB-99: a água é meta (RN-MET-05): sequência de dias como nas outras metas
+            estado.progressoAgua?.let { textoSequencia(it) }?.let { ChipStatus(EstiloStatus.FEITA, texto = it) }
+        }
         Text(stringResource(Res.string.pac_agua_progresso, estado.aguaMl.toString(), estado.metaAguaMl.toString()), style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+        estado.progressoAgua?.let { p ->
+            Text(textoSemana(p) ?: stringResource(Res.string.pacmeta_dias_ate_agora, p.semana.diasCumpridos, p.semana.diasPrevistos),
+                style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("agua-semana"))
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
             listOf(200, 300, 500).forEach { ml -> BotaoTexto(stringResource(Res.string.pac_agua_mais, ml.toString()), { acoes.aoBeberAgua(ml) }) }
             BotaoTexto(stringResource(Res.string.pac_agua_outro), { livre = !livre }, selecionado = livre)

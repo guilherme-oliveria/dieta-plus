@@ -42,6 +42,13 @@ class PainelTest {
         assertEquals(listOf(bia.id, ana.id), r.respondidos.map { it.fichaId })
     }
 
+    @Test fun avisoDeFimDoTesteSoNosUltimosDias() {
+        val teste = AssinaturaResumoResposta(Uuid.random(), "TESTE", StatusAssinatura.TESTE, 5, 4, agora + 1.days)
+        assertEquals(1, montarPainel(emptyList(), emptyList(), emptyList(), emptyList(), teste, agora, fuso).diasFimTeste)
+        assertNull(montarPainel(emptyList(), emptyList(), emptyList(), emptyList(), teste.copy(fimPeriodoEm = agora + 20.days), agora, fuso).diasFimTeste)
+        assertNull(montarPainel(emptyList(), emptyList(), emptyList(), emptyList(), teste.copy(status = StatusAssinatura.ATIVA), agora, fuso).diasFimTeste)
+    }
+
     @Test fun rotaDaFicha() {
         val id = Uuid.random()
         assertEquals(id, fichaDaRota("/pacientes/$id")); assertNull(fichaDaRota("/pacientes")); assertNull(fichaDaRota("/agenda")); assertNull(fichaDaRota(null))

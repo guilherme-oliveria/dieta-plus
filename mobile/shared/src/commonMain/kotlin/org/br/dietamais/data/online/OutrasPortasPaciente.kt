@@ -42,6 +42,10 @@ class PreferenciasOnline(private val api: ApiDieta) : PortaPreferencias {
     }
     override fun observarLembretes(): Flow<Boolean> = flowOf(false)
     override fun definirLembretes(ativo: Boolean) = Unit
+    /** MOB-88: na web a escolha vale enquanto a página está aberta. */
+    private val perguntaHumor = MutableStateFlow(true)
+    override fun observarPerguntaHumor(): Flow<Boolean> = perguntaHumor
+    override fun definirPerguntaHumor(ativo: Boolean) { perguntaHumor.value = ativo }
     override suspend fun atualizar(): PreferenciasNotificacaoResposta {
         val esperado = api.operacaoSessao.value ?: throw SessaoAlterada()
         val resposta = api.obter<PreferenciasNotificacaoResposta>("eu/preferencias-notificacao")

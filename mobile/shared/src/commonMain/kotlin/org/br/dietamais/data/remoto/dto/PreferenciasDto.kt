@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
 
 @Serializable(with = TipoNotificacaoSerializer::class)
-enum class TipoNotificacao { NOVA_DIETA, QUESTIONARIO_ENVIADO, CONSULTA_AMANHA, QUESTIONARIO_RESPONDIDO, PACIENTE_SEM_CHECKIN, ASSINATURA, OUTRO }
+enum class TipoNotificacao { NOVA_DIETA, QUESTIONARIO_ENVIADO, CONSULTA_AMANHA, QUESTIONARIO_RESPONDIDO, PACIENTE_SEM_CHECKIN, ASSINATURA, NOVA_ORIENTACAO, OUTRO }
 object TipoNotificacaoSerializer : EnumComOutro<TipoNotificacao>("TipoNotificacao", TipoNotificacao.entries.toTypedArray(), TipoNotificacao.OUTRO)
 
 @Serializable

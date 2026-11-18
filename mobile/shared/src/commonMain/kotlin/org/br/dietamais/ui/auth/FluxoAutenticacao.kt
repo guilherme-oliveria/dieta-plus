@@ -40,7 +40,7 @@ import org.br.dietamais.ui.paciente.compras.AcoesCompras
 import org.br.dietamais.ui.paciente.compras.ComprasTela
 import org.br.dietamais.ui.paciente.compras.ComprasViewModel
 import org.br.dietamais.ui.nutri.assinatura.AcoesPerfilNutri
-import org.br.dietamais.ui.nutri.assinatura.AcoesAssinatura
+import org.br.dietamais.ui.nutri.assinatura.acoesAssinatura
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
 import org.br.dietamais.ui.nutri.assinatura.ContaNutriTela
@@ -124,7 +124,8 @@ fun FluxoAutenticacao(viewModel: AutenticacaoViewModel = koinViewModel(), convit
                             verticalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                             estado.erro?.let { MensagemAutenticacaoTexto(it, alerta = true) }
                             teste?.let {
-                                Text(stringResource(Res.string.auth_assinatura_teste, it.limitePacientes, it.fimPeriodoEm.toString().substringBefore('T')),
+                                val fim = it.fimPeriodoEm.toString().substringBefore('T')
+                                Text(it.limitePacientes?.let { l -> stringResource(Res.string.auth_assinatura_teste, l, fim) } ?: stringResource(Res.string.auth_assinatura_teste_sem_limite, fim),
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -234,15 +235,24 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             Column(Modifier.fillMaxSize()) {
                 AnamnesePacienteRota(anamnese)
                 ProximaConsultaRota(koinViewModel<ConsultasPacienteViewModel>(viewModelStoreOwner = dono))
-                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua), Modifier.weight(1f))
+                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua,
+                    aoFome = vm::escolherFome, aoSensacao = vm::escolherSensacao, aoSalvarHumor = vm::salvarHumor, aoPularHumor = vm::pularHumor,
+                    aoAbrirFora = vm::abrirForaDoPlano, aoTextoFora = vm::mudarTextoFora, aoRefeicaoFora = vm::mudarRefeicaoFora,
+                    aoHoraFora = vm::mudarHoraFora, aoRegistrarFora = vm::registrarForaDoPlano, aoFecharFora = vm::fecharForaDoPlano,
+                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f),
+                    metas = { org.br.dietamais.ui.paciente.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.metas.MetasPacienteViewModel>(viewModelStoreOwner = dono)) })
             }
             TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
         },
         conteudoDieta = {
             val pdf = koinInject<org.br.dietamais.data.repositorio.PortaPdf>()
-            org.br.dietamais.ui.paciente.dieta.DietaPacienteRota(vm, pdf = { e -> e.dieta?.let { d ->
-                BotaoPdf(stringResource(Res.string.pdf_dieta), !e.semConexao, { pdf.link(org.br.dietamais.data.repositorio.RecursoPdf.DIETA, d.dietaId) })
-                org.br.dietamais.ui.comum.BotoesPdfLista(pdf, d.dietaId, !e.semConexao) } })
+            // MOB-93: Suplementos e Orientações abrem dentro da aba Dieta, lidos do banco local
+            org.br.dietamais.ui.paciente.dieta.DietaComPrescricoes(koinViewModel<org.br.dietamais.ui.paciente.dieta.PrescricoesPacienteViewModel>(viewModelStoreOwner = dono),
+                estado.dieta?.nutricionista?.nome) { extras ->
+                org.br.dietamais.ui.paciente.dieta.DietaPacienteRota(vm, pdf = { e -> e.dieta?.let { d ->
+                    BotaoPdf(stringResource(Res.string.pdf_dieta), !e.semConexao, { pdf.link(org.br.dietamais.data.repositorio.RecursoPdf.DIETA, d.dietaId) })
+                    org.br.dietamais.ui.comum.BotoesPdfLista(pdf, d.dietaId, !e.semConexao) } }, extras = extras)
+            }
         },
         conteudoEvolucao = { EvolucaoPacienteRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono)) },
         conteudoCompras = {
@@ -257,8 +267,11 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             val estadoPriv by priv.estado.collectAsState()
             LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoContaExcluida() }
             PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
-                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink),
-                extras = { PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
+                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink, perfil::mudarPerguntaHumor),
+                extras = {
+                    // MOB-95: documentos emitidos pela nutri
+                    org.br.dietamais.ui.paciente.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel>(viewModelStoreOwner = dono), koinInject())
+                    PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
         })
 }
 
@@ -270,10 +283,13 @@ private fun NavegacaoNutri() {
     NavegacaoApp(PerfilNavegacao.NUTRICIONISTA, resolverVinculo = { ficha -> pacientes.estado.value.lista.firstOrNull { it.id.toString() == ficha }?.vinculoId?.toString() },
     conteudoPacientes = { classe, vinculo, abrir, voltar ->
         PacientesRota(pacientes, classe, vinculo, abrir, voltar, abaConteudo = { aba, paciente ->
-          if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+          if (aba == AbaFicha.SAUDE) org.br.dietamais.ui.nutri.paciente.SaudePacienteRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel>(viewModelStoreOwner = dono), paciente)
+          else if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+          else if (aba == AbaFicha.PRESCRICOES) org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
           else if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.AVALIACOES) AvaliacoesNutriRota(koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.sexo, paciente.dataNascimento, koinViewModel<org.br.dietamais.ui.nutri.avaliacao.ExamesNutriViewModel>(viewModelStoreOwner = dono), paciente.nome)
           else if (aba == AbaFicha.ANAMNESE) AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
+          else if (aba == AbaFicha.DOCUMENTOS) org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
           else if (aba == AbaFicha.DIETA) DietasPacienteRota(koinViewModel<MontadorDietaViewModel>(viewModelStoreOwner = dono), paciente, koinViewModel<org.br.dietamais.ui.nutri.dieta.PlanejadorPorcoesViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.ModelosDietaViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.AplicarModeloViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.PlanejadorPorcoesViewModel>(qualifier = org.koin.core.qualifier.named("modelo"), viewModelStoreOwner = dono), koinInject<org.br.dietamais.ui.nutri.dieta.DietasDeModelo>())
           else {
             val lista = koinViewModel<ListaPacienteViewModel>(viewModelStoreOwner = dono)
@@ -282,7 +298,7 @@ private fun NavegacaoNutri() {
             ListaPacienteTela(estadoLista, lista::mudarBusca, lista::remover, lista::adicionar, lista::salvar, lista::descartar, lista::recarregar,
                                 AcoesCopiaLista(lista::escolherOrigem, lista::pedirCopia, lista::confirmarCopia, lista::desistirDaCopia))
           }
-        })
+        }, resumoExtra = { paciente -> org.br.dietamais.ui.nutri.paciente.AdesaoHumorRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel>(viewModelStoreOwner = dono), paciente.id) })
     }, conteudoInicio = { PainelRota(koinViewModel<PainelViewModel>(viewModelStoreOwner = dono)) },
     conteudoAgenda = { AgendaRota(koinViewModel<AgendaViewModel>(viewModelStoreOwner = dono)) },
     conteudoAlimentos = { AlimentosRota(koinViewModel<AlimentosViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.produtos.ProdutosViewModel>(viewModelStoreOwner = dono)) },
@@ -301,7 +317,8 @@ private fun NavegacaoNutri() {
                 val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
                 val estadoLembrete by lembrete.estado.collectAsState()
                 LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
-                AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
+                org.br.dietamais.ui.nutri.documentos.ModelosDocumentoRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel>(viewModelStoreOwner = dono))
+                AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                 val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                 val estadoPriv by priv.estado.collectAsState()
                 PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = false)

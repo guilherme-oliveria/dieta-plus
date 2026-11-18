@@ -43,6 +43,7 @@ fun moduloWebNutri(ambiente: AmbienteWeb, compartilhamento: Compartilhamento) = 
     val online = ambiente.conectividade.estado.map { it != EstadoConexao.INDISPONIVEL }
     single<Compartilhamento> { compartilhamento }
     single<PortaPacientes> { PacientesOnline(get()) }
+    viewModel { org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel(get()) }
     single<PortaAlimentos> { AlimentosOnline(get()) }
     single<PortaDietas> { DietasRepositorio(get<ApiDieta>()) { } }
     single<PortaPdf> { PdfRepositorio(get()) }
@@ -55,8 +56,12 @@ fun moduloWebNutri(ambiente: AmbienteWeb, compartilhamento: Compartilhamento) = 
     viewModel { org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriViewModel(get(), conectividade = online) }
     single<org.br.dietamais.data.repositorio.PortaMetasNutri> { org.br.dietamais.data.repositorio.MetasNutriRepositorio(get<ApiDieta>()) }
     viewModel { org.br.dietamais.ui.nutri.metas.MetasNutriViewModel(get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaPrescricoesNutri> { org.br.dietamais.data.repositorio.PrescricoesNutriRepositorio(get<ApiDieta>()) }
+    viewModel { org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel(get(), getOrNull(), conectividade = online) }
     single<org.br.dietamais.data.repositorio.PortaPreferenciasAgenda> { org.br.dietamais.data.repositorio.PreferenciasAgendaRepositorio(get<ApiDieta>()) }
     viewModel { org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel(get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaAdesao> { org.br.dietamais.data.repositorio.AdesaoRepositorio(get<ApiDieta>()) }
+    viewModel { org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel(get(), conectividade = online) }
     viewModel { p -> PrivacidadeViewModel(get(), conectividade = online, exportacaoDisponivel = p.get()) }
     viewModel { AssinaturaViewModel(get(), conectividade = online) }
     single<PortaConsultas> { ConsultasOnline(get()) }
@@ -65,6 +70,9 @@ fun moduloWebNutri(ambiente: AmbienteWeb, compartilhamento: Compartilhamento) = 
     viewModel { AgendaViewModel(get(), get(), conectividade = online) }
     single<org.br.dietamais.data.repositorio.PortaFinanceiro> { org.br.dietamais.data.repositorio.FinanceiroRepositorio(get<ApiDieta>()) }
     viewModel { org.br.dietamais.ui.nutri.agenda.FinanceiroViewModel(get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaDocumentosNutri> { org.br.dietamais.data.repositorio.DocumentosNutriRepositorio(get<ApiDieta>()) }
+    viewModel { org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel(get(), getOrNull(), getOrNull(), conectividade = online) }
+    viewModel { org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel(get(), conectividade = online) }
     viewModel { AvaliacoesViewModel(get(), conectividade = online, protocolosPadrao = getOrNull<org.br.dietamais.data.repositorio.PortaProtocolosNutri>()?.let { org.br.dietamais.ui.nutri.protocolos.protocolosPadraoDe(it) }) }
     viewModel { AlimentosViewModel(get(), sessao = get<ApiDieta>().operacaoSessao, conectividade = online) }
     viewModel { ListaPacienteViewModel(get(), get(), pacientes = getOrNull(), conectividade = online) }

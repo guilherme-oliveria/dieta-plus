@@ -46,7 +46,7 @@ data class CadastroNutriResposta(val usuario: UsuarioResposta, val assinatura: A
 
 @Serializable
 data class AssinaturaResumoResposta(val organizacaoId: Uuid, val plano: String, val status: StatusAssinatura,
-    val limitePacientes: Int, val pacientesOcupados: Int, val fimPeriodoEm: Instant)
+    val limitePacientes: Int? = null, val pacientesOcupados: Int, val fimPeriodoEm: Instant)
 
 @Serializable
 data class EuResposta(val usuario: UsuarioResposta, val assinatura: AssinaturaResumoResposta? = null, val vinculos: List<VinculoResposta>)

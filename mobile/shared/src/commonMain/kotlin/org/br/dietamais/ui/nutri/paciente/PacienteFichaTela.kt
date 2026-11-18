@@ -22,7 +22,8 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVoltar: () -> Unit, aoConvidar: () -> Unit,
-    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> }) {
+    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> },
+    resumoExtra: @Composable (PacienteResposta) -> Unit = {}) {
     val paciente = estado.selecionado
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.margemCompacta), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
@@ -35,6 +36,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                     Text(paciente.nome, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f).semantics { heading() })
                 }
                 StatusPaciente(paciente.status)
+                SeloSaudeFicha(paciente.restricoesSaude)
                 if (estado.semConexao) FaixaOffline()
                 estado.erro?.let { MensagemPaciente(it, alerta = true) }
                 estado.aviso?.let { MensagemPaciente(it) }
@@ -43,15 +45,18 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                     AbaFicha.entries.forEach { aba -> Tab(selected = estado.abaFicha == aba, onClick = { aoAba(aba) },
                         text = { Text(stringResource(when (aba) {
                             AbaFicha.RESUMO -> Res.string.pacientes_resumo
+                            AbaFicha.SAUDE -> Res.string.pacientes_saude
                             AbaFicha.METAS -> Res.string.pacientes_metas
+                            AbaFicha.PRESCRICOES -> Res.string.pacientes_prescricoes
                             AbaFicha.AVALIACOES -> Res.string.pacientes_avaliacoes
                             AbaFicha.EVOLUCAO -> Res.string.pacientes_evolucao
                             AbaFicha.DIETA -> Res.string.aba_dieta
                             AbaFicha.LISTA -> Res.string.pacientes_lista
                             AbaFicha.ANAMNESE -> Res.string.pacientes_anamnese
+                            AbaFicha.DOCUMENTOS -> Res.string.pacientes_documentos
                         })) }) }
                 }
-                if (estado.abaFicha == AbaFicha.METAS || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
+                if (estado.abaFicha == AbaFicha.SAUDE || estado.abaFicha == AbaFicha.METAS || estado.abaFicha == AbaFicha.PRESCRICOES || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO || estado.abaFicha == AbaFicha.DOCUMENTOS) abaConteudo(estado.abaFicha, paciente)
                 else if (estado.abaFicha != AbaFicha.RESUMO) EstadoVazio()
                 else {
                     // Atalhos dentro do Resumo (abaixo das abas): acima delas, ao trocar de aba a faixa sumia e as abas pulavam de lugar.
@@ -60,6 +65,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                         BotaoContornado(stringResource(Res.string.ficha_atalho_graficos), { aoAba(AbaFicha.EVOLUCAO) }, Modifier.weight(1f))
                     }
                     estado.resumos?.get(paciente.vinculoId)?.ultimaAvaliacao?.let { u -> CartaoUltimaAvaliacao(u) { aoAba(AbaFicha.AVALIACOES) } }
+                    resumoExtra(paciente) // MOB-89: adesão, humor e fora do plano
                     CardDieta(Modifier.fillMaxWidth()) {
                     DadoFicha(stringResource(Res.string.auth_email), paciente.email)
                     DadoFicha(stringResource(Res.string.pacientes_nascimento), paciente.dataNascimento?.let { "${it.day.toString().padStart(2, '0')}/${(it.month.ordinal + 1).toString().padStart(2, '0')}/${it.year}" })

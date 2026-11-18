@@ -202,6 +202,11 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
 - A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
 - A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.
+## MOB-82 · Saúde e restrições na ficha (18/11/2026)
+
+- Artboards `A-Saude-Ficha` e `A-Saude-Item` (DES-16). O formulário do item abre dentro da aba "Saúde", no lugar da lista, como no artboard; não é uma folha sobreposta.
+- Marcadores da folha: o artboard mostra "Castanhas", que não existe como marcador de alimento no backend (BE-69); ficou de fora. "Soja" entrou, porque o backend tem. "Leite" aparece como "Leite e lactose" (`CONTEM_LACTOSE`).
+- Cada item ganhou "Remover" ao lado de "Editar", com confirmação; o artboard só mostra "Editar".
 
 ## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
 
@@ -215,6 +220,19 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
 - Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
 - Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
+## MOB-88 · Fome, sensação e fora do plano (18/11/2026)
+
+- Artboards `P-Refeicao-Humor`, `P-Fora-Plano` e `P-Perfil-Preferencias` (DES-18). As duas folhas usam `AlertDialog` (centralizado), não folha de baixo: é o padrão de diálogo do app hoje e funciona igual nos 3 tamanhos.
+- A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
+- O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
+- Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
+
+## MOB-89 · Humor e fora do plano na adesão (18/11/2026)
+
+- Artboard `A-Adesao-Humor` (DES-18). O app ainda não tem a aba "Adesão" do artboard: o cartão "Adesão · últimos 7 dias" entra no Resumo da ficha, abaixo da última avaliação. Uma aba própria fica para quando houver mais conteúdo de adesão (metas da MOB-91).
+- A linha de cada registro fora do plano mostra dia e hora, sem "no lugar do lanche da tarde": a ficha da nutri não tem a dieta do paciente carregada no Resumo. Se a nutri pedir, o backend pode mandar o nome da refeição junto (campo novo e opcional).
+- Período em "10/11 a 16/11" (o artboard abrevia "10 a 16/11").
+- Leitura online: sem rede o cartão avisa e busca de novo quando a conexão volta.
 
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 
@@ -231,3 +249,75 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
+
+## MOB-92 · Nutri: prescrever e orientar (18/11/2026)
+
+Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
+
+- Suplementos e orientações ficam numa aba só da ficha, "Prescrições", com dois chips (Suplementos e Orientações), para não somar mais duas abas.
+- Os botões "B" e "•≡" acrescentam o negrito e o item de lista no fim do texto, não na posição do cursor: o `CampoTexto` comum não expõe a seleção.
+- Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
+- "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
+- Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
+## MOB-93 · Paciente: suplementos e orientações (18/11/2026)
+
+Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba Dieta, por um cartão de atalho ("Suplementos · 3 em uso", "Orientações · 1 nova") que só aparece quando a nutri já prescreveu ou orientou algo. O push "nova orientação" abre a aba Dieta com as Orientações. Divergências:
+
+- O lembrete do suplemento toca todo dia nos horários prescritos: a frequência é texto livre ("3 vezes por semana") e o app não a interpreta. O paciente desliga por suplemento em "Lembrar no horário". O texto da notificação é genérico ("Hora do seu suplemento"), sem nome nem dose.
+- O selo "Nova" marca a orientação que o paciente ainda não abriu **neste aparelho**: a marca de lida não vai para o servidor.
+- As orientações anteriores abrem com "Ler" e fecham com "Recolher", em vez de abrir uma tela própria.
+- Na web, o paciente ainda não vê Suplementos e Orientações: o backend só entrega essas coleções pelo `/sync`, que a web não usa. Precisa de `GET /eu/suplementos` e `GET /eu/orientacoes` (fica para uma tarefa do backend).
+## MOB-94 · Nutri: documentos (18/11/2026)
+
+Artboards: `A-Documentos-Paciente`, `A-Documento-Emitir`, `A-Documento-Anular` e `A-Modelos-Documento`. Divergências:
+
+- A aba "Documentos" entra no fim das abas da ficha (depois de Anamnese), não entre Prescrições e Saúde.
+- "Compartilhar PDF" abre o link assinado (10 min) no navegador, que oferece baixar e compartilhar; o app não chama a folha de compartilhamento do sistema.
+- O atestado pede data e horário (opcional). O campo "dias de afastamento" do artboard não existe no backend (os campos são paciente, data, horário, nutri e CRN): a nutri escreve no texto do modelo.
+- A prévia troca os campos no aparelho, só para conferência; quem preenche o documento de verdade é o servidor.
+- Anular abre uma folha com o motivo, em vez de um diálogo por cima da lista.
+- "Modelos de documento" é um cartão na Conta (como "Meus protocolos"), não uma tela própria. "Inserir campo" acrescenta o campo no fim do texto, não na posição do cursor.
+- Na agenda, "Emitir declaração" fica em "Mais ações" das consultas realizadas e abre a mesma folha de emissão.
+## MOB-95 · Paciente: documentos (18/11/2026)
+
+Artboard: `P-Documentos`. Os documentos aparecem num cartão "Documentos" no Perfil, que só existe quando a nutri já emitiu algum. A lista vem do banco local (coleção `documentos` do sync) no app e de `GET /eu/documentos` na web; "Abrir PDF" usa o link assinado e fica desabilitado sem internet. Divergências:
+
+- A linha não mostra o nome da nutri ("17/11/2026 · Nut. Marina" no artboard): os metadados do documento do paciente (BE-79) não trazem quem emitiu.
+- O documento anulado mostra só o selo "Anulado", sem o botão do PDF.
+
+## MOB-90 · Paciente: metas de hábito (18/11/2026)
+
+Artboards: `P-Hoje-Metas` e `P-Metas-Semana`. "Metas de hoje" fica no Hoje logo antes do cartão de água, e "Ver semana" abre "Minhas metas" por cima da aba. Divergências:
+
+- A água ainda não aparece como meta: continua no cartão de água de sempre até a MOB-99 (a meta de água da nutri fica fora desta lista). Resolvido na MOB-99, ver abaixo.
+- O "Lembrete neste aparelho" da tela da semana foi para a MOB-90b; a tela mostra só os dias, a sequência e o progresso.
+- O cabeçalho do artboard ("Olá, Ana", data) não entrou: o Hoje já tem o título e os dias.
+- Botão rápido por tipo: "+ 10 min" (atividade), "+ 1000 passos", "+ 1 h" (sono), "+ 1 porção" (frutas e verduras) e "+ 1" no contador. Metas do tipo "outra" só têm "Outro valor".
+- Só a meta sim ou não tem "Cumpri hoje"; as outras não têm desfazer (o registro é só inclusão, RN-MET-02). O desfazer do artboard fica na água (MOB-99).
+- Na web as metas não aparecem: a web do paciente é online-only e ainda não há leitura de metas fora do sync.
+
+## MOB-99 · Água como meta (18/11/2026)
+
+Artboard: `P-Hoje-Metas` (a água é uma das metas). Divergências:
+
+- A água continua no cartão próprio do Hoje (botões de copo, "Outro valor" e "Desfazer último" da MOB-UX-05), em vez de virar um cartão igual aos das outras metas. Ganhou o selo de sequência ("N dias seguidos") e a linha da semana ("N de M até agora"), como as outras. Em "Minhas metas" (semana) ela aparece primeiro, com os 7 dias.
+- Com mais de uma nutri, cada vínculo tem a sua meta de água e o servidor copia cada copo para todas. O app lê só uma: a mais antiga que vale hoje. O alvo mostrado é o dessa meta.
+- Não houve migração do banco local. O servidor já devolve o histórico de água como registros da meta (BE-86), e os copos antigos que ainda estavam na fila seguem pelo caminho antigo e continuam somando no dia até o envio. Assim nada se perde e nada conta duas vezes.
+- Sem a meta de água no aparelho (vínculo sem meta ou backend antigo), o cartão funciona como antes: grava pelo caminho antigo e usa 35 ml × peso.
+- Na web (só online) nada muda: ela lê a água de `GET /eu/rotina`, que o servidor mantém com o mesmo total.
+
+## MOB-96 · Assinatura: comparar planos (18/11/2026)
+
+Artboards: `A-Assinatura-Planos`, `A-Assinatura-Ativa`, `A-Assinatura-Sem-Preco` e `A-Painel-Fim-Teste` (DES-22). O cartão "Minha assinatura" da Conta mostra:
+
+- "Teste grátis · Faltam N dias" (de `diasRestantesTeste`), ou plano e periodicidade com a próxima cobrança;
+- o uso das vagas com barra, que fica laranja a partir de 90% com "Perto do limite";
+- a alternância Mensal/Anual, com "N meses grátis" calculado dos preços que o servidor mandou;
+- um cartão por plano (preço, equivalente mensal do anual, limite ou "Pacientes sem limite") e um só botão: "Assinar X mensal/anual", "Mudar para X" ou "Manter o plano X" quando há troca agendada.
+
+Nenhum preço fica no app. Sem a chave `exibePrecoEBotao` (D-09), aparecem só os nomes e limites e "A assinatura é gerenciada fora deste aplicativo", sem `if (plataforma)`. O painel avisa nos últimos 7 dias do teste, com "Ver planos" levando à Conta; o aviso `/assinatura` do servidor (BE-82) também abre a Conta. Divergências:
+
+- A próxima cobrança não traz a forma de pagamento ("· PIX" no artboard): o `GET /assinatura` não informa.
+- Sem a chave, os planos aparecem um por linha ("Básico: até 20 pacientes") em vez da frase corrida do artboard, que não fica boa com quantidade variável de planos.
+- No anual, plano sem preço anual aparece como "Só no plano mensal" e não pode ser escolhido para assinar; o artboard não mostra esse caso.
+- O aviso do painel conta dias de calendário no fuso do aparelho (0 = "termina hoje", 1 = "amanhã").

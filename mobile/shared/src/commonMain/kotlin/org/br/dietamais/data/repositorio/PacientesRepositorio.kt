@@ -26,7 +26,16 @@ interface PortaPacientes {
     suspend fun assinatura(): AssinaturaResumoResposta?
     /** BE-66: próxima consulta e última avaliação por vínculo; só online. Nulo quando não deu para ler (a lista segue sem os filtros de atenção). */
     suspend fun resumos(): Map<Uuid, org.br.dietamais.dominio.pacientes.ResumoPaciente>? = null
+    /**
+     * MOB-82 (RN-SAU-01): grava a lista inteira de itens de saúde junto com a ficha; a lista substitui a anterior.
+     * O PATCH da ficha regrava todos os campos, então os outros dados vão como estão.
+     */
+    suspend fun salvarRestricoes(paciente: PacienteResposta, restricoes: List<RestricaoSaudeDto>): PacienteResposta = throw UnsupportedOperationException()
 }
+
+/** Requisição do PATCH da ficha que só troca as restrições: o resto vai como está (o servidor regrava os campos simples). */
+fun requisicaoRestricoes(p: PacienteResposta, restricoes: List<RestricaoSaudeDto>) = AtualizarPacienteRequisicao(p.nome, p.email, p.dataNascimento, p.sexo, p.telefone,
+    p.estaturaReferencia, p.objetivo, p.observacoes, cadastroAmpliado = null, restricoesSaude = restricoes)
 
 /** Lê `GET /pacientes` (100 por página) e guarda só o resumo de cada vínculo. */
 suspend fun carregarResumosPacientes(api: ApiDieta): Map<Uuid, org.br.dietamais.dominio.pacientes.ResumoPaciente>? {
@@ -91,6 +100,15 @@ class PacientesRepositorio(private val api: ApiDieta, private val banco: BancoDi
         val otimista = PacienteResposta(requisicao.id, requisicao.id, requisicao.nome, requisicao.email, requisicao.dataNascimento, requisicao.sexo, requisicao.telefone,
             requisicao.estaturaReferencia, requisicao.objetivo, requisicao.observacoes, StatusVinculo.CONVIDADO, 0, agoraLocal, agoraLocal, cadastroAmpliado = requisicao.cadastroAmpliado)
         escrita.criar("pacientes", requisicao.id, JsonContrato.encodeToJsonElement(requisicao).jsonObject, JsonContrato.encodeToString(otimista))
+        otimista
+    }
+
+    /** Offline-first (MOB-29/MOB-82): ficha otimista com as restrições novas e a mutação ATUALIZAR na fila, a partir da versão lida. */
+    override suspend fun salvarRestricoes(paciente: PacienteResposta, restricoes: List<RestricaoSaudeDto>): PacienteResposta = operacoes.withLock {
+        contexto()
+        val otimista = paciente.copy(restricoesSaude = restricoes, versao = paciente.versao + 1, atualizadoEm = agora())
+        escrita.atualizar("pacientes", paciente.id, paciente.versao, JsonContrato.encodeToJsonElement(requisicaoRestricoes(paciente, restricoes)).jsonObject,
+            JsonContrato.encodeToString(otimista))
         otimista
     }
 

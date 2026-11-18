@@ -6,6 +6,7 @@ import kotlinx.datetime.minus
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.dominio.agenda.consultasDoDia
 import org.br.dietamais.dominio.agenda.diaLocal
+import org.br.dietamais.dominio.assinatura.diasParaAvisoFimTeste
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -13,7 +14,9 @@ import kotlin.uuid.Uuid
 data class ItemPainel(val fichaId: Uuid, val nome: String?, val quando: Instant? = null)
 
 data class ResumoPainel(val consultasHoje: List<ConsultaResposta>, val semCheckin: List<ItemPainel>, val respondidos: List<ItemPainel>,
-    val assinatura: AssinaturaResumoResposta?) {
+    val assinatura: AssinaturaResumoResposta?,
+    /** Dias até o fim do teste nos últimos 7 (MOB-96, `A-Painel-Fim-Teste`); nulo fora da janela ou fora do teste. */
+    val diasFimTeste: Int? = null) {
     val vazio: Boolean get() = consultasHoje.isEmpty() && semCheckin.isEmpty() && respondidos.isEmpty()
 }
 
@@ -34,7 +37,7 @@ fun montarPainel(consultas: List<ConsultaResposta>, pacientes: List<PacienteResp
         .distinctBy { it.fichaId }
     val respondidos = questionarios.filter { it.status == StatusQuestionario.RESPONDIDO && it.respondidoEm != null && agora - it.respondidoEm <= JANELA_RESPONDIDOS }
         .sortedByDescending { it.respondidoEm }.map { ItemPainel(it.pacienteId, nomes[it.pacienteId], it.respondidoEm) }
-    return ResumoPainel(doDia, semCheckin, respondidos, assinatura)
+    return ResumoPainel(doDia, semCheckin, respondidos, assinatura, diasParaAvisoFimTeste(assinatura, agora, fuso))
 }
 
 /** `/pacientes/{fichaId}` -> id da ficha. */

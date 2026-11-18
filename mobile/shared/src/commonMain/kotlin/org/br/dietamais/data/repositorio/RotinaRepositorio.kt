@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
@@ -18,10 +20,16 @@ import org.br.dietamais.data.sync.FilaMutacoes
 import org.br.dietamais.data.sync.NovaMutacao
 import org.br.dietamais.data.sync.OperacaoMutacao
 import org.br.dietamais.data.sync.novoIdLocal
+import org.br.dietamais.dominio.metas.metaAguaAtual
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-data class DadosRotina(val checkins: List<CheckinResposta> = emptyList(), val agua: List<AguaResposta> = emptyList(), val pesos: List<PesoResposta> = emptyList())
+/**
+ * MOB-99: [metas] e [registrosMeta] trazem a meta de água (RN-MET-05); [aguaNaFila] são os registros do caminho antigo `agua` ainda não enviados.
+ * A web (online) deixa esses campos vazios e segue lendo a água do caminho antigo, que o servidor mantém com o mesmo total.
+ */
+data class DadosRotina(val checkins: List<CheckinResposta> = emptyList(), val agua: List<AguaResposta> = emptyList(), val pesos: List<PesoResposta> = emptyList(),
+    val metas: List<MetaResposta> = emptyList(), val registrosMeta: List<RegistroMetaResposta> = emptyList(), val aguaNaFila: Set<Uuid> = emptySet())
 
 interface PortaRotina {
     fun observar(): Flow<DadosRotina>
@@ -31,41 +39,83 @@ interface PortaRotina {
     fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant)
     fun registrarAgua(ml: Int, agora: Instant)
     fun registrarPeso(pesoKg: Double, agora: Instant)
+    /** MOB-88 (RN-ROT-01): check-in com fome antes e sensação depois (1 a 5, opcionais), no mesmo registro. */
+    fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
+        if (fomeAntes == null && sensacaoDepois == null) registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora) else throw UnsupportedOperationException()
+    }
+    /** MOB-88 (RN-ROT-06): "Comi algo fora do plano", só inclusão. */
+    fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant): Unit = throw UnsupportedOperationException()
 }
 
-class RotinaRepositorio(private val banco: BancoDieta, private val fila: FilaMutacoes = FilaMutacoes(banco)) : PortaRotina {
+class RotinaRepositorio(private val banco: BancoDieta, private val fila: FilaMutacoes = FilaMutacoes(banco),
+    private val fuso: TimeZone = TimeZone.currentSystemDefault()) : PortaRotina {
     override fun observar(): Flow<DadosRotina> = combine(
-        banco.registroSyncQueries.daSessao("checkins").asFlow().mapToList(Dispatchers.Default),
-        banco.registroSyncQueries.daSessao("agua").asFlow().mapToList(Dispatchers.Default),
-        banco.registroSyncQueries.daSessao("pesos").asFlow().mapToList(Dispatchers.Default)) { checkins, agua, pesos ->
-        try { DadosRotina(checkins.map { JsonContrato.decodeFromString<CheckinResposta>(it) }, agua.map { JsonContrato.decodeFromString<AguaResposta>(it) },
-            pesos.map { JsonContrato.decodeFromString<PesoResposta>(it) }) }
-        catch (_: Exception) { throw RespostaInvalida() }
+        combine(
+            banco.registroSyncQueries.daSessao("checkins").asFlow().mapToList(Dispatchers.Default),
+            banco.registroSyncQueries.daSessao("agua").asFlow().mapToList(Dispatchers.Default),
+            banco.registroSyncQueries.daSessao("pesos").asFlow().mapToList(Dispatchers.Default)) { checkins, agua, pesos ->
+            try { DadosRotina(checkins.map { JsonContrato.decodeFromString<CheckinResposta>(it) }, agua.map { JsonContrato.decodeFromString<AguaResposta>(it) },
+                pesos.map { JsonContrato.decodeFromString<PesoResposta>(it) }) }
+            catch (_: Exception) { throw RespostaInvalida() }
+        },
+        banco.registroSyncQueries.daSessao("metas").asFlow().mapToList(Dispatchers.Default),
+        banco.registroSyncQueries.daSessao("registrosMeta").asFlow().mapToList(Dispatchers.Default),
+        banco.mutacaoPendenteQueries.daSessaoAtual().asFlow().mapToList(Dispatchers.Default)) { base, metas, registros, mutacoes ->
+        try {
+            base.copy(metas = metas.map { JsonContrato.decodeFromString<MetaResposta>(it) }.filter { it.tipo == TipoMeta.AGUA },
+                registrosMeta = registros.map { JsonContrato.decodeFromString<RegistroMetaResposta>(it) },
+                aguaNaFila = mutacoes.filter { it.entidade == "agua" && it.status == "PENDENTE" }.mapNotNull { runCatching { Uuid.parse(it.id) }.getOrNull() }.toSet())
+        } catch (_: Exception) { throw RespostaInvalida() }
     }
 
     /** O servidor recusou depois um registro já mostrado (a criação otimista some): avisa a tela, que de outro modo ficaria muda. Recusas antigas não contam. */
     override val falhas: Flow<Unit> = flow {
         var vistas: Set<String>? = null
         banco.mutacaoPendenteQueries.daSessaoAtual().asFlow().mapToList(Dispatchers.Default).collect { lista ->
-            val agora = lista.filter { it.status == "REJEITADA" && it.entidade in setOf("checkins", "agua", "pesos") }.map { it.id_mutacao }.toSet()
+            val agora = lista.filter { it.status == "REJEITADA" && it.entidade in setOf("checkins", "agua", "pesos", "registrosForaDoPlano") }.map { it.id_mutacao }.toSet()
             val antes = vistas
             vistas = agora
             if (antes != null && (agora - antes).isNotEmpty()) emit(Unit)
         }
     }
 
-    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) {
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) =
+        registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora, null, null)
+
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
         require((status == StatusCheckin.TROCADO) == trocas.isNotEmpty() && status != StatusCheckin.OUTRO)
+        require(fomeAntes == null || fomeAntes in 1..5); require(sensacaoDepois == null || sensacaoDepois in 1..5)
         val id = novoIdLocal()
-        gravar("checkins", id, JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora)).jsonObject) { paciente ->
-            JsonContrato.encodeToString(CheckinResposta(id, paciente, dietaId, refeicaoId, data, status, trocas, agora))
+        gravar("checkins", id, JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois)).jsonObject) { paciente ->
+            JsonContrato.encodeToString(CheckinResposta(id, paciente, dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois))
         }
     }
 
+    override fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant) {
+        val limpo = texto.trim()
+        require(limpo.isNotEmpty() && limpo.length <= 280)
+        val id = novoIdLocal()
+        gravar("registrosForaDoPlano", id, JsonContrato.encodeToJsonElement(RegistroForaDoPlanoRequisicao(id, data, limpo, refeicaoId, registradoEm)).jsonObject) {
+            JsonContrato.encodeToString(RegistroForaDoPlanoResposta(id, data, limpo, refeicaoId, registradoEm))
+        }
+    }
+
+    /** MOB-99 (RN-MET-05): com a meta de água no aparelho, o copo vai para `registrosMeta`; sem ela (vínculo ainda sem meta), pelo caminho antigo `agua`. */
     override fun registrarAgua(ml: Int, agora: Instant) {
         require(ml in 1..5000)
         val id = novoIdLocal()
-        gravar("agua", id, JsonContrato.encodeToJsonElement(AguaRequisicao(id, ml, agora)).jsonObject) { JsonContrato.encodeToString(AguaResposta(id, it, ml, agora)) }
+        val dia = agora.toLocalDateTime(fuso).date
+        val metas = try { banco.registroSyncQueries.daSessao("metas").executeAsList().map { JsonContrato.decodeFromString<MetaResposta>(it) } }
+            catch (_: Exception) { throw RespostaInvalida() }
+        val meta = metaAguaAtual(metas, dia)
+        if (meta == null) {
+            gravar("agua", id, JsonContrato.encodeToJsonElement(AguaRequisicao(id, ml, agora)).jsonObject) { JsonContrato.encodeToString(AguaResposta(id, it, ml, agora)) }
+            return
+        }
+        val valor = ml.toDouble()
+        gravar("registrosMeta", id, JsonContrato.encodeToJsonElement(RegistroMetaRequisicao(id, meta.id, dia, valor, agora)).jsonObject) {
+            JsonContrato.encodeToString(RegistroMetaResposta(id, meta.id, dia, valor, agora))
+        }
     }
 
     override fun registrarPeso(pesoKg: Double, agora: Instant) {

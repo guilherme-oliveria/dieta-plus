@@ -22,4 +22,5 @@ fun moduloPacientes(compartilhamento: Compartilhamento, ambiente: AmbienteDieta?
         }
     }, fixados = if (ambiente != null) org.br.dietamais.data.repositorio.FixadosRepositorio(get()) else null,
         ordem = if (ambiente != null) org.br.dietamais.data.repositorio.OrdemPacientesRepositorio(get()) else null) }
+    viewModel { org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel(get()) }
 }

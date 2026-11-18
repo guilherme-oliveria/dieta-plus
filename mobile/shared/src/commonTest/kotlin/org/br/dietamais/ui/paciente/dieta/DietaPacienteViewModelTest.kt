@@ -13,6 +13,7 @@ import kotlinx.datetime.TimeZone
 import org.br.dietamais.data.remoto.ErroApi
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.repositorio.*
+import org.br.dietamais.dominio.rotina.ErroForaDoPlano
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -53,12 +54,22 @@ class DietaPacienteViewModelTest {
             val c = CheckinResposta(Uuid.random(), Uuid.random(), dietaId, refeicaoId, data, status, trocas, agora)
             checkins += c; dados.value = dados.value.copy(checkins = dados.value.checkins + c)
         }
+        val humores = mutableListOf<Pair<Int?, Int?>>()
+        val fora = mutableListOf<RegistroForaDoPlanoResposta>()
+        override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
+            registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora); humores += fomeAntes to sensacaoDepois
+        }
+        override fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant) {
+            if (falha) throw IllegalStateException("falha simulada")
+            fora += RegistroForaDoPlanoResposta(Uuid.random(), data, texto, refeicaoId, registradoEm)
+        }
         override fun registrarAgua(ml: Int, agora: Instant) { dados.value = dados.value.copy(agua = dados.value.agua + AguaResposta(Uuid.random(), Uuid.random(), ml, agora)) }
         override fun registrarPeso(pesoKg: Double, agora: Instant) { dados.value = dados.value.copy(pesos = dados.value.pesos + PesoResposta(Uuid.random(), Uuid.random(), pesoKg, agora)) }
     }
 
-    private fun TestScope.vm(porta: Porta, rotina: Rotina = Rotina(), conectividade: Flow<Boolean>? = null, gravou: () -> Unit = {}) =
-        DietaPacienteViewModel(porta, rotina, relogio, TimeZone.UTC, StandardTestDispatcher(testScheduler), conectividade, flowOf(Unit), gravou)
+    private fun TestScope.vm(porta: Porta, rotina: Rotina = Rotina(), conectividade: Flow<Boolean>? = null, perguntarHumor: Boolean = false, gravou: () -> Unit = {}) =
+        DietaPacienteViewModel(porta, rotina, relogio, TimeZone.UTC, StandardTestDispatcher(testScheduler), conectividade, flowOf(Unit), gravou,
+            perguntarHumor = flowOf(perguntarHumor))
 
     @Test fun semDietaMostraEstadoVazio() = runTest {
         val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente()))); advanceUntilIdle()
@@ -266,5 +277,117 @@ class DietaPacienteViewModelTest {
         assertEquals(250, vm.estado.value.aguaMl); assertNull(vm.estado.value.proxima)
         vm.mudarDia(LocalDate(2026, 10, 20)); advanceUntilIdle()
         assertEquals(LocalDate(2026, 10, 28), vm.estado.value.dia) // fora da janela de 3 dias volta para hoje
+    }
+
+    // ---- MOB-99: água como meta
+    @Test fun comAMetaDeAguaOTotalOAlvoEASequenciaVemDaMeta() = runTest {
+        val rotina = Rotina(); val s = snap("Ana", "2026-01-01T10:00:00Z")
+        val criada = Instant.parse("2026-10-01T00:00:00Z")
+        val meta = MetaResposta(Uuid.random(), Uuid.random(), TipoMeta.AGUA, null, 1500.0, null, FrequenciaMeta.DIARIA, versao = 1, criadoEm = criada, atualizadoEm = criada)
+        val naFila = Uuid.random()
+        rotina.dados.value = DadosRotina(
+            // 250 já espelhado na meta (não conta duas vezes) e 100 ainda na fila pelo caminho antigo
+            agua = listOf(AguaResposta(Uuid.random(), Uuid.random(), 250, Instant.parse("2026-10-28T07:00:00Z")),
+                AguaResposta(naFila, Uuid.random(), 100, Instant.parse("2026-10-28T08:00:00Z"))),
+            pesos = listOf(PesoResposta(Uuid.random(), Uuid.random(), 70.0, criada)), metas = listOf(meta),
+            registrosMeta = listOf(RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 28), 250.0, Instant.parse("2026-10-28T07:00:00Z")),
+                RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 26), 1500.0, criada),
+                RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 27), 1600.0, criada)),
+            aguaNaFila = setOf(naFila))
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina); advanceUntilIdle()
+        val e = vm.estado.value
+        assertEquals(350, e.aguaMl); assertEquals(1500, e.metaAguaMl) // o alvo é o da meta, não 35 ml × 70 kg
+        assertEquals(2, e.progressoAgua?.sequencia); assertEquals(250.0, e.progressoAgua?.hoje)
+        // o copo que ainda espera o prazo de desfazer entra no total, como antes
+        vm.beberAgua(200); runCurrent()
+        assertEquals(550, vm.estado.value.aguaMl)
+    }
+
+    @Test fun semMetaDeAguaNaoHaSequenciaEOAlvoVemDoPeso() = runTest {
+        val rotina = Rotina(); val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(snap("Ana", "2026-01-01T10:00:00Z"))))), rotina); advanceUntilIdle()
+        assertNull(vm.estado.value.progressoAgua); assertEquals(2000, vm.estado.value.metaAguaMl)
+    }
+
+    // ---- MOB-88: humor e fora do plano
+    @Test fun comPerguntaLigadaComiAbreHumorEOPrazoSoComecaAoSalvar() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina, perguntarHumor = true); advanceUntilIdle()
+        val almoco = vm.estado.value.proxima!!
+        vm.marcar(almoco.id, StatusCheckin.FEITO); advanceTimeBy(PRAZO_DESFAZER_MS * 3); runCurrent()
+        assertEquals(almoco.id, vm.estado.value.humor?.refeicaoId); assertEquals("Almoço", vm.estado.value.humor?.nomeRefeicao)
+        assertTrue(rotina.checkins.isEmpty()) // a pergunta segura o prazo
+        vm.escolherFome(4); vm.escolherSensacao(2); vm.escolherSensacao(2) // tocar de novo limpa
+        vm.escolherSensacao(3); vm.escolherFome(9) // fora da escala é ignorado (limpa o valor)
+        vm.escolherFome(4)
+        vm.salvarHumor(); runCurrent()
+        assertNull(vm.estado.value.humor); assertTrue(vm.estado.value.podeDesfazer); assertTrue(rotina.checkins.isEmpty())
+        advanceTimeBy(PRAZO_DESFAZER_MS + 1); runCurrent()
+        assertEquals(StatusCheckin.FEITO, rotina.checkins.single().status); assertEquals(listOf<Pair<Int?, Int?>>(4 to 3), rotina.humores)
+    }
+
+    @Test fun pularHumorGravaSemValoresEDesfazerApagaTudo() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina, perguntarHumor = true); advanceUntilIdle()
+        val almoco = vm.estado.value.proxima!!
+        vm.marcar(almoco.id, StatusCheckin.FEITO); runCurrent()
+        vm.escolherFome(2); vm.desfazerCheckin(); advanceUntilIdle()
+        assertNull(vm.estado.value.humor); assertTrue(rotina.checkins.isEmpty()); assertNull(vm.estado.value.checkins[almoco.id])
+        vm.marcar(almoco.id, StatusCheckin.FEITO); runCurrent()
+        vm.pularHumor(); advanceUntilIdle()
+        assertEquals(1, rotina.checkins.size); assertTrue(rotina.humores.isEmpty())
+    }
+
+    @Test fun puleiNaoPerguntaHumorEPerguntaDesligadaNaoAbre() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z")
+        val ligada = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), perguntarHumor = true); advanceUntilIdle()
+        ligada.marcar(ligada.estado.value.proxima!!.id, StatusCheckin.PULADO); runCurrent()
+        assertNull(ligada.estado.value.humor)
+        val desligada = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s))))); advanceUntilIdle()
+        desligada.marcar(desligada.estado.value.proxima!!.id, StatusCheckin.FEITO); runCurrent()
+        assertNull(desligada.estado.value.humor)
+    }
+
+    @Test fun foraDoPlanoValidaTextoEHoraFutura() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina); advanceUntilIdle()
+        vm.abrirForaDoPlano()
+        assertEquals("09:00", vm.estado.value.foraDoPlano?.hora)
+        vm.registrarForaDoPlano()
+        assertEquals(setOf(ErroForaDoPlano.TEXTO), vm.estado.value.errosForaDoPlano)
+        vm.mudarTextoFora("Pão de queijo"); assertTrue(vm.estado.value.errosForaDoPlano.isEmpty())
+        vm.mudarHoraFora("10:30"); vm.registrarForaDoPlano()
+        assertEquals(setOf(ErroForaDoPlano.HORA), vm.estado.value.errosForaDoPlano)
+        vm.mudarHoraFora("25:00"); vm.registrarForaDoPlano()
+        assertEquals(setOf(ErroForaDoPlano.HORA), vm.estado.value.errosForaDoPlano)
+        vm.mudarTextoFora("x".repeat(400)); assertEquals(280, vm.estado.value.foraDoPlano?.texto?.length)
+        vm.fecharForaDoPlano(); advanceUntilIdle()
+        assertNull(vm.estado.value.foraDoPlano); assertTrue(rotina.fora.isEmpty())
+    }
+
+    @Test fun foraDoPlanoGravaDepoisDoPrazoEDesfazerNaoGrava() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina); advanceUntilIdle()
+        val cafe = s.refeicoes[0]
+        vm.abrirForaDoPlano(); vm.mudarTextoFora("  Pão de queijo  "); vm.mudarRefeicaoFora(cafe.id); vm.mudarHoraFora("8:15")
+        vm.registrarForaDoPlano(); runCurrent()
+        assertNull(vm.estado.value.foraDoPlano); assertTrue(vm.estado.value.podeDesfazerFora); assertTrue(rotina.fora.isEmpty())
+        vm.desfazerForaDoPlano(); advanceUntilIdle()
+        assertFalse(vm.estado.value.podeDesfazerFora); assertTrue(rotina.fora.isEmpty())
+        vm.abrirForaDoPlano(); vm.mudarTextoFora("Pão de queijo"); vm.mudarRefeicaoFora(Uuid.random()); vm.mudarHoraFora("08:15")
+        vm.registrarForaDoPlano(); advanceTimeBy(PRAZO_DESFAZER_MS + 1); runCurrent()
+        val r = rotina.fora.single()
+        assertEquals("Pão de queijo", r.texto); assertNull(r.refeicaoId) // refeição que não é da dieta vira nenhuma
+        assertEquals(Instant.parse("2026-10-28T08:15:00Z"), r.registradoEm); assertEquals(LocalDate(2026, 10, 28), r.data)
+        assertFalse(vm.estado.value.podeDesfazerFora)
+    }
+
+    @Test fun fecharATelaGravaOForaDoPlanoPendente() = runTest {
+        val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina); advanceUntilIdle()
+        vm.abrirForaDoPlano(); vm.mudarTextoFora("Brigadeiro"); vm.registrarForaDoPlano(); runCurrent()
+        val loja = ViewModelStore()
+        ViewModelProvider.create(loja, viewModelFactory { initializer { vm } })[DietaPacienteViewModel::class]
+        loja.clear()
+        assertEquals("Brigadeiro", rotina.fora.single().texto)
     }
 }

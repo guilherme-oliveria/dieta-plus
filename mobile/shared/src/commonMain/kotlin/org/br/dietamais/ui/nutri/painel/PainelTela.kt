@@ -1,5 +1,6 @@
 package org.br.dietamais.ui.nutri.painel
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 import kotlinx.datetime.TimeZone
 import org.br.dietamais.app.SolicitacoesNavegacao
@@ -21,11 +23,13 @@ import org.br.dietamais.dominio.painel.ItemPainel
 import org.br.dietamais.recursos.*
 import org.br.dietamais.ui.comum.*
 import org.br.dietamais.ui.nutri.agenda.rotuloTipoConsulta
+import org.br.dietamais.dominio.assinatura.fracaoUso
 import org.br.dietamais.ui.theme.Dimens
+import org.br.dietamais.ui.theme.FormasDieta
 import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
 
-data class AcoesPainel(val aoAtualizar: () -> Unit = {}, val aoAbrirPaciente: (Uuid) -> Unit = {}, val aoAbrirAgenda: () -> Unit = {})
+data class AcoesPainel(val aoAtualizar: () -> Unit = {}, val aoAbrirPaciente: (Uuid) -> Unit = {}, val aoAbrirAgenda: () -> Unit = {}, val aoVerPlanos: () -> Unit = {})
 
 @Composable
 fun PainelTela(estado: EstadoPainel, acoes: AcoesPainel, fuso: TimeZone = TimeZone.currentSystemDefault(), modifier: Modifier = Modifier) {
@@ -36,6 +40,7 @@ fun PainelTela(estado: EstadoPainel, acoes: AcoesPainel, fuso: TimeZone = TimeZo
             BotaoTexto(stringResource(Res.string.painel_atualizar), acoes.aoAtualizar, carregando = estado.atualizando)
         }
         if (estado.semConexao) Text(stringResource(Res.string.painel_offline), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        r.diasFimTeste?.let { AvisoFimTeste(it, acoes.aoVerPlanos) }
         CardDieta(Modifier.fillMaxWidth()) {
             Text(stringResource(Res.string.painel_consultas_hoje), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
             if (r.consultasHoje.isEmpty()) Text(stringResource(Res.string.painel_sem_consultas), style = MaterialTheme.typography.bodyMedium)
@@ -47,8 +52,10 @@ fun PainelTela(estado: EstadoPainel, acoes: AcoesPainel, fuso: TimeZone = TimeZo
         r.assinatura?.let { a ->
             CardDieta(Modifier.fillMaxWidth()) {
                 Text(stringResource(Res.string.painel_plano), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
-                Text(stringResource(Res.string.painel_plano_uso, a.pacientesOcupados, a.limitePacientes), style = MaterialTheme.typography.bodyLarge)
-                LinearProgressIndicator(progress = { if (a.limitePacientes <= 0) 0f else (a.pacientesOcupados.toFloat() / a.limitePacientes).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
+                val limite = a.limitePacientes
+                Text(if (limite == null) stringResource(Res.string.painel_plano_uso_sem_limite, a.pacientesOcupados) else stringResource(Res.string.painel_plano_uso, a.pacientesOcupados, limite),
+                    style = MaterialTheme.typography.bodyLarge)
+                fracaoUso(a.pacientesOcupados, limite)?.let { f -> LinearProgressIndicator(progress = { f }, Modifier.fillMaxWidth()) }
                 if (a.status == StatusAssinatura.EM_ATRASO || a.status == StatusAssinatura.EXPIRADA || a.status == StatusAssinatura.CANCELADA)
                     Text(stringResource(Res.string.painel_plano_atencao), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
@@ -78,5 +85,22 @@ private fun SecaoPacientes(titulo: String, vazio: String, itens: List<ItemPainel
 fun PainelRota(viewModel: PainelViewModel) {
     val estado by viewModel.estado.collectAsState()
     LaunchedEffect(viewModel) { viewModel.atualizar() }
-    PainelTela(estado, AcoesPainel(viewModel::atualizar, { SolicitacoesNavegacao.pedir("/pacientes/$it") }, { SolicitacoesNavegacao.pedir("/agenda") }))
+    PainelTela(estado, AcoesPainel(viewModel::atualizar, { SolicitacoesNavegacao.pedir("/pacientes/$it") }, { SolicitacoesNavegacao.pedir("/agenda") }, { SolicitacoesNavegacao.pedir("/assinatura") }))
+}
+
+/** Aviso do fim do teste (MOB-96, artboard `A-Painel-Fim-Teste`): os dados ficam guardados; "Ver planos" leva à assinatura na Conta. */
+@Composable
+private fun AvisoFimTeste(dias: Int, aoVerPlanos: () -> Unit) {
+    Surface(shape = FormasDieta.card, color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+        border = BorderStroke(Dimens.borda, MaterialTheme.colorScheme.error), modifier = Modifier.fillMaxWidth().testTag("painel-fim-teste")) {
+        Column(Modifier.padding(Dimens.paddingCard), verticalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
+            Text(when (dias) {
+                0 -> stringResource(Res.string.painel_fim_teste_hoje)
+                1 -> stringResource(Res.string.painel_fim_teste_amanha)
+                else -> stringResource(Res.string.painel_fim_teste_dias, dias)
+            }, style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+            Text(stringResource(Res.string.painel_fim_teste_texto), style = MaterialTheme.typography.bodyMedium)
+            BotaoPrincipal(stringResource(Res.string.painel_ver_planos), aoVerPlanos)
+        }
+    }
 }

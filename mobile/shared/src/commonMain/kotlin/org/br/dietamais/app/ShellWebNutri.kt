@@ -34,7 +34,7 @@ import org.br.dietamais.ui.nutri.listapaciente.ListaPacienteViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import org.br.dietamais.ui.auth.acoesPrivacidade
-import org.br.dietamais.ui.nutri.assinatura.AcoesAssinatura
+import org.br.dietamais.ui.nutri.assinatura.acoesAssinatura
 import org.br.dietamais.ui.nutri.assinatura.AcoesPerfilNutri
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
@@ -100,11 +100,14 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                                 AcoesCopiaLista(lista::escolherOrigem, lista::pedirCopia, lista::confirmarCopia, lista::desistirDaCopia))
                         }
                         AbaFicha.METAS -> org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+                        AbaFicha.SAUDE -> org.br.dietamais.ui.nutri.paciente.SaudePacienteRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel>(viewModelStoreOwner = dono), paciente)
+                        AbaFicha.PRESCRICOES -> org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
                         AbaFicha.EVOLUCAO -> EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
                         AbaFicha.ANAMNESE -> AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
+                        AbaFicha.DOCUMENTOS -> org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
                         else -> EstadoVazio(mensagem = stringResource(Res.string.web_aba_no_app))
                     }
-                })
+                }, resumoExtra = { paciente -> org.br.dietamais.ui.nutri.paciente.AdesaoHumorRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel>(viewModelStoreOwner = dono), paciente.id) })
             },
             conteudoInicio = { PainelRota(koinViewModel<PainelViewModel>(viewModelStoreOwner = dono)) },
             conteudoAgenda = { AgendaRota(koinViewModel<AgendaViewModel>(viewModelStoreOwner = dono)) },
@@ -122,7 +125,8 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                         val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
                         val estadoLembrete by lembrete.estado.collectAsState()
                         LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
-                        AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
+                        org.br.dietamais.ui.nutri.documentos.ModelosDocumentoRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel>(viewModelStoreOwner = dono))
+                        AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                         val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                         val estadoPriv by priv.estado.collectAsState()
                         PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = false)

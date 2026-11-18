@@ -23,7 +23,9 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 class AcoesPerfil(val aoMudarLembretes: (Boolean) -> Unit, val aoMudarTipo: (TipoNotificacao, Boolean) -> Unit, val aoMudarSilencioAtivo: (Boolean) -> Unit,
-    val aoMudarInicio: (String) -> Unit, val aoMudarFim: (String) -> Unit, val aoSalvar: () -> Unit, val aoGerarLink: () -> Unit, val aoRevogarLink: () -> Unit)
+    val aoMudarInicio: (String) -> Unit, val aoMudarFim: (String) -> Unit, val aoSalvar: () -> Unit, val aoGerarLink: () -> Unit, val aoRevogarLink: () -> Unit,
+    /** MOB-88 */
+    val aoMudarPerguntaHumor: (Boolean) -> Unit = {})
 
 /** Aba Perfil do paciente: lembretes, avisos, silêncio, minhas nutris e agenda do celular (MOB-19 e MOB-21). */
 @Composable
@@ -37,6 +39,7 @@ fun PerfilPacienteTela(estado: EstadoPerfilPaciente, acoes: AcoesPerfil, modifie
         estado.aviso?.let { Text(stringResource(textoMensagem(it)), style = MaterialTheme.typography.bodySmall) }
 
         Interruptor(stringResource(Res.string.perfil_lembretes), estado.lembretes, acoes.aoMudarLembretes)
+        Interruptor(stringResource(Res.string.perfil_pergunta_humor), estado.perguntaHumor, acoes.aoMudarPerguntaHumor)
 
         CardDieta(Modifier.fillMaxWidth()) {
             Text(stringResource(Res.string.perfil_avisos), style = MaterialTheme.typography.titleMedium)
@@ -93,6 +96,7 @@ private fun Interruptor(rotulo: String, marcado: Boolean, aoMudar: (Boolean) -> 
 private fun rotuloTipo(t: TipoNotificacao): StringResource = when (t) {
     TipoNotificacao.NOVA_DIETA -> Res.string.perfil_tipo_nova_dieta
     TipoNotificacao.QUESTIONARIO_ENVIADO -> Res.string.perfil_tipo_questionario_enviado
+    TipoNotificacao.NOVA_ORIENTACAO -> Res.string.perfil_tipo_nova_orientacao
     else -> Res.string.perfil_tipo_consulta_amanha
 }
 

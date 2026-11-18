@@ -46,7 +46,7 @@ actual class NotificadorLocal(private val contexto: Context, private val pedirNo
         cancelarTudo()
         val lista = JSONArray()
         lembretes.forEach { l ->
-            val item = JSONObject().put("c", l.chave).put("q", l.quando.toEpochMilliseconds()).put("t", textos.titulo).put("b", textos.corpo(l.refeicao))
+            val item = JSONObject().put("c", l.chave).put("q", l.quando.toEpochMilliseconds()).put("t", l.titulo ?: textos.titulo).put("b", l.corpo ?: textos.corpo(l.refeicao))
                 .put("ac", textos.acoes.comi).put("tr", textos.acoes.troquei).put("pu", textos.acoes.pulei)
             if (l.dietaId != null && l.dia != null) item.put("d", l.dietaId.toString()).put("r", l.refeicaoId.toString()).put("x", l.dia.toString())
             AgendaLembretes.agendar(app, item)

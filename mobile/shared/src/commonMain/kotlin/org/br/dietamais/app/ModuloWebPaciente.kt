@@ -40,10 +40,12 @@ fun moduloWebPaciente(ambiente: AmbienteWeb) = module {
     single<PortaPreferencias> { PreferenciasOnline(get()) }
     single<PortaVinculosLocais> { VinculosOnline(get()) }
     single<PortaCalendario> { CalendarioRepositorio(get()) }
-    viewModel { DietaPacienteViewModel(get(), get(), conectividade = online) }
+    viewModel { DietaPacienteViewModel(get(), get(), conectividade = online, perguntarHumor = get<PortaPreferencias>().observarPerguntaHumor()) }
     viewModel { AnamnesePacienteViewModel(get(), conectividade = online) }
     viewModel { ConsultasPacienteViewModel(get()) }
     viewModel { EvolucaoViewModel(get(), get<PortaRotina>()) }
     viewModel { ComprasViewModel(get(), get(), get(), { getString(Res.string.compras_titulo_texto) }) }
     viewModel { PerfilPacienteViewModel(get(), get(), get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaDocumentosPaciente> { org.br.dietamais.data.online.DocumentosPacienteOnline(get()) }
+    viewModel { org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel(get(), conectividade = online) }
 }

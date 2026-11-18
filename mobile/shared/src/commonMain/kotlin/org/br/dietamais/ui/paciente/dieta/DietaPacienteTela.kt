@@ -33,7 +33,9 @@ import kotlin.uuid.Uuid
 fun DietaPacienteTela(estado: EstadoDietaPaciente, aoAbrirRefeicao: (Uuid?) -> Unit, aoEscolher: (Uuid) -> Unit, modifier: Modifier = Modifier,
     pdf: @Composable (EstadoDietaPaciente) -> Unit = {}, aoAbrirLista: () -> Unit = {},
     acoesLista: AcoesListaPaciente = AcoesListaPaciente(), aoTrocar: (Uuid, Uuid) -> Unit = { _, _ -> },
-    aoMarcar: (Uuid, StatusCheckin) -> Unit = { _, _ -> }, aoTrocarRefeicao: (Uuid) -> Unit = {}, aoDesfazer: () -> Unit = {}) {
+    aoMarcar: (Uuid, StatusCheckin) -> Unit = { _, _ -> }, aoTrocarRefeicao: (Uuid) -> Unit = {}, aoDesfazer: () -> Unit = {},
+    /** MOB-93: cartão de Suplementos e Orientações, que aparece mesmo sem dieta publicada. */
+    extras: @Composable () -> Unit = {}) {
     if (estado.listaAberta) { ListaSubstituicaoTela(estado, acoesLista); return }
     val refeicao = estado.refeicoes.firstOrNull { it.id == estado.refeicaoAberta }
     if (refeicao != null && estado.dieta != null) {
@@ -46,6 +48,7 @@ fun DietaPacienteTela(estado: EstadoDietaPaciente, aoAbrirRefeicao: (Uuid?) -> U
             verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
             if (estado.semConexao) FaixaOffline()
             estado.erro?.let { Text(stringResource(textoErro(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            extras()
             val dieta = estado.dieta
             when {
                 !estado.carregado -> EstadoCarregando()
