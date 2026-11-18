@@ -5,6 +5,7 @@
 // getByRole/getByLabel/getByText. Dois cuidados:
 //  - o canvas fica por cima e "intercepta" o clique: clicamos nas coordenadas do elemento (page.mouse), nunca com locator.click();
 //  - os campos de texto são <div contenteditable>: nada de fill(); clica e digita pelo teclado.
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export const SENHA_EXEMPLO = "teste123";
@@ -107,4 +108,52 @@ export async function tocarAteSumir(page: Page, nome: string | RegExp, tentativa
     await page.waitForTimeout(700);
   }
   await expect(botao(page, nome)).toHaveCount(0);
+}
+
+// ---- A6 (MOB-45): trava de acessibilidade, usada em acessibilidade.spec.ts e nas telas novas da 1.4.0 (MOB-97).
+// As violações abaixo vêm do próprio Compose para web (1.12), não do código do app:
+//  - aria-required-attr: o Compose emite role="heading" sem aria-level;
+//  - aria-required-children: LazyColumn emite role="list" e os itens saem como botões, sem role="listitem";
+//  - aria-roles: o <canvas> sai com role="generic".
+const DO_COMPOSE = new Set(["aria-required-attr", "aria-required-children", "aria-roles"]);
+
+/** Trava de acessibilidade (A6): axe-core sem violação nossa, ao menos um título e nenhum controle sem nome. */
+export async function conferirAcessibilidade(page: Page, tela: string) {
+  await page.waitForTimeout(1200);
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  const nossas = violations.filter((v) => !DO_COMPOSE.has(v.id));
+  expect(nossas.map((v) => `${v.id} (${v.nodes.length}): ${v.help}`), `axe em "${tela}"`).toEqual([]);
+  // Toda tela tem ao menos um título (heading) e nenhum botão, campo ou aba fica sem nome acessível.
+  const resumo = await page.evaluate(() => {
+    const semNome: string[] = [];
+    let titulos = 0;
+    const visitar = (n: Element) => {
+      if (n.shadowRoot) [...n.shadowRoot.children].forEach(visitar);
+      const role = n.getAttribute("role");
+      if (role === "heading") titulos++;
+      if (role && ["button", "textbox", "tab", "checkbox", "switch", "link"].includes(role) && !(n.getAttribute("aria-label") || n.textContent || "").trim()) semNome.push(role);
+      [...n.children].forEach(visitar);
+    };
+    visitar(document.body);
+    return { titulos, semNome };
+  });
+  expect(resumo.titulos, `títulos em "${tela}"`).toBeGreaterThan(0);
+  expect(resumo.semNome, `controles sem nome em "${tela}"`).toEqual([]);
+}
+
+/** Toca numa aba da ficha. A fileira de abas rola na horizontal: se a aba está fora da janela, rola a fileira com a roda (deltaX) sobre a aba "Resumo". */
+export async function tocarAba(page: Page, nome: string) {
+  const aba = botao(page, nome);
+  const vp = page.viewportSize()!;
+  for (let i = 0; i < 8; i++) {
+    await expect(aba.first()).toBeAttached({ timeout: 20_000 });
+    const c = await aba.first().boundingBox();
+    if (c && c.width > 0 && c.x >= 0 && c.x + c.width <= vp.width) break;
+    const ancora = await botao(page, "Resumo").first().boundingBox().catch(() => null);
+    if (!ancora || ancora.width === 0) break;
+    await page.mouse.move(ancora.x + ancora.width / 2, ancora.y + ancora.height / 2);
+    await page.mouse.wheel(!c || c.width === 0 || c.x > 0 ? 400 : -400, 0);
+    await page.waitForTimeout(250);
+  }
+  await clicar(page, aba);
 }

@@ -27,6 +27,10 @@ Requisitos: Java 25, Node 24, Docker. Sem `sudo`, o Chromium do Playwright preci
 6. Paciente entra, vê o Hoje com a refeição e marca **Comi** (aparece "Feita").
 7. Isolamento: uma segunda nutri recebe `404` (não `403`) ao pedir a paciente da primeira e não a vê na lista, pela API e pela tela.
 
+## Histórias da 1.4.0 (`historias-1-4-0.spec.ts`, MOB-97)
+
+Com a Maria dos dados de exemplo: alergia cadastrada na aba Saúde (H-01); consulta online com link marcada como realizada (H-02); "Comi algo fora do plano" no Hoje (H-03); meta, suplemento e orientação nas abas Metas e Prescrições (H-04, H-05); declaração de comparecimento da consulta realizada, conferência pública e o documento na ficha e no Perfil da paciente (H-06); comparação de planos na Conta (H-07). Os dados entram pela API quando a tela não é o foco; cada tela nova passa pela trava de acessibilidade (`conferirAcessibilidade` em `apoio.ts`), e o `acessibilidade.spec.ts` agora percorre as 10 abas da ficha.
+
 ## Como a web é testada (a árvore de acessibilidade vira o DOM)
 
 O app é desenhado em `<canvas>`, mas o Compose publica a árvore de `semantics` como elementos HTML **dentro de um shadow root aberto**, com `role`, `aria-label` e texto. O Playwright atravessa o shadow DOM, então os seletores são `getByRole` e `getByText` (ver `apoio.ts`). Particularidades que o `apoio.ts` resolve:

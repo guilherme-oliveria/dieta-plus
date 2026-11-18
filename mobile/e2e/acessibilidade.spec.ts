@@ -1,38 +1,9 @@
 // A6 (MOB-45): trava de acessibilidade da web. Roda o axe-core na árvore de semantics que o Compose publica no DOM.
 //
-// O que falha o teste: qualquer violação do axe fora da lista abaixo (controle sem nome, falta de h1/main/landmark, etc.).
-// As violações da lista vêm do próprio Compose para web (1.12), não do código do app, e não dá para corrigir daqui:
-//  - aria-required-attr: o Compose emite role="heading" sem aria-level;
-//  - aria-required-children: LazyColumn emite role="list" e os itens saem como botões, sem role="listitem";
-//  - aria-roles: o <canvas> sai com role="generic".
-import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
-import { abrir, clicar, entrar, NUTRI_EXEMPLO, tocar, buscarPaciente } from "./apoio.ts";
-
-const DO_COMPOSE = new Set(["aria-required-attr", "aria-required-children", "aria-roles"]);
-
-async function conferir(page: Page, tela: string) {
-  await page.waitForTimeout(1200);
-  const { violations } = await new AxeBuilder({ page }).analyze();
-  const nossas = violations.filter((v) => !DO_COMPOSE.has(v.id));
-  expect(nossas.map((v) => `${v.id} (${v.nodes.length}): ${v.help}`), `axe em "${tela}"`).toEqual([]);
-  // Toda tela tem ao menos um título (heading) e nenhum botão, campo ou aba fica sem nome acessível.
-  const resumo = await page.evaluate(() => {
-    const semNome: string[] = [];
-    let titulos = 0;
-    const visitar = (n: Element) => {
-      if (n.shadowRoot) [...n.shadowRoot.children].forEach(visitar);
-      const role = n.getAttribute("role");
-      if (role === "heading") titulos++;
-      if (role && ["button", "textbox", "tab", "checkbox", "switch", "link"].includes(role) && !(n.getAttribute("aria-label") || n.textContent || "").trim()) semNome.push(role);
-      [...n.children].forEach(visitar);
-    };
-    visitar(document.body);
-    return { titulos, semNome };
-  });
-  expect(resumo.titulos, `títulos em "${tela}"`).toBeGreaterThan(0);
-  expect(resumo.semNome, `controles sem nome em "${tela}"`).toEqual([]);
-}
+// O que falha o teste: qualquer violação do axe fora das que vêm do próprio Compose para web (lista e motivo em apoio.ts,
+// conferirAcessibilidade), tela sem título ou controle sem nome. As telas novas da 1.4.0 também passam por aqui (MOB-97).
+import { expect, test } from "@playwright/test";
+import { abrir, clicar, conferirAcessibilidade as conferir, entrar, NUTRI_EXEMPLO, tocar, tocarAba, buscarPaciente } from "./apoio.ts";
 
 test("telas de entrada: Entrar, código do convite e cadastro de nutri", async ({ page }) => {
   await abrir(page);
@@ -56,8 +27,8 @@ test("nutri: início, pacientes, agenda, alimentos, conta e ficha", async ({ pag
   await tocar(page, "Pacientes");
   await buscarPaciente(page, "Maria");
   await clicar(page, page.getByRole("button", { name: /Maria Exemplo/ }));
-  for (const aba of ["Resumo", "Avaliações", "Evolução", "Dieta", "Lista", "Anamnese"]) {
-    await tocar(page, aba);
+  for (const aba of ["Resumo", "Saúde", "Metas", "Prescrições", "Avaliações", "Evolução", "Dieta", "Lista", "Anamnese", "Documentos"]) {
+    await tocarAba(page, aba);
     await conferir(page, `Ficha: ${aba}`);
   }
 });
