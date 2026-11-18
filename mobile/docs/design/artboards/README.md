@@ -46,6 +46,8 @@ Cópia dos artboards do canvas https://claude.ai/artifact/6thej5zGsTo81ZosiigGxC
 | `A-Adesao-Humor.dc.html` | Nutri · Adesão com humor e fora do plano (DES-18) |
 | `P-Hoje-Metas.dc.html`, `P-Metas-Semana.dc.html` | Paciente · Metas de hábito no Hoje e na semana (DES-19) |
 | `A-Metas-Paciente.dc.html`, `A-Meta-Nova.dc.html`, `A-Modelos-Meta.dc.html` | Nutri · Metas, nova meta e modelos (DES-19) |
+| `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html` | Nutri · Suplementos e orientações (DES-20) |
+| `P-Suplementos.dc.html`, `P-Orientacoes.dc.html` | Paciente · Suplementos e orientações (DES-20) |
 | `A-Documentos-Paciente.dc.html`, `A-Documento-Emitir.dc.html`, `A-Documento-Anular.dc.html`, `A-Modelos-Documento.dc.html` | Nutri · Documentos (DES-21) |
 | `P-Documentos.dc.html` | Paciente · Documentos sem internet (DES-21) |
 | `PDF-Declaracao.dc.html`, `W-Conferir-Documento.dc.html` | PDF da declaração (A4) e página pública de conferência (DES-21) |
@@ -63,5 +65,7 @@ Rodada DES-17 (17/11/2026, release 1.4.0): consulta com tipo, modalidade e link,
 Rodada DES-18 (17/11/2026, release 1.4.0): fome antes e sensação depois no registro, "Comi algo fora do plano" e o cartão na adesão da nutri. Fotos em [../evidencias/DES-18/](../evidencias/DES-18/).
 
 Rodada DES-19 (17/11/2026, release 1.4.0): metas de hábito, com a água como uma delas. Fotos em [../evidencias/DES-19/](../evidencias/DES-19/).
+
+Rodada DES-20 (17/11/2026, release 1.4.0): suplementos e orientações da nutri e do paciente. Fotos em [../evidencias/DES-20/](../evidencias/DES-20/).
 
 Rodada DES-21 (17/11/2026, release 1.4.0): documentos (atestado e declaração de comparecimento). Nutri, CRN e código são fictícios. Fotos em [../evidencias/DES-21/](../evidencias/DES-21/).
