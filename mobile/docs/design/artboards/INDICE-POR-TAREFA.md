@@ -25,6 +25,7 @@ Fotos em `../evidencias/DES-NN/`. Dados de exemplo fictícios (paciente "Ana Lim
 | **MOB-94** Nutri: documentos | `A-Documentos-Paciente` (lista com válido/anulado e motivo), `A-Documento-Emitir` (modelo, consulta realizada, prévia), `A-Documento-Anular` (motivo obrigatório), `A-Modelos-Documento` (modelos do sistema só leitura, copiar para editar) | Emissão imutável (RN-DOC-02). Texto dos modelos do sistema validado por nutricionista (D-06) |
 | **MOB-95** Paciente: Documentos | `P-Documentos` (lista offline, "Abrir PDF" exige internet) | Anulado aparece marcado |
 | **BE-78** e **BE-79** PDF e conferência | `PDF-Declaracao` (A4: logo, nutri e CRN, texto, assinatura em linha, código de conferência), `W-Conferir-Documento` (página pública) | Sem assinatura digitalizada (D-05, 1.5.0). Conferência sem dado do paciente (D-04) |
+| **MOB-96** Assinatura: comparar planos | `A-Assinatura-Planos` (teste com dias restantes e uso, Mensal/Anual, três planos, botão que abre o navegador), `A-Assinatura-Ativa` (uso perto do limite, trocar de plano), `A-Assinatura-Sem-Preco` (variante quando a chave do servidor desliga preço e botão, D-09), `A-Painel-Fim-Teste` (aviso no painel) | Valores da seção 7.1 vêm do servidor (`planosDisponiveis`), nunca fixos no app. Troca: subir na hora, descer no vencimento (D-11) |
 
 ## Mobile pendente
 
