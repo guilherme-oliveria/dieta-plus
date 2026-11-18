@@ -142,7 +142,7 @@ Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1
 - [ ] **MOB-99 Água como meta no app (H-04, D-07).** O cartão de água do Hoje passa a ler e registrar pela meta de água (`registrosMeta`), mantendo "Desfazer último" e "Outro valor" (MOB-UX-05); alvo vindo da meta, que a nutri pode ajustar; sequência e progresso como nas outras metas; migração nova do banco local levando os registros de água para a meta, sem perder os que ainda estão na fila. Funciona offline. *Depende de:* DES-19, MOB-90, BE-86.
 - [x] **MOB-91 Nutri: metas, modelos e cumprimento (H-04).** Cadastro de meta na ficha, modelos de metas e aplicar a um paciente, cumprimento na ficha (e o indicador do painel, se o BE-74 entregar). Escrita online. *Depende de:* DES-19, BE-74.
 - [x] **MOB-92 Nutri: prescrever e orientar (H-05).** Prescrição de suplemento (produto da nutri ou texto livre; dose, forma, frequência, horário, início e fim), orientação avulsa com negrito e lista, modelos de orientação; opção de incluir suplementos no PDF da dieta. Escrita online. *Depende de:* DES-20, BE-75, BE-76.
-- [ ] **MOB-93 Paciente: suplementos e orientações (H-05).** Telas "Suplementos" e "Orientações" lendo do banco local, lembrete local do suplemento (pode desligar), push "nova orientação" abrindo a tela depois do sync. *Depende de:* DES-20, BE-75, BE-76.
+- [x] **MOB-93 Paciente: suplementos e orientações (H-05).** Telas "Suplementos" e "Orientações" lendo do banco local, lembrete local do suplemento (pode desligar), push "nova orientação" abrindo a tela depois do sync. *Depende de:* DES-20, BE-75, BE-76.
 
 ### Onda 27
 

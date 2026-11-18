@@ -259,6 +259,14 @@ Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
 - Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
 - "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
 - Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
+## MOB-93 · Paciente: suplementos e orientações (18/11/2026)
+
+Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba Dieta, por um cartão de atalho ("Suplementos · 3 em uso", "Orientações · 1 nova") que só aparece quando a nutri já prescreveu ou orientou algo. O push "nova orientação" abre a aba Dieta com as Orientações. Divergências:
+
+- O lembrete do suplemento toca todo dia nos horários prescritos: a frequência é texto livre ("3 vezes por semana") e o app não a interpreta. O paciente desliga por suplemento em "Lembrar no horário". O texto da notificação é genérico ("Hora do seu suplemento"), sem nome nem dose.
+- O selo "Nova" marca a orientação que o paciente ainda não abriu **neste aparelho**: a marca de lida não vai para o servidor.
+- As orientações anteriores abrem com "Ler" e fecham com "Recolher", em vez de abrir uma tela própria.
+- Na web, o paciente ainda não vê Suplementos e Orientações: o backend só entrega essas coleções pelo `/sync`, que a web não usa. Precisa de `GET /eu/suplementos` e `GET /eu/orientacoes` (fica para uma tarefa do backend).
 ## MOB-95 · Paciente: documentos (18/11/2026)
 
 Artboard: `P-Documentos`. Os documentos aparecem num cartão "Documentos" no Perfil, que só existe quando a nutri já emitiu algum. A lista vem do banco local (coleção `documentos` do sync) no app e de `GET /eu/documentos` na web; "Abrir PDF" usa o link assinado e fica desabilitado sem internet. Divergências:
