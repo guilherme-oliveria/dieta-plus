@@ -170,6 +170,71 @@ Regras: RN-LGPD-01 a 05.
 - [ ] Paciente exporta os próprios dados e pede exclusão da conta.
 - [ ] Log de acesso a dados clínicos gravado e consultável pelo admin (sem ver o conteúdo).
 
+## F-22 Alergias e intolerâncias na ficha, com alerta no montador — release 1.4.0 (H-01)
+
+Regras: RN-SAU-01 e 02, RN-DIE-14, RN-MOD-03.
+
+- [ ] A ficha tem a seção "Saúde e restrições" com itens de quatro tipos (alergia, intolerância, condição e medicamento), cada um com nome, gravidade opcional e observação; o cabeçalho mostra um selo com as restrições ativas.
+- [ ] Alergia e intolerância se ligam a marcadores de alimento (lista ampliada com amendoim, frutos do mar, ovo, soja e outros, com sugestão inicial por nome no catálogo).
+- [ ] No montador, item com marcador de intolerância mostra o alerta e deixa seguir; de alergia, pede confirmação explícita. O backend recalcula os alertas ao salvar e recusa publicar dieta com alergia não confirmada (`ALERGIA_NAO_CONFIRMADA`).
+- [ ] Dieta nova nasce com as restrições da ficha, e a lista de substituição publicada sai sem os alimentos marcados.
+- [ ] Funciona offline no desktop e no tablet; o paciente nunca vê a seção.
+
+## F-23 Consulta com status, modalidade e link online — release 1.4.0 (H-02)
+
+Regras: RN-AGE-03 a 05, RN-NOT-02.
+
+- [ ] Status Agendada, Realizada, Falta e Cancelada, com transições validadas no backend; para o paciente, Realizada e Falta aparecem como encerrada.
+- [ ] Modalidade Presencial ou Online, separada do tipo; o tipo antigo `ONLINE` continua aceito (vira Retorno + Online). Consulta online aceita link `https`, e o paciente vê "Entrar na consulta".
+- [ ] "Orientação para o paciente" aparece para ele; "Observação interna" nunca sai na projeção do paciente.
+- [ ] A nutri escolhe a antecedência do lembrete (2 h, 1 dia ou 2 dias) e o lembrete extra 1 h antes; e-mail de confirmação ao agendar. Agenda com visão do mês.
+- [ ] Push e `.ics` sem dado clínico, sem link e sem orientação.
+
+## F-24 Humor e "comi fora do plano" — release 1.4.0 (H-03)
+
+Regras: RN-ROT-02, RN-ROT-06, RN-SYN-03.
+
+- [ ] No registro da refeição, as escalas opcionais "fome antes" e "como ficou depois" (1 a 5); o paciente pode desligar a pergunta no perfil.
+- [ ] Botão "Comi algo fora do plano": texto de até 280 caracteres, refeição opcional e horário; só inclusão, offline, sem conflito.
+- [ ] A nutri vê na adesão as médias da semana e a lista dos registros fora do plano.
+- [ ] Humor e registros fora do plano entram na exportação e na auditoria.
+
+## F-25 Metas de hábito — release 1.4.0 (H-04)
+
+Regras: RN-MET-01 a 05.
+
+- [ ] A nutri cria metas (água, atividade, passos, sono, frutas e verduras, sim/não e contador) com alvo, frequência diária ou N vezes por semana e início e fim opcionais, e mantém modelos aplicáveis a vários pacientes.
+- [ ] A água é uma meta: todo paciente tem a meta de água, com alvo padrão de 35 ml × peso mais recente que a nutri ajusta; os registros antigos foram migrados e o caminho antigo (`POST /eu/agua`) continua aceito.
+- [ ] O paciente marca no Hoje, offline, e vê a sequência e o progresso da semana, calculados por função pura com os vetores de `contrato/calculos/metas.json`.
+- [ ] A nutri vê o cumprimento das metas na ficha. Sem pontos nem níveis.
+
+## F-26 Suplementos e orientações — release 1.4.0 (H-05)
+
+Regras: RN-SUP-01 e 02, RN-ORI-01, RN-ASS-05, RN-NOT-02.
+
+- [ ] A nutri prescreve suplemento por produto ou texto livre (dose, forma, frequência, horários, início e fim); a prescrição guarda cópia do nome e da dose.
+- [ ] Orientação avulsa com título e Markdown restrito (negrito, itálico e listas, nunca HTML), com modelos da nutri; nova orientação dispara push genérico.
+- [ ] O paciente vê "Suplementos" e "Orientações" offline, mesmo com a assinatura da nutri inativa.
+- [ ] O PDF da dieta pode incluir os suplementos ativos (`incluirSuplementos`).
+
+## F-27 Atestado e declaração de comparecimento — release 1.4.0 (H-06)
+
+Regras: RN-DOC-01 a 03.
+
+- [ ] Dois modelos do sistema somente leitura (atestado e declaração), com campos de preenchimento; a nutri copia para editar.
+- [ ] O documento emitido é imutável (texto final e PDF); corrigir é emitir outro, e anular exige motivo. A declaração pode partir de consulta Realizada.
+- [ ] Cada documento tem código de conferência; a rota pública confirma tipo, emissor, CRN, data e situação, sem nenhum dado do paciente, com limite de requisições.
+- [ ] O paciente vê os documentos dele em "Documentos" (lista offline; o PDF abre online, por link assinado de 10 min). Emissão, anulação e conferência ficam na auditoria.
+
+## F-28 Plano anual e troca de plano — release 1.4.0 (H-07)
+
+Regras: RN-ASS-06 a 11.
+
+- [ ] `GET /api/v1/planos` (público) lista os planos à venda, com preço mensal e anual e limite de pacientes (ou sem limite); o admin edita os campos novos, com log.
+- [ ] O checkout aceita plano e periodicidade (mensal ou anual), continua fora do app e aceita PIX, cartão e boleto; o webhook trata a renovação anual.
+- [ ] Com assinatura ativa, subir de plano vale na hora e descer vale no próximo vencimento (RN-ASS-08: ninguém perde paciente).
+- [ ] Tela de assinatura compara planos com alternância mensal/anual, uso dos limites e "faltam N dias de teste"; aviso no painel e por e-mail 7 dias e 1 dia antes do fim do teste.
+
 ## Fora do MVP
 
 Site Angular (P1). Troca de nutri com cópia de histórico, clínicas com várias nutris e secretária, vitrine de nutris, consultoria online paga com split, anúncios, foto do prato, chat, fórmulas da planilha (7 dobras), importação da planilha, receitas, Google Fit/Apple Saúde, RabbitMQ (P2).
