@@ -134,6 +134,9 @@ test("paciente vê o Hoje com a dieta e marca Comi", async ({ browser }) => {
   await veTexto(page, /Café da manhã/);
   const comi = page.waitForResponse((r) => r.request().method() !== "GET" && r.url().includes("/api/v1/") && !r.url().includes("/auth/"));
   await tocar(page, "Comi");
+  // MOB-88: a pergunta de fome e sensação abre depois de "Comi" (ligada por padrão); Pular grava o registro sem as escalas
+  await veTexto(page, /Como foi: café da manhã\?/);
+  await tocar(page, "Pular");
   expect((await comi).status()).toBeLessThan(300);
   await veTexto(page, "Feita");
   await expect(botao(page, "Comi")).toHaveCount(0);
