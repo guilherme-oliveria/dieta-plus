@@ -107,7 +107,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                         AbaFicha.DOCUMENTOS -> org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
                         else -> EstadoVazio(mensagem = stringResource(Res.string.web_aba_no_app))
                     }
-                })
+                }, resumoExtra = { paciente -> org.br.dietamais.ui.nutri.paciente.AdesaoHumorRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel>(viewModelStoreOwner = dono), paciente.id) })
             },
             conteudoInicio = { PainelRota(koinViewModel<PainelViewModel>(viewModelStoreOwner = dono)) },
             conteudoAgenda = { AgendaRota(koinViewModel<AgendaViewModel>(viewModelStoreOwner = dono)) },

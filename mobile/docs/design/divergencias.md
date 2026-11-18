@@ -227,6 +227,13 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
 - Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
 
+## MOB-89 · Humor e fora do plano na adesão (18/11/2026)
+
+- Artboard `A-Adesao-Humor` (DES-18). O app ainda não tem a aba "Adesão" do artboard: o cartão "Adesão · últimos 7 dias" entra no Resumo da ficha, abaixo da última avaliação. Uma aba própria fica para quando houver mais conteúdo de adesão (metas da MOB-91).
+- A linha de cada registro fora do plano mostra dia e hora, sem "no lugar do lanche da tarde": a ficha da nutri não tem a dieta do paciente carregada no Resumo. Se a nutri pedir, o backend pode mandar o nome da refeição junto (campo novo e opcional).
+- Período em "10/11 a 16/11" (o artboard abrevia "10 a 16/11").
+- Leitura online: sem rede o cartão avisa e busca de novo quando a conexão volta.
+
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 
 Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:

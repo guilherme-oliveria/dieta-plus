@@ -60,6 +60,8 @@ fun moduloWebNutri(ambiente: AmbienteWeb, compartilhamento: Compartilhamento) = 
     viewModel { org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel(get(), getOrNull(), conectividade = online) }
     single<org.br.dietamais.data.repositorio.PortaPreferenciasAgenda> { org.br.dietamais.data.repositorio.PreferenciasAgendaRepositorio(get<ApiDieta>()) }
     viewModel { org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel(get(), conectividade = online) }
+    single<org.br.dietamais.data.repositorio.PortaAdesao> { org.br.dietamais.data.repositorio.AdesaoRepositorio(get<ApiDieta>()) }
+    viewModel { org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel(get(), conectividade = online) }
     viewModel { p -> PrivacidadeViewModel(get(), conectividade = online, exportacaoDisponivel = p.get()) }
     viewModel { AssinaturaViewModel(get(), conectividade = online) }
     single<PortaConsultas> { ConsultasOnline(get()) }
