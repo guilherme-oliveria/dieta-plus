@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: 071-documentos
+      author: dietamais
+      comment: "BE-78 (H-06, RN-DOC-01 e 02). Modelos de documento (os dois do sistema têm nutricionista_id nulo e são só leitura) e documentos emitidos, imutáveis. A coleção DOCUMENTOS já está no CHECK do diário desde o changeset 065; o diário do sync entra no BE-79."
+      changes:
+        - createTable:
+            tableName: modelo_documento
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_modelo_documento_nutri, references: nutricionista(id), deleteCascade: true } }
+              - column: { name: tipo, type: varchar(30), constraints: { nullable: false } }
+              - column: { name: nome, type: varchar(80), constraints: { nullable: false } }
+              - column: { name: texto, type: varchar(5000), constraints: { nullable: false } }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - sql:
+            sql: ALTER TABLE modelo_documento ADD CONSTRAINT ck_modelo_documento_tipo CHECK (tipo IN ('ATESTADO','DECLARACAO_COMPARECIMENTO'))
+        - createIndex:
+            tableName: modelo_documento
+            indexName: ix_modelo_documento_nutri
+            columns:
+              - column: { name: nutricionista_id }
+        # D-06: o texto dos dois modelos do sistema é revisado pela nutri parceira antes da release (changeset novo, se mudar).
+        - insert:
+            tableName: modelo_documento
+            columns:
+              - column: { name: id, value: 019a9000-0000-7000-8000-00000000d001 }
+              - column: { name: tipo, value: ATESTADO }
+              - column: { name: nome, value: Atestado }
+              - column: { name: texto, value: "Atesto, para os devidos fins, que {{paciente}} está em acompanhamento nutricional comigo e foi atendido(a) em consulta de nutrição em {{data}}." }
+        - insert:
+            tableName: modelo_documento
+            columns:
+              - column: { name: id, value: 019a9000-0000-7000-8000-00000000d002 }
+              - column: { name: tipo, value: DECLARACAO_COMPARECIMENTO }
+              - column: { name: nome, value: Declaração de comparecimento }
+              - column: { name: texto, value: "Declaro, para os devidos fins, que {{paciente}} compareceu a consulta de nutrição em {{data}}, às {{horario}}." }
+        - createTable:
+            tableName: documento_emitido
+            columns:
+              - column: { name: id, type: uuid, defaultValueComputed: uuidv7(), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: vinculo_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: nutricionista_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: paciente_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: modelo_id, type: uuid, constraints: { nullable: true, foreignKeyName: fk_documento_emitido_modelo, references: modelo_documento(id), deleteCascade: false } }
+              - column: { name: consulta_id, type: uuid }
+              - column: { name: tipo, type: varchar(30), constraints: { nullable: false } }
+              - column: { name: titulo, type: varchar(80), constraints: { nullable: false } }
+              - column: { name: texto, type: varchar(6000), constraints: { nullable: false } }
+              - column: { name: emissor_nome, type: varchar(200), constraints: { nullable: false } }
+              - column: { name: emissor_crn, type: varchar(40) }
+              - column: { name: codigo_conferencia, type: varchar(14), constraints: { nullable: false, unique: true, uniqueConstraintName: uq_documento_emitido_codigo } }
+              - column: { name: pdf_chave, type: varchar(200), constraints: { nullable: false } }
+              - column: { name: emitido_em, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: anulado_em, type: timestamptz }
+              - column: { name: motivo_anulacao, type: varchar(300) }
+              - column: { name: versao, type: bigint, defaultValueNumeric: 1, constraints: { nullable: false } }
+              - column: { name: seq, type: bigint, defaultValueComputed: "nextval('seq_sync')", constraints: { nullable: false } }
+              - column: { name: criado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: atualizado_em, type: timestamptz, defaultValueComputed: now(), constraints: { nullable: false } }
+              - column: { name: excluido_em, type: timestamptz }
+        - sql:
+            sql: ALTER TABLE documento_emitido ADD CONSTRAINT ck_documento_emitido_tipo CHECK (tipo IN ('ATESTADO','DECLARACAO_COMPARECIMENTO'))
+        - sql:
+            sql: ALTER TABLE documento_emitido ADD CONSTRAINT ck_documento_emitido_anulacao CHECK ((anulado_em IS NULL) = (motivo_anulacao IS NULL))
+        - addForeignKeyConstraint:
+            baseTableName: documento_emitido
+            baseColumnNames: vinculo_id,nutricionista_id
+            referencedTableName: vinculo
+            referencedColumnNames: id,nutricionista_id
+            constraintName: fk_documento_emitido_vinculo_proprio
+            onDelete: CASCADE
+        - createIndex:
+            tableName: documento_emitido
+            indexName: ix_documento_emitido_paciente
+            columns:
+              - column: { name: paciente_id }
+              - column: { name: emitido_em }
+        - createIndex:
+            tableName: documento_emitido
+            indexName: ix_documento_emitido_nutri
+            columns:
+              - column: { name: nutricionista_id }
