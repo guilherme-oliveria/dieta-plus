@@ -202,6 +202,11 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
 - A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
 - A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.
+## MOB-82 · Saúde e restrições na ficha (18/11/2026)
+
+- Artboards `A-Saude-Ficha` e `A-Saude-Item` (DES-16). O formulário do item abre dentro da aba "Saúde", no lugar da lista, como no artboard; não é uma folha sobreposta.
+- Marcadores da folha: o artboard mostra "Castanhas", que não existe como marcador de alimento no backend (BE-69); ficou de fora. "Soja" entrou, porque o backend tem. "Leite" aparece como "Leite e lactose" (`CONTEM_LACTOSE`).
+- Cada item ganhou "Remover" ao lado de "Editar", com confirmação; o artboard só mostra "Editar".
 
 ## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
 
@@ -221,6 +226,13 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
 - O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
 - Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
+
+## MOB-89 · Humor e fora do plano na adesão (18/11/2026)
+
+- Artboard `A-Adesao-Humor` (DES-18). O app ainda não tem a aba "Adesão" do artboard: o cartão "Adesão · últimos 7 dias" entra no Resumo da ficha, abaixo da última avaliação. Uma aba própria fica para quando houver mais conteúdo de adesão (metas da MOB-91).
+- A linha de cada registro fora do plano mostra dia e hora, sem "no lugar do lanche da tarde": a ficha da nutri não tem a dieta do paciente carregada no Resumo. Se a nutri pedir, o backend pode mandar o nome da refeição junto (campo novo e opcional).
+- Período em "10/11 a 16/11" (o artboard abrevia "10 a 16/11").
+- Leitura online: sem rede o cartão avisa e busca de novo quando a conexão volta.
 
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 
@@ -247,6 +259,14 @@ Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
 - Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
 - "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
 - Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
+## MOB-93 · Paciente: suplementos e orientações (18/11/2026)
+
+Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba Dieta, por um cartão de atalho ("Suplementos · 3 em uso", "Orientações · 1 nova") que só aparece quando a nutri já prescreveu ou orientou algo. O push "nova orientação" abre a aba Dieta com as Orientações. Divergências:
+
+- O lembrete do suplemento toca todo dia nos horários prescritos: a frequência é texto livre ("3 vezes por semana") e o app não a interpreta. O paciente desliga por suplemento em "Lembrar no horário". O texto da notificação é genérico ("Hora do seu suplemento"), sem nome nem dose.
+- O selo "Nova" marca a orientação que o paciente ainda não abriu **neste aparelho**: a marca de lida não vai para o servidor.
+- As orientações anteriores abrem com "Ler" e fecham com "Recolher", em vez de abrir uma tela própria.
+- Na web, o paciente ainda não vê Suplementos e Orientações: o backend só entrega essas coleções pelo `/sync`, que a web não usa. Precisa de `GET /eu/suplementos` e `GET /eu/orientacoes` (fica para uma tarefa do backend).
 ## MOB-96 · Assinatura: comparar planos (18/11/2026)
 
 Artboards: `A-Assinatura-Planos`, `A-Assinatura-Ativa`, `A-Assinatura-Sem-Preco` e `A-Painel-Fim-Teste` (DES-22). O cartão "Minha assinatura" da Conta mostra:

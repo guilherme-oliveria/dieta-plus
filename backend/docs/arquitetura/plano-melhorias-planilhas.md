@@ -226,7 +226,7 @@ Biblioteca própria em `ui/comum/graficos` (Compose Canvas, sem dependência nov
 | 20. Dieta calculada | **BE-C8** contrato da fase 8 (porções, produtos, metas na dieta, modelos) · **BE-47** grupos com variantes de porção, 3 grupos novos (Vegetal cru, Embutido, Bebida) e 36 nutrientes por alimento importados da planilha · **BE-48** produtos e suplementos · **BE-49** dieta ligada às metas: alternativas, itens à vontade, rodapé, totais de micronutrientes, adequação, peso ajustado · **BE-50** PDF da dieta (coluna Substituições) e PDF da lista de substituição | **MOB-54** planejador por porções com rosca de metas e barras por refeição · **MOB-55** paciente: rosca de macros e lista de substituição para consulta | — | Dieta de 2509 kcal do PDF montada pela grade bate com a planilha |
 | 21. Dietas pré-prontas | **BE-51** marcadores de restrição nos alimentos · **BE-52** modelos de dieta (sistema + nutri, aplicar com escala por VET, restrições filtram a lista) · **BE-53** modelos iniciais (seed) | **MOB-56** biblioteca de modelos (lista, editar, duplicar, salvar dieta como modelo) · **MOB-57** aplicar modelo ao paciente | — | **Marco M9 (1.3.0)**: nutri prescreve a partir de um modelo e ajusta às metas |
 | 22. Crianças e adolescentes | **BE-54** referências OMS 0–9 (P/I, E/I, IMC/I por mês, percentil e Z), Frisancho, IMC 10–17 · **BE-55** cálculo infantil e adolescente (classificações, CMB/AMBc/AGB, Slaughter, Deurenberg, GEB/GET IOM e RDI) | **MOB-58** avaliação infantil e adolescente · **MOB-59** curva de crescimento para nutri e responsável | **DES-10** criança, exames e anamnese | — |
-| 23. Clínica e exames | **BE-56** catálogo de exames (faixas por sexo, idade, ciclo, IMC) e lançamento por avaliação · **BE-57** PA, comportamental e alimentar estruturados (no questionário padrão) | **MOB-60** exames (nutri lança, paciente vê barra de faixa se compartilhado) · **MOB-61** anamnese estruturada com os cálculos de álcool, sal e óleo | — | **Marco M10 (1.4.0)**: as 4 planilhas cobertas |
+| 23. Clínica e exames | **BE-56** catálogo de exames (faixas por sexo, idade, ciclo, IMC) e lançamento por avaliação · **BE-57** PA, comportamental e alimentar estruturados (no questionário padrão) | **MOB-60** exames (nutri lança, paciente vê barra de faixa se compartilhado) · **MOB-61** anamnese estruturada com os cálculos de álcool, sal e óleo | — | **Marco M10 (saiu na 1.3.0)**: as 4 planilhas cobertas |
 
 Tarefas sem dependência entre si na mesma coluna e onda podem ir em PRs paralelos (BE-43 e BE-44; MOB-47 e MOB-49). MOB-49 pode começar já, porque o backend já devolve os dados.
 
@@ -313,7 +313,7 @@ Tarefas sem dependência entre si na mesma coluna e onda podem ir em PRs paralel
 | --- | --- | --- | --- |
 | M8 | 1.2.0 | Avaliação de adulto e idoso igual à planilha, com prévia ao vivo, texto-resumo, PDF com gráficos; paciente vê "Meus resultados" | Avaliação do Guilherme refeita no app gera os mesmos números do PDF |
 | M9 | 1.3.0 | Necessidades e metas, dieta por porções contra as metas, suplementos, listas em PDF, modelos por condição editáveis | Dieta de 2509 kcal pela grade bate; modelo "Hipertensão" aplicado tira os embutidos da lista do paciente |
-| M10 | 1.4.0 | Crianças e adolescentes com curvas da OMS, exames, anamnese estruturada | Caso de cada faixa etária com os vetores |
+| M10 | 1.3.0 (junto com o M9) | Crianças e adolescentes com curvas da OMS, exames, anamnese estruturada | Caso de cada faixa etária com os vetores |
 
 ## 8. Riscos e decisões
 

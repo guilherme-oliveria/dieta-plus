@@ -31,7 +31,7 @@ actual class NotificadorLocal : NotificacaoLocal {
             val agora = System.currentTimeMillis()
             lembretes.forEach { l ->
                 val espera = l.quando.toEpochMilliseconds() - agora
-                if (espera > 0) timer.schedule(object : TimerTask() { override fun run() { bandeja.displayMessage(titulo, corpo(l.refeicao), TrayIcon.MessageType.INFO) } }, espera)
+                if (espera > 0) timer.schedule(object : TimerTask() { override fun run() { bandeja.displayMessage(l.titulo ?: titulo, l.corpo ?: corpo(l.refeicao), TrayIcon.MessageType.INFO) } }, espera)
             }
         }
     }

@@ -50,7 +50,7 @@ actual class NotificadorLocal : NotificacaoLocal {
         val unidades = NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay or NSCalendarUnitHour or NSCalendarUnitMinute
         lembretes.forEach { l ->
             val conteudo = UNMutableNotificationContent().apply {
-                setTitle(textos.titulo); setBody(textos.corpo(l.refeicao)); setSound(UNNotificationSound.defaultSound())
+                setTitle(l.titulo ?: textos.titulo); setBody(l.corpo ?: textos.corpo(l.refeicao)); setSound(UNNotificationSound.defaultSound())
                 if (l.dietaId != null && l.dia != null) {
                     // Só ids e o dia, sem dado clínico: os botões Comi e Pulei registram o check-in (MOB-18b).
                     setCategoryIdentifier(CATEGORIA)
