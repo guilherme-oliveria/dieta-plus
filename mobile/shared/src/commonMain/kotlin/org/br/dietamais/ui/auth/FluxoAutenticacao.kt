@@ -275,7 +275,8 @@ private fun NavegacaoNutri() {
     NavegacaoApp(PerfilNavegacao.NUTRICIONISTA, resolverVinculo = { ficha -> pacientes.estado.value.lista.firstOrNull { it.id.toString() == ficha }?.vinculoId?.toString() },
     conteudoPacientes = { classe, vinculo, abrir, voltar ->
         PacientesRota(pacientes, classe, vinculo, abrir, voltar, abaConteudo = { aba, paciente ->
-          if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+          if (aba == AbaFicha.SAUDE) org.br.dietamais.ui.nutri.paciente.SaudePacienteRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel>(viewModelStoreOwner = dono), paciente)
+          else if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
           else if (aba == AbaFicha.PRESCRICOES) org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
           else if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.AVALIACOES) AvaliacoesNutriRota(koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.sexo, paciente.dataNascimento, koinViewModel<org.br.dietamais.ui.nutri.avaliacao.ExamesNutriViewModel>(viewModelStoreOwner = dono), paciente.nome)
@@ -288,7 +289,7 @@ private fun NavegacaoNutri() {
             ListaPacienteTela(estadoLista, lista::mudarBusca, lista::remover, lista::adicionar, lista::salvar, lista::descartar, lista::recarregar,
                                 AcoesCopiaLista(lista::escolherOrigem, lista::pedirCopia, lista::confirmarCopia, lista::desistirDaCopia))
           }
-        })
+        }, resumoExtra = { paciente -> org.br.dietamais.ui.nutri.paciente.AdesaoHumorRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel>(viewModelStoreOwner = dono), paciente.id) })
     }, conteudoInicio = { PainelRota(koinViewModel<PainelViewModel>(viewModelStoreOwner = dono)) },
     conteudoAgenda = { AgendaRota(koinViewModel<AgendaViewModel>(viewModelStoreOwner = dono)) },
     conteudoAlimentos = { AlimentosRota(koinViewModel<AlimentosViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.produtos.ProdutosViewModel>(viewModelStoreOwner = dono)) },
