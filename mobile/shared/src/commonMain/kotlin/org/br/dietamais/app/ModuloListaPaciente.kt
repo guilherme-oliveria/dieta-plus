@@ -79,6 +79,9 @@ fun moduloPorcoes(ambiente: AmbienteDieta?) = module {
 fun moduloDietaPaciente(ambiente: AmbienteDieta?) = module {
     single<org.br.dietamais.data.repositorio.PortaDietaPaciente> { org.br.dietamais.data.repositorio.DietaPacienteRepositorio(get(), get()) }
     single<org.br.dietamais.data.repositorio.PortaRotina> { org.br.dietamais.data.repositorio.RotinaRepositorio(get()) }
+    // MOB-90: metas de hábito lidas do sync e registros gravados offline
+    single<org.br.dietamais.data.repositorio.PortaMetasPaciente> { org.br.dietamais.data.repositorio.MetasPacienteRepositorio(get()) }
+    viewModel { org.br.dietamais.ui.paciente.metas.MetasPacienteViewModel(get(), aoGravar = { ambiente?.solicitarLeitura() }) }
     viewModel { org.br.dietamais.ui.paciente.dieta.DietaPacienteViewModel(get(), get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL },
         aoGravar = { ambiente?.solicitarLeitura() },
         perguntarHumor = getOrNull<org.br.dietamais.data.repositorio.PortaPreferencias>()?.observarPerguntaHumor() ?: kotlinx.coroutines.flow.flowOf(true)) }

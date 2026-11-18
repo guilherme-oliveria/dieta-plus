@@ -33,7 +33,9 @@ class AcoesHoje(val aoMudarDia: (LocalDate) -> Unit, val aoMarcar: (Uuid, Status
 
 /** Aba Hoje: dia, próxima refeição com Comi/Troquei/Pulei, demais refeições e água (MOB-14, 15, 17). */
 @Composable
-fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier = Modifier) {
+fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier = Modifier,
+    /** MOB-90: "Metas de hoje", logo antes do cartão de água (no app; a web ainda não lê metas). */
+    metas: @Composable () -> Unit = {}) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.paddingCard),
         verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
         Text(stringResource(Res.string.aba_hoje), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
@@ -80,6 +82,7 @@ fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier =
                 }
                 // MOB-88: registro rápido do que saiu do plano, sem julgamento
                 BotaoContornado(stringResource(Res.string.fora_abrir), acoes.aoAbrirFora, Modifier.fillMaxWidth())
+                metas()
                 CardAgua(estado, acoes)
             }
         }

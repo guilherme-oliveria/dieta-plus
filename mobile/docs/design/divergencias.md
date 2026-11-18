@@ -247,3 +247,14 @@ Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
 - Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
 - "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
 - Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
+
+## MOB-90 · Paciente: metas de hábito (18/11/2026)
+
+Artboards: `P-Hoje-Metas` e `P-Metas-Semana`. "Metas de hoje" fica no Hoje logo antes do cartão de água, e "Ver semana" abre "Minhas metas" por cima da aba. Divergências:
+
+- A água ainda não aparece como meta: continua no cartão de água de sempre até a MOB-99 (a meta de água da nutri fica fora desta lista).
+- O "Lembrete neste aparelho" da tela da semana foi para a MOB-90b; a tela mostra só os dias, a sequência e o progresso.
+- O cabeçalho do artboard ("Olá, Ana", data) não entrou: o Hoje já tem o título e os dias.
+- Botão rápido por tipo: "+ 10 min" (atividade), "+ 1000 passos", "+ 1 h" (sono), "+ 1 porção" (frutas e verduras) e "+ 1" no contador. Metas do tipo "outra" só têm "Outro valor".
+- Só a meta sim ou não tem "Cumpri hoje"; as outras não têm desfazer (o registro é só inclusão, RN-MET-02). O desfazer do artboard fica na água (MOB-99).
+- Na web as metas não aparecem: a web do paciente é online-only e ainda não há leitura de metas fora do sync.
