@@ -104,6 +104,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                         AbaFicha.PRESCRICOES -> org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
                         AbaFicha.EVOLUCAO -> EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
                         AbaFicha.ANAMNESE -> AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
+                        AbaFicha.DOCUMENTOS -> org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
                         else -> EstadoVazio(mensagem = stringResource(Res.string.web_aba_no_app))
                     }
                 }, resumoExtra = { paciente -> org.br.dietamais.ui.nutri.paciente.AdesaoHumorRota(koinViewModel<org.br.dietamais.ui.nutri.paciente.AdesaoPacienteViewModel>(viewModelStoreOwner = dono), paciente.id) })
@@ -124,6 +125,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                         val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
                         val estadoLembrete by lembrete.estado.collectAsState()
                         LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
+                        org.br.dietamais.ui.nutri.documentos.ModelosDocumentoRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel>(viewModelStoreOwner = dono))
                         AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                         val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                         val estadoPriv by priv.estado.collectAsState()

@@ -285,6 +285,7 @@ private fun NavegacaoNutri() {
           else if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.AVALIACOES) AvaliacoesNutriRota(koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.sexo, paciente.dataNascimento, koinViewModel<org.br.dietamais.ui.nutri.avaliacao.ExamesNutriViewModel>(viewModelStoreOwner = dono), paciente.nome)
           else if (aba == AbaFicha.ANAMNESE) AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
+          else if (aba == AbaFicha.DOCUMENTOS) org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
           else if (aba == AbaFicha.DIETA) DietasPacienteRota(koinViewModel<MontadorDietaViewModel>(viewModelStoreOwner = dono), paciente, koinViewModel<org.br.dietamais.ui.nutri.dieta.PlanejadorPorcoesViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.ModelosDietaViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.AplicarModeloViewModel>(viewModelStoreOwner = dono), koinViewModel<org.br.dietamais.ui.nutri.dieta.PlanejadorPorcoesViewModel>(qualifier = org.koin.core.qualifier.named("modelo"), viewModelStoreOwner = dono), koinInject<org.br.dietamais.ui.nutri.dieta.DietasDeModelo>())
           else {
             val lista = koinViewModel<ListaPacienteViewModel>(viewModelStoreOwner = dono)
@@ -312,6 +313,7 @@ private fun NavegacaoNutri() {
                 val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
                 val estadoLembrete by lembrete.estado.collectAsState()
                 LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
+                org.br.dietamais.ui.nutri.documentos.ModelosDocumentoRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel>(viewModelStoreOwner = dono))
                 AssinaturaCard(estadoAssinatura, acoesAssinatura(assinatura))
                 val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                 val estadoPriv by priv.estado.collectAsState()

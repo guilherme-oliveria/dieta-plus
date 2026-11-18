@@ -124,6 +124,10 @@ fun moduloPerfilNutri(ambiente: AmbienteDieta?) = module {
     single<org.br.dietamais.data.repositorio.PortaPrivacidade> { org.br.dietamais.data.repositorio.PrivacidadeRepositorio(get()) }
     viewModel { p -> org.br.dietamais.ui.privacidade.PrivacidadeViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }, exportacaoDisponivel = p.get()) }
     single<org.br.dietamais.data.repositorio.PortaPdf> { org.br.dietamais.data.repositorio.PdfRepositorio(get()) }
+    // MOB-94: documentos e modelos de documento (online)
+    single<org.br.dietamais.data.repositorio.PortaDocumentosNutri> { org.br.dietamais.data.repositorio.DocumentosNutriRepositorio(get()) }
+    viewModel { org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel(get(), getOrNull(), getOrNull(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
+    viewModel { org.br.dietamais.ui.nutri.documentos.ModelosDocumentoViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaAssinatura> { org.br.dietamais.data.repositorio.AssinaturaRepositorio(get()) }
     viewModel { org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
 }

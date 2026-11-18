@@ -146,7 +146,7 @@ Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1
 
 ### Onda 27
 
-- [ ] **MOB-94 Nutri: documentos (H-06).** Modelos de documento na conta, emitir atestado e declaração (a declaração também a partir da consulta realizada), lista na ficha, anular com motivo, compartilhar o PDF pelo link assinado. Exige rede. *Depende de:* DES-21, BE-78.
+- [x] **MOB-94 Nutri: documentos (H-06).** Modelos de documento na conta, emitir atestado e declaração (a declaração também a partir da consulta realizada), lista na ficha, anular com motivo, compartilhar o PDF pelo link assinado. Exige rede. *Depende de:* DES-21, BE-78.
 - [ ] **MOB-95 Paciente: Documentos (H-06).** Lista offline dos documentos emitidos para ele; abrir o PDF exige rede. *Depende de:* DES-21, BE-79.
 - [x] **MOB-96 Assinatura: comparar planos (H-07).** Comparação com alternância mensal/anual lida da API (nenhum preço no código), uso de cada limite, "faltam N dias de teste", aviso de fim do teste no painel e botão que abre o navegador. Preço e botão de assinar só aparecem quando a chave do `GET /assinatura` permitir para a plataforma (D-09), sem `if (plataforma)` na tela. *Depende de:* DES-22, BE-80.
 - [ ] **MOB-97 Ponta a ponta da web da 1.4.0.** Cenários novos em `e2e/`: restrição na ficha e alerta no montador, status da consulta e link, humor e fora do plano, meta, suplemento e orientação, documento e conferência, comparação de planos; trava de acessibilidade (axe-core) sem regressão nas telas novas. *Depende de:* as histórias na `develop`.
