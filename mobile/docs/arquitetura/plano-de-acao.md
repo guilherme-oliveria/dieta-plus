@@ -136,7 +136,7 @@ Detalhe em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1
 
 ### Onda 26
 
-- [ ] **MOB-86 Preferência de lembrete da nutri (H-02).** Antecedência (2 h, 1 dia, 2 dias) e lembrete extra 1 h antes, na conta da nutri. Exige rede. *Depende de:* DES-17, BE-72.
+- [x] **MOB-86 Preferência de lembrete da nutri (H-02).** Antecedência (2 h, 1 dia, 2 dias) e lembrete extra 1 h antes, na conta da nutri. Exige rede. *Depende de:* DES-17, BE-72. Feito: cartão "Lembrete das consultas" na Conta (app e web); o e-mail de confirmação do artboard aparece como texto, porque o backend não tem a chave para desligá-lo.
 - [ ] **MOB-89 Nutri: humor e fora do plano na adesão (H-03).** Cartão na adesão do paciente com as médias da semana e a lista dos registros fora do plano. *Depende de:* DES-18, BE-73.
 - [ ] **MOB-90 Paciente: metas de hábito (H-04).** Metas no Hoje (a água passa para o modelo de metas na MOB-99; aqui o cartão de água ainda não muda), registro offline por inclusão, sequência de dias e progresso da semana por função pura em `dominio/metas` com os vetores `metas.json`, lembrete local opcional por meta respeitando o horário de silêncio (`AgendadorLembretes`). Sem pontos nem níveis. *Depende de:* DES-19, MOB-88, BE-74.
 - [ ] **MOB-99 Água como meta no app (H-04, D-07).** O cartão de água do Hoje passa a ler e registrar pela meta de água (`registrosMeta`), mantendo "Desfazer último" e "Outro valor" (MOB-UX-05); alvo vindo da meta, que a nutri pode ajustar; sequência e progresso como nas outras metas; migração nova do banco local levando os registros de água para a meta, sem perder os que ainda estão na fila. Funciona offline. *Depende de:* DES-19, MOB-90, BE-86.

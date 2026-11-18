@@ -45,6 +45,8 @@ import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
 import org.br.dietamais.ui.nutri.assinatura.ContaNutriTela
 import org.br.dietamais.ui.nutri.assinatura.PerfilNutriViewModel
+import org.br.dietamais.ui.nutri.assinatura.LembreteConsultasCard
+import org.br.dietamais.ui.nutri.assinatura.AcoesLembreteConsultas
 import org.br.dietamais.ui.paciente.hoje.AcoesHoje
 import org.br.dietamais.ui.paciente.perfil.AcoesPerfil
 import org.br.dietamais.ui.paciente.perfil.PerfilPacienteTela
@@ -295,6 +297,9 @@ private fun NavegacaoNutri() {
                 val protocolos = koinViewModel<org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriViewModel>(viewModelStoreOwner = dono)
                 val estadoProtocolos by protocolos.estado.collectAsState()
                 org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriCard(estadoProtocolos, org.br.dietamais.ui.nutri.protocolos.AcoesProtocolosNutri(protocolos::mudarDobras, protocolos::mudarMassa, protocolos::salvar, protocolos::recarregar))
+                val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
+                val estadoLembrete by lembrete.estado.collectAsState()
+                LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
                 AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
                 val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                 val estadoPriv by priv.estado.collectAsState()
