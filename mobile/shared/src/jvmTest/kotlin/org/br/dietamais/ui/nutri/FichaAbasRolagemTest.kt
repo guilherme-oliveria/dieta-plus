@@ -29,25 +29,25 @@ class FichaAbasRolagemTest {
         versao = 0, criadoEm = Instant.parse("2026-01-01T00:00:00Z"), atualizadoEm = Instant.parse("2026-01-01T00:00:00Z"))
 
     @Test fun abaEvolucaoAbreDentroDaFichaSemFecharOApp() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
-        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.EVOLUCAO), {}, {}, {}) { _, _ ->
+        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.EVOLUCAO), {}, {}, {}, abaConteudo = { _, _ ->
             EvolucaoTela(EstadoEvolucao(carregado = true), AcoesEvolucao(), rolavel = false)
-        } } }
+        }) } }
         onNodeWithText("Pessoa fictícia").assertIsDisplayed()
     }
 
     @Test fun abaAvaliacoesAbreDentroDaFichaSemFecharOApp() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
-        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.AVALIACOES), {}, {}, {}) { _, _ ->
+        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.AVALIACOES), {}, {}, {}, abaConteudo = { _, _ ->
             HistoricoAvaliacoesTela(EstadoAvaliacoes(), AcoesHistorico(), rolavel = false)
-        } } }
+        }) } }
         onNodeWithText("Pessoa fictícia").assertIsDisplayed()
     }
 
     @Test fun comRolagemPropriaDentroDaFichaOComposeLancaEPorIssoAsRotasDaFichaPassamRolavelFalso() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
         // Documenta o erro original: se alguém voltar a deixar a aba rolando por dentro da ficha, este é o sintoma.
         val erro = runCatching {
-            setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.EVOLUCAO), {}, {}, {}) { _, _ ->
+            setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.EVOLUCAO), {}, {}, {}, abaConteudo = { _, _ ->
                 EvolucaoTela(EstadoEvolucao(carregado = true), AcoesEvolucao(), rolavel = true)
-            } } }
+            }) } }
             waitForIdle()
         }.exceptionOrNull()
         kotlin.test.assertNotNull(erro, "rolagem dentro de rolagem deveria lançar")
@@ -60,20 +60,20 @@ class FichaAbasRolagemTest {
 
     @Test fun abaDietaComListaEMontadorAbertoDentroDaFichaNaoFechaOApp() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
         val rascunho = org.br.dietamais.ui.nutri.dieta.RascunhoDieta(titulo = "Plano fictício")
-        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.DIETA), {}, {}, {}) { _, _ ->
+        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.DIETA), {}, {}, {}, abaConteudo = { _, _ ->
             org.br.dietamais.ui.nutri.dieta.DietasListaTela(org.br.dietamais.ui.nutri.dieta.EstadoDieta(), {}, {}, {}, {})
             androidx.compose.ui.window.Dialog(onDismissRequest = {}, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
                 org.br.dietamais.ui.nutri.dieta.MontarDietaTela(org.br.dietamais.ui.nutri.dieta.EstadoDieta(rascunho = rascunho), org.br.dietamais.ui.nutri.dieta.AcoesMontador())
             }
-        } } }
+        }) } }
         waitForIdle()
         onNodeWithText("Pessoa fictícia").assertExists()
     }
 
     @Test fun abaListaDentroDaFichaNaoFechaOApp() = runSkikoComposeUiTest(size = Size(390f, 844f)) {
-        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.LISTA), {}, {}, {}) { _, _ ->
+        setContent { DietaTheme { PacienteFichaTela(EstadoPacientes(selecionado = paciente, abaFicha = AbaFicha.LISTA), {}, {}, {}, abaConteudo = { _, _ ->
             org.br.dietamais.ui.nutri.listapaciente.ListaPacienteTela(org.br.dietamais.ui.nutri.listapaciente.EstadoListaPaciente())
-        } } }
+        }) } }
         onNodeWithText("Pessoa fictícia").assertExists()
     }
 }
