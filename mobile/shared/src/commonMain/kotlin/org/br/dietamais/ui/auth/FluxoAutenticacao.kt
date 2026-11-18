@@ -239,7 +239,8 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
                     aoFome = vm::escolherFome, aoSensacao = vm::escolherSensacao, aoSalvarHumor = vm::salvarHumor, aoPularHumor = vm::pularHumor,
                     aoAbrirFora = vm::abrirForaDoPlano, aoTextoFora = vm::mudarTextoFora, aoRefeicaoFora = vm::mudarRefeicaoFora,
                     aoHoraFora = vm::mudarHoraFora, aoRegistrarFora = vm::registrarForaDoPlano, aoFecharFora = vm::fecharForaDoPlano,
-                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f))
+                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f),
+                    metas = { org.br.dietamais.ui.paciente.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.metas.MetasPacienteViewModel>(viewModelStoreOwner = dono)) })
             }
             TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
         },

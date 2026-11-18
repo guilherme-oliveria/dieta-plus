@@ -284,6 +284,28 @@ Artboard: `P-Documentos`. Os documentos aparecem num cartão "Documentos" no Per
 
 - A linha não mostra o nome da nutri ("17/11/2026 · Nut. Marina" no artboard): os metadados do documento do paciente (BE-79) não trazem quem emitiu.
 - O documento anulado mostra só o selo "Anulado", sem o botão do PDF.
+
+## MOB-90 · Paciente: metas de hábito (18/11/2026)
+
+Artboards: `P-Hoje-Metas` e `P-Metas-Semana`. "Metas de hoje" fica no Hoje logo antes do cartão de água, e "Ver semana" abre "Minhas metas" por cima da aba. Divergências:
+
+- A água ainda não aparece como meta: continua no cartão de água de sempre até a MOB-99 (a meta de água da nutri fica fora desta lista). Resolvido na MOB-99, ver abaixo.
+- O "Lembrete neste aparelho" da tela da semana foi para a MOB-90b; a tela mostra só os dias, a sequência e o progresso.
+- O cabeçalho do artboard ("Olá, Ana", data) não entrou: o Hoje já tem o título e os dias.
+- Botão rápido por tipo: "+ 10 min" (atividade), "+ 1000 passos", "+ 1 h" (sono), "+ 1 porção" (frutas e verduras) e "+ 1" no contador. Metas do tipo "outra" só têm "Outro valor".
+- Só a meta sim ou não tem "Cumpri hoje"; as outras não têm desfazer (o registro é só inclusão, RN-MET-02). O desfazer do artboard fica na água (MOB-99).
+- Na web as metas não aparecem: a web do paciente é online-only e ainda não há leitura de metas fora do sync.
+
+## MOB-99 · Água como meta (18/11/2026)
+
+Artboard: `P-Hoje-Metas` (a água é uma das metas). Divergências:
+
+- A água continua no cartão próprio do Hoje (botões de copo, "Outro valor" e "Desfazer último" da MOB-UX-05), em vez de virar um cartão igual aos das outras metas. Ganhou o selo de sequência ("N dias seguidos") e a linha da semana ("N de M até agora"), como as outras. Em "Minhas metas" (semana) ela aparece primeiro, com os 7 dias.
+- Com mais de uma nutri, cada vínculo tem a sua meta de água e o servidor copia cada copo para todas. O app lê só uma: a mais antiga que vale hoje. O alvo mostrado é o dessa meta.
+- Não houve migração do banco local. O servidor já devolve o histórico de água como registros da meta (BE-86), e os copos antigos que ainda estavam na fila seguem pelo caminho antigo e continuam somando no dia até o envio. Assim nada se perde e nada conta duas vezes.
+- Sem a meta de água no aparelho (vínculo sem meta ou backend antigo), o cartão funciona como antes: grava pelo caminho antigo e usa 35 ml × peso.
+- Na web (só online) nada muda: ela lê a água de `GET /eu/rotina`, que o servidor mantém com o mesmo total.
+
 ## MOB-96 · Assinatura: comparar planos (18/11/2026)
 
 Artboards: `A-Assinatura-Planos`, `A-Assinatura-Ativa`, `A-Assinatura-Sem-Preco` e `A-Painel-Fim-Teste` (DES-22). O cartão "Minha assinatura" da Conta mostra:
