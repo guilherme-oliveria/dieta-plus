@@ -2,6 +2,7 @@ package org.br.dietamais.data.repositorio
 
 import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.AdesaoDto
+import org.br.dietamais.data.remoto.dto.Perfil
 import kotlin.uuid.Uuid
 
 /** Adesão do paciente na ficha da nutri (BE-73, MOB-89): leitura online, sem cache. */
