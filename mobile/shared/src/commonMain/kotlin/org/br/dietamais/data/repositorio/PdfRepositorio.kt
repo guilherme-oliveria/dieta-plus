@@ -4,7 +4,8 @@ import org.br.dietamais.data.remoto.*
 import org.br.dietamais.data.remoto.dto.*
 import kotlin.uuid.Uuid
 
-enum class RecursoPdf { DIETA, AVALIACAO, LISTA, DOCUMENTO }
+/** `DIETA_COM_SUPLEMENTOS`: PDF da dieta com o bloco dos suplementos em uso (BE-77, MOB-92; só a nutri). `DOCUMENTO`: atestado ou declaração (MOB-94). */
+enum class RecursoPdf { DIETA, DIETA_COM_SUPLEMENTOS, AVALIACAO, LISTA, DOCUMENTO }
 
 /** MOB-73: versões do PDF da lista de substituição (valores do parâmetro `tamanho`, BE-50b). */
 enum class TamanhoListaPdf { PEQUENA, MEDIA, GRANDE, CARBOIDRATOS }
@@ -28,6 +29,7 @@ class PdfRepositorio(private val api: ApiDieta) : PortaPdf {
 
 internal fun caminhoPdf(recurso: RecursoPdf, id: Uuid, tamanho: TamanhoListaPdf = TamanhoListaPdf.MEDIA): String = when (recurso) {
     RecursoPdf.DIETA -> "dietas/$id/pdf"
+    RecursoPdf.DIETA_COM_SUPLEMENTOS -> "dietas/$id/pdf?incluirSuplementos=true"
     RecursoPdf.AVALIACAO -> "avaliacoes/$id/pdf"
     RecursoPdf.LISTA -> "dietas/$id/pdf-lista?tamanho=${tamanho.name}"
     // MOB-94/95: o PDF gravado na emissão (nutri: `documentos/{id}/pdf`; paciente: `eu/documentos/{id}/pdf`, BE-79)

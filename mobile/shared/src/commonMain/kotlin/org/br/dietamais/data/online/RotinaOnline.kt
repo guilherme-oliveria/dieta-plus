@@ -62,11 +62,14 @@ class RotinaOnline(private val api: ApiDieta, private val escopo: CoroutineScope
         }
     }
 
-    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) {
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) =
+        registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora, null, null)
+
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
         require((status == StatusCheckin.TROCADO) == trocas.isNotEmpty() && status != StatusCheckin.OUTRO)
         val id = novoIdLocal()
-        val corpo = JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora))
-        otimista(id, { it.copy(checkins = it.checkins + CheckinResposta(id, donoAtual(), dietaId, refeicaoId, data, status, trocas, agora)) },
+        val corpo = JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois))
+        otimista(id, { it.copy(checkins = it.checkins + CheckinResposta(id, donoAtual(), dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois)) },
             { it.copy(checkins = it.checkins.filter { c -> c.id != id }) },
             { val r = api.enviar<CheckinResposta>("eu/checkins", corpo, id); substituindo { d -> d.copy(checkins = d.checkins.map { c -> if (c.id == id) r else c }) } })
     }
@@ -85,6 +88,19 @@ class RotinaOnline(private val api: ApiDieta, private val escopo: CoroutineScope
         val corpo = JsonContrato.encodeToJsonElement(PesoRequisicao(id, pesoKg, agora))
         otimista(id, { it.copy(pesos = it.pesos + PesoResposta(id, donoAtual(), pesoKg, agora)) }, { it.copy(pesos = it.pesos.filter { p -> p.id != id }) },
             { val r = api.enviar<PesoResposta>("eu/pesos", corpo, id); substituindo { d -> d.copy(pesos = d.pesos.map { p -> if (p.id == id) r else p }) } })
+    }
+
+    /** MOB-88: na web o registro fora do plano vai direto pela API (não aparece na rotina do paciente). */
+    override fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant) {
+        val limpo = texto.trim()
+        require(limpo.isNotEmpty() && limpo.length <= 280)
+        val id = novoIdLocal(); contexto()
+        val corpo = JsonContrato.encodeToJsonElement(RegistroForaDoPlanoRequisicao(id, data, limpo, refeicaoId, registradoEm))
+        escopo.launch {
+            try { api.enviar<RegistroForaDoPlanoResposta>("eu/registros-fora-do-plano", corpo, id) }
+            catch (c: CancellationException) { throw c }
+            catch (_: Exception) { falhou.tryEmit(Unit) }
+        }
     }
 
     private fun donoAtual(): Uuid = (api.sessao.value ?: throw SessaoAlterada()).usuarioId
