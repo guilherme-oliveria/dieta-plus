@@ -17,7 +17,9 @@ data class JanelaSilencio(val ativo: Boolean = true, val inicio: LocalTime = Loc
 /** Notificação local de refeição (RN-ROT-05). [refeicao] é o nome; o texto final é montado na camada de apresentação. */
 data class Lembrete(val chave: String, val quando: Instant, val refeicaoId: Uuid, val refeicao: String,
     /** Dia da refeição e dieta de origem: preenchidos para que a notificação registre o check-in (MOB-18b). */
-    val dia: LocalDate? = null, val dietaId: Uuid? = null)
+    val dia: LocalDate? = null, val dietaId: Uuid? = null,
+    /** Textos já montados que substituem os de refeição (lembrete de suplemento, MOB-93); sem dado clínico. */
+    val titulo: String? = null, val corpo: String? = null)
 
 /** Limite do iOS: 64 notificações locais pendentes. */
 const val LIMITE_LEMBRETES = 64
@@ -49,4 +51,6 @@ enum class AcaoLembrete { COMI, TROQUEI, PULEI }
 data class RotulosAcoes(val comi: String, val troquei: String, val pulei: String)
 
 /** Textos já montados (sem dado clínico) da notificação local; [corpo] recebe o nome da refeição. */
-data class TextosLembrete(val titulo: String, val corpo: (String) -> String, val acoes: RotulosAcoes)
+data class TextosLembrete(val titulo: String, val corpo: (String) -> String, val acoes: RotulosAcoes,
+    /** Lembrete de suplemento (MOB-93): texto genérico, sem o nome nem a dose. */
+    val tituloSuplemento: String = titulo, val corpoSuplemento: String = "")
