@@ -279,6 +279,35 @@ class DietaPacienteViewModelTest {
         assertEquals(LocalDate(2026, 10, 28), vm.estado.value.dia) // fora da janela de 3 dias volta para hoje
     }
 
+    // ---- MOB-99: água como meta
+    @Test fun comAMetaDeAguaOTotalOAlvoEASequenciaVemDaMeta() = runTest {
+        val rotina = Rotina(); val s = snap("Ana", "2026-01-01T10:00:00Z")
+        val criada = Instant.parse("2026-10-01T00:00:00Z")
+        val meta = MetaResposta(Uuid.random(), Uuid.random(), TipoMeta.AGUA, null, 1500.0, null, FrequenciaMeta.DIARIA, versao = 1, criadoEm = criada, atualizadoEm = criada)
+        val naFila = Uuid.random()
+        rotina.dados.value = DadosRotina(
+            // 250 já espelhado na meta (não conta duas vezes) e 100 ainda na fila pelo caminho antigo
+            agua = listOf(AguaResposta(Uuid.random(), Uuid.random(), 250, Instant.parse("2026-10-28T07:00:00Z")),
+                AguaResposta(naFila, Uuid.random(), 100, Instant.parse("2026-10-28T08:00:00Z"))),
+            pesos = listOf(PesoResposta(Uuid.random(), Uuid.random(), 70.0, criada)), metas = listOf(meta),
+            registrosMeta = listOf(RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 28), 250.0, Instant.parse("2026-10-28T07:00:00Z")),
+                RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 26), 1500.0, criada),
+                RegistroMetaResposta(Uuid.random(), meta.id, LocalDate(2026, 10, 27), 1600.0, criada)),
+            aguaNaFila = setOf(naFila))
+        val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(s)))), rotina); advanceUntilIdle()
+        val e = vm.estado.value
+        assertEquals(350, e.aguaMl); assertEquals(1500, e.metaAguaMl) // o alvo é o da meta, não 35 ml × 70 kg
+        assertEquals(2, e.progressoAgua?.sequencia); assertEquals(250.0, e.progressoAgua?.hoje)
+        // o copo que ainda espera o prazo de desfazer entra no total, como antes
+        vm.beberAgua(200); runCurrent()
+        assertEquals(550, vm.estado.value.aguaMl)
+    }
+
+    @Test fun semMetaDeAguaNaoHaSequenciaEOAlvoVemDoPeso() = runTest {
+        val rotina = Rotina(); val vm = vm(Porta(MutableStateFlow(DadosDietaPaciente(listOf(snap("Ana", "2026-01-01T10:00:00Z"))))), rotina); advanceUntilIdle()
+        assertNull(vm.estado.value.progressoAgua); assertEquals(2000, vm.estado.value.metaAguaMl)
+    }
+
     // ---- MOB-88: humor e fora do plano
     @Test fun comPerguntaLigadaComiAbreHumorEOPrazoSoComecaAoSalvar() = runTest {
         val s = snap("Ana", "2026-01-01T10:00:00Z"); val rotina = Rotina()

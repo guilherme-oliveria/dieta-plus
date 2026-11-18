@@ -4,6 +4,8 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import org.br.dietamais.data.remoto.JsonContrato
 import org.br.dietamais.data.local.BancoDieta
 import org.br.dietamais.data.remoto.dto.*
 import org.br.dietamais.data.repositorio.RotinaRepositorio
@@ -57,5 +59,44 @@ class RotinaRepositorioTest {
         assertFailsWith<IllegalArgumentException> { repo.registrarForaDoPlano(LocalDate(2026, 10, 28), "   ", null, agora) }
         assertFailsWith<IllegalArgumentException> { repo.registrarCheckin(Uuid.random(), refeicao, LocalDate(2026, 10, 28), StatusCheckin.FEITO, emptyList(), agora, 6, null) }
         assertEquals(2, FilaMutacoes(banco).pendentes().size)
+    }
+
+    // ---- MOB-99: água como meta
+    private fun salvarMetaAgua(banco: BancoDieta): MetaResposta {
+        val criada = Instant.parse("2026-10-01T00:00:00Z")
+        val meta = MetaResposta(Uuid.random(), usuario, TipoMeta.AGUA, null, 2450.0, null, FrequenciaMeta.DIARIA, alvoPadrao = true, versao = 1, criadoEm = criada, atualizadoEm = criada)
+        banco.registroSyncQueries.salvar(usuario.toString(), "PACIENTE", "metas", meta.id.toString(), 1, 0, JsonContrato.encodeToString(meta))
+        return meta
+    }
+
+    @Test fun comAMetaDeAguaOCopoVaiParaRegistrosMetaNoDiaDoFuso() = comBanco { banco ->
+        val repo = RotinaRepositorio(banco, fuso = TimeZone.of("America/Sao_Paulo"))
+        // copo antigo, gravado antes da meta chegar ao aparelho: segue pelo caminho antigo
+        repo.registrarAgua(150, agora)
+        val meta = salvarMetaAgua(banco)
+        // 01h UTC do dia 29 ainda é dia 28 em São Paulo
+        repo.registrarAgua(300, Instant.parse("2026-10-29T01:00:00Z"))
+        val fila = FilaMutacoes(banco).pendentes()
+        assertEquals(listOf("agua", "registrosMeta"), fila.map { it.entidade })
+        assertEquals("\"${meta.id}\"", fila[1].dados["metaId"].toString())
+        assertEquals("\"2026-10-28\"", fila[1].dados["data"].toString())
+        assertEquals("300.0", fila[1].dados["valor"].toString())
+        val dados = repo.observar().first()
+        assertEquals(listOf(meta.id), dados.metas.map { it.id })
+        assertEquals(listOf(300.0), dados.registrosMeta.map { it.valor })
+        assertEquals(setOf(fila[0].id), dados.aguaNaFila)
+        // enviado o copo antigo, ele sai da fila (o servidor o devolve como registro da meta)
+        banco.mutacaoPendenteQueries.concluir(fila[0].idMutacao.toString(), usuario.toString(), "PACIENTE")
+        assertTrue(repo.observar().first().aguaNaFila.isEmpty())
+    }
+
+    @Test fun metasDeOutroTipoNaoMudamOCaminhoDaAgua() = comBanco { banco ->
+        val repo = RotinaRepositorio(banco)
+        val criada = Instant.parse("2026-10-01T00:00:00Z")
+        val passos = MetaResposta(Uuid.random(), usuario, TipoMeta.PASSOS, null, 8000.0, null, FrequenciaMeta.DIARIA, versao = 1, criadoEm = criada, atualizadoEm = criada)
+        banco.registroSyncQueries.salvar(usuario.toString(), "PACIENTE", "metas", passos.id.toString(), 1, 0, JsonContrato.encodeToString(passos))
+        repo.registrarAgua(200, agora)
+        assertEquals(listOf("agua"), FilaMutacoes(banco).pendentes().map { it.entidade })
+        assertTrue(repo.observar().first().metas.isEmpty())
     }
 }

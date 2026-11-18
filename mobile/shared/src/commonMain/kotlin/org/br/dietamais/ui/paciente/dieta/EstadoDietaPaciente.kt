@@ -21,7 +21,9 @@ data class EstadoDietaPaciente(
     val versaoSelecao: Long = 0, val semConexao: Boolean = false, val enviando: Boolean = false, val erro: MensagemDietaPaciente? = null,
     val refeicaoAberta: Uuid? = null,
     val hoje: LocalDate? = null, val dia: LocalDate? = null, val dias: List<LocalDate> = emptyList(),
-    val checkins: Map<Uuid, StatusCheckin> = emptyMap(), val aguaMl: Int = 0, val metaAguaMl: Int = 2000, val troca: EstadoTroca? = null,
+    val checkins: Map<Uuid, StatusCheckin> = emptyMap(), val aguaMl: Int = 0, val metaAguaMl: Int = 2000,
+    /** MOB-99: sequência e semana da meta de água; nulo sem a meta (backend antigo ou vínculo sem meta). */
+    val progressoAgua: org.br.dietamais.dominio.metas.ProgressoMeta? = null, val troca: EstadoTroca? = null,
     val listaAberta: Boolean = false, val gruposLista: List<GrupoListaPaciente> = emptyList(), val buscaLista: String = "",
     val grupoListaFiltro: Uuid? = null, val grupoListaAberto: Uuid? = null,
     /** MOB-UX-04: há um check-in ainda não gravado, que o paciente pode desfazer. */

@@ -130,13 +130,13 @@ private fun ColumnScope.ConteudoQuantidade(p: ProgressoMeta, titulo: String, est
 
 /** "6 dias seguidos" (diária) ou "2 semanas seguidas" (semanal); só a partir de 2, como na ficha da nutri. */
 @Composable
-private fun textoSequencia(p: ProgressoMeta): String? = p.sequencia.takeIf { it > 1 }?.let {
+internal fun textoSequencia(p: ProgressoMeta): String? = p.sequencia.takeIf { it > 1 }?.let {
     stringResource(if (p.meta.frequencia == FrequenciaMeta.SEMANAL) Res.string.pacmeta_seq_semanas else Res.string.pacmeta_seq_dias, it)
 }
 
 /** Semanal: "1 de 3 na semana · faltam 2"; diária: nada no Hoje (o dia já mostra o progresso). */
 @Composable
-private fun textoSemana(p: ProgressoMeta): String? {
+internal fun textoSemana(p: ProgressoMeta): String? {
     if (p.meta.frequencia != FrequenciaMeta.SEMANAL) return null
     val vezes = p.meta.vezesPorSemana ?: 1
     return if (p.faltamNaSemana == 0) stringResource(Res.string.pacmeta_semanal_completa, minOf(p.semana.diasCumpridos, vezes), vezes)

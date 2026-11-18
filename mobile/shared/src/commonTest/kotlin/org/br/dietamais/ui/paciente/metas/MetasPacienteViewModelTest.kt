@@ -48,7 +48,7 @@ class MetasPacienteViewModelTest {
     private fun TestScope.criar(porta: Porta, aoGravar: () -> Unit = {}) =
         MetasPacienteViewModel(porta, relogio, TimeZone.UTC, UnconfinedTestDispatcher(testScheduler), flowOf(Unit), aoGravar)
 
-    @Test fun aguaFicaForaEMetaForaDoPeriodoSaiDoHojeMasFicaNaSemana() = runTest {
+    @Test fun aguaSoNaSemanaEMetaForaDoPeriodoSaiDoHojeMasFicaNaSemana() = runTest {
         val agua = meta(TipoMeta.AGUA, 2000.0)
         val caminhada = meta(TipoMeta.ATIVIDADE_MIN)
         val acabou = meta(TipoMeta.PASSOS, 8000.0, fim = LocalDate(2026, 11, 16))
@@ -57,7 +57,16 @@ class MetasPacienteViewModelTest {
         val e = vm.estado.value
         assertTrue(e.carregado); assertEquals(hoje, e.hojeData)
         assertEquals(listOf(caminhada.id), e.hoje.map { it.meta.id })
-        assertEquals(listOf(caminhada.id, acabou.id), e.semana.map { it.meta.id })
+        // MOB-99: a água entra na semana (primeiro), mas no Hoje fica no cartão de água
+        assertEquals(listOf(agua.id, caminhada.id, acabou.id), e.semana.map { it.meta.id })
+    }
+
+    @Test fun comDuasMetasDeAguaASemanaMostraSoAMaisAntiga() = runTest {
+        val nova = meta(TipoMeta.AGUA, 2500.0).copy(criadoEm = Instant.parse("2026-11-10T00:00:00Z"))
+        val antiga = meta(TipoMeta.AGUA, 2000.0)
+        val vm = criar(Porta(DadosMetasPaciente(listOf(nova, antiga))))
+        assertEquals(listOf(antiga.id), vm.estado.value.semana.map { it.meta.id })
+        assertTrue(vm.estado.value.hoje.isEmpty())
     }
 
     @Test fun somarGravaHojeEAtualizaOProgresso() = runTest {

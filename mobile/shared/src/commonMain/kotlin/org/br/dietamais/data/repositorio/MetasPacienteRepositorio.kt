@@ -41,7 +41,7 @@ interface PortaMetasPaciente {
     fun definirLembrete(metaId: Uuid, horarios: List<LocalTime>) {}
 }
 
-/** Valor aceito num registro de meta (RN-MET-02): maior que zero e até 100.000 (a água, de 1 a 5.000 ml, fica no cartão de água até a MOB-99). */
+/** Valor aceito num registro de meta (RN-MET-02): maior que zero e até 100.000 (a água, inteira de 1 a 5.000 ml, é registrada pelo cartão de água: MOB-99). */
 const val VALOR_MAXIMO_REGISTRO_META = 100_000.0
 
 class MetasPacienteRepositorio(private val banco: BancoDieta, private val fila: FilaMutacoes = FilaMutacoes(banco)) : PortaMetasPaciente {
