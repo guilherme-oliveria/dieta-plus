@@ -4,6 +4,7 @@ import org.br.dietamais.data.remoto.dto.AtualizarFinanceiroConsultaRequisicao
 import org.br.dietamais.data.remoto.dto.ComparecimentoConsulta
 import org.br.dietamais.data.remoto.dto.FinanceiroConsultaResposta
 import org.br.dietamais.data.remoto.dto.FormaPagamento
+import org.br.dietamais.data.remoto.dto.StatusConsulta
 import kotlin.math.roundToLong
 
 /** Erros de feedback do formulário (o backend decide, RN-FIN-01). */
@@ -46,4 +47,11 @@ fun formatarReais(valor: Double): String {
     val centavos = (valor * 100).roundToLong()
     val inteiro = (centavos / 100).toString().reversed().chunked(3).joinToString(".").reversed()
     return "R$ $inteiro,${(centavos % 100).toString().padStart(2, '0')}"
+}
+
+/** RN-FIN-01 (C-01): o status da consulta é a fonte do comparecimento; nulo = o status não diz (Agendada). */
+fun comparecimentoDoStatus(status: StatusConsulta): ComparecimentoConsulta? = when (status) {
+    StatusConsulta.REALIZADA -> ComparecimentoConsulta.COMPARECEU
+    StatusConsulta.FALTA -> ComparecimentoConsulta.FALTOU
+    else -> null
 }

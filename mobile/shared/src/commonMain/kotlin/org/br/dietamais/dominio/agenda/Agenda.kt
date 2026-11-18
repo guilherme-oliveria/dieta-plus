@@ -2,6 +2,7 @@ package org.br.dietamais.dominio.agenda
 
 import kotlinx.datetime.*
 import org.br.dietamais.data.remoto.dto.ConsultaResposta
+import org.br.dietamais.data.remoto.dto.ModalidadeConsulta
 import org.br.dietamais.data.remoto.dto.StatusConsulta
 import org.br.dietamais.data.remoto.dto.TipoConsulta
 import kotlin.time.Duration.Companion.minutes
@@ -56,11 +57,30 @@ fun lerHora(texto: String): Pair<Int, Int>? {
     return if (h in 0..23 && m in 0..59 && partes[1].trim().length == 2) h to m else null
 }
 
-enum class ErroConsulta { PACIENTE, DATA, HORA, DURACAO, PASSADO }
+enum class ErroConsulta { PACIENTE, DATA, HORA, DURACAO, PASSADO, LINK }
 
-/** `id`/`versao` nulos = consulta nova. Data e hora no fuso do aparelho. */
+/**
+ * `id`/`versao` nulos = consulta nova. Data e hora no fuso do aparelho.
+ * MOB-84 (RN-AGE-04): [modalidade] separada do tipo; [link] só vale com modalidade online; [orientacao] o paciente vê; [observacao] só a nutri.
+ */
 data class FormularioConsulta(val id: Uuid? = null, val versao: Long? = null, val pacienteId: Uuid? = null, val data: String = "", val hora: String = "",
-    val duracao: String = "50", val tipo: TipoConsulta = TipoConsulta.RETORNO, val lugar: String = "", val chave: Uuid? = null)
+    val duracao: String = "50", val tipo: TipoConsulta = TipoConsulta.RETORNO, val lugar: String = "", val chave: Uuid? = null,
+    val modalidade: ModalidadeConsulta = ModalidadeConsulta.PRESENCIAL, val link: String = "", val orientacao: String = "", val observacao: String = "") {
+    override fun toString() = "FormularioConsulta(id=$id, tipo=$tipo, modalidade=$modalidade)"
+}
+
+/** RN-AGE-04: até 300 caracteres. */
+const val LIMITE_LINK = 300
+/** RN-AGE-04: orientação para o paciente até 2.000 caracteres (a observação interna segue o mesmo limite no app). */
+const val LIMITE_TEXTO_CONSULTA = 2000
+
+/** RN-AGE-04: link só `https`, com host, até 300 caracteres. O backend decide (`LINK_INVALIDO`); aqui é só feedback. */
+fun linkValido(texto: String): Boolean {
+    val t = texto.trim()
+    if (t.length > LIMITE_LINK || !t.startsWith("https://", ignoreCase = true)) return false
+    val host = t.substring(8).takeWhile { it != '/' && it != '?' && it != '#' }.substringAfterLast('@').substringBefore(':')
+    return host.isNotBlank() && t.none { it.isWhitespace() }
+}
 
 data class ResultadoFormulario(val inicio: Instant?, val duracaoMin: Int?, val erros: Set<ErroConsulta>)
 
@@ -75,8 +95,36 @@ fun validarFormulario(f: FormularioConsulta, fuso: TimeZone, agora: Instant, exi
     if (duracao == null) erros += ErroConsulta.DURACAO
     val inicio = if (data != null && hora != null) data.atTime(hora.first, hora.second).toInstant(fuso) else null
     if (inicio != null && inicio < agora - TOLERANCIA) erros += ErroConsulta.PASSADO
+    if (f.modalidade == ModalidadeConsulta.ONLINE && f.link.isNotBlank() && !linkValido(f.link)) erros += ErroConsulta.LINK
     return ResultadoFormulario(inicio, duracao, erros)
 }
 
-fun formularioDe(consulta: ConsultaResposta, fuso: TimeZone) = FormularioConsulta(consulta.id, consulta.versao, consulta.pacienteId,
-    formatarData(diaLocal(consulta.inicio, fuso)), formatarHora(consulta.inicio, fuso), consulta.duracaoMin.toString(), consulta.tipo, consulta.lugar.orEmpty())
+/** C-02: o tipo legado `ONLINE` abre como Retorno + Online (o link antigo ficava em `lugar`). */
+fun formularioDe(consulta: ConsultaResposta, fuso: TimeZone): FormularioConsulta {
+    val legadoOnline = consulta.tipo == TipoConsulta.ONLINE
+    val modalidade = consulta.modalidade?.takeIf { it != ModalidadeConsulta.OUTRO } ?: if (legadoOnline) ModalidadeConsulta.ONLINE else ModalidadeConsulta.PRESENCIAL
+    val link = consulta.linkOnline ?: consulta.lugar?.takeIf { legadoOnline && linkValido(it) }
+    return FormularioConsulta(consulta.id, consulta.versao, consulta.pacienteId, formatarData(diaLocal(consulta.inicio, fuso)), formatarHora(consulta.inicio, fuso),
+        consulta.duracaoMin.toString(), if (legadoOnline) TipoConsulta.RETORNO else consulta.tipo, consulta.lugar.orEmpty(),
+        modalidade = modalidade, link = link.orEmpty(), orientacao = consulta.orientacaoPaciente.orEmpty(), observacao = consulta.observacaoInterna.orEmpty())
+}
+
+/**
+ * MOB-87 (D-03): o que o paciente vê da consulta. Tipo e modalidade já resolvidos (o tipo legado "Online" vira Retorno + Online, C-02),
+ * link só `https` e só com modalidade online, local que não é o link, e a orientação da nutri. Nunca a observação interna.
+ */
+data class ConsultaDoPaciente(val tipo: TipoConsulta, val modalidade: ModalidadeConsulta, val link: String?, val lugar: String?, val orientacao: String?, val duracaoMin: Int)
+
+fun consultaDoPaciente(consulta: ConsultaResposta, fuso: TimeZone): ConsultaDoPaciente {
+    val f = formularioDe(consulta, fuso)
+    val link = f.link.trim().takeIf { f.modalidade == ModalidadeConsulta.ONLINE && linkValido(it) }
+    val lugar = consulta.lugar?.trim()?.takeIf { it.isNotEmpty() && it != link }
+    return ConsultaDoPaciente(f.tipo, f.modalidade, link, lugar, consulta.orientacaoPaciente?.trim()?.takeIf { it.isNotEmpty() }, consulta.duracaoMin)
+}
+
+/** RN-AGE-03: Realizada e Falta saem de Agendada e se corrigem entre si; Cancelada é final. */
+fun podeMarcar(consulta: ConsultaResposta, destino: StatusConsulta): Boolean = when (destino) {
+    StatusConsulta.REALIZADA -> consulta.status == StatusConsulta.AGENDADA || consulta.status == StatusConsulta.FALTA
+    StatusConsulta.FALTA -> consulta.status == StatusConsulta.AGENDADA || consulta.status == StatusConsulta.REALIZADA
+    else -> false
+}

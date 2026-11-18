@@ -10,7 +10,9 @@ import kotlin.uuid.Uuid
 
 enum class ModoAgenda { DIA, SEMANA }
 
-enum class MensagemAgenda { SEM_CONEXAO, CONFLITO, ASSINATURA_INATIVA, VINCULO_ENCERRADO, NAO_ENCONTRADA, JA_CANCELADA, TAXA_EXCEDIDA, DATA_INVALIDA, ERRO, AGENDADA, REMARCADA, CANCELADA }
+enum class MensagemAgenda { SEM_CONEXAO, CONFLITO, ASSINATURA_INATIVA, VINCULO_ENCERRADO, NAO_ENCONTRADA, JA_CANCELADA, TAXA_EXCEDIDA, DATA_INVALIDA, ERRO, AGENDADA, REMARCADA, CANCELADA,
+    /** MOB-84 (RN-AGE-03/04) */
+    MARCADA_REALIZADA, MARCADA_FALTA, TRANSICAO_INVALIDA, LINK_INVALIDO }
 
 data class EstadoAgenda(val dia: LocalDate, val modo: ModoAgenda = ModoAgenda.DIA, val consultas: List<ConsultaResposta> = emptyList(), val pacientes: List<PacienteResposta> = emptyList(),
     val atualizando: Boolean = false, val enviando: Boolean = false, val semConexao: Boolean = false, val formulario: FormularioConsulta? = null,

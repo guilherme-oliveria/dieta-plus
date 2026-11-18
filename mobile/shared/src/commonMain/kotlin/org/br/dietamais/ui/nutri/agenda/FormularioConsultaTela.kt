@@ -15,7 +15,9 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.datetime.TimeZone
+import org.br.dietamais.data.remoto.dto.ModalidadeConsulta
 import org.br.dietamais.data.remoto.dto.TipoConsulta
+import androidx.compose.ui.platform.testTag
 import org.br.dietamais.dominio.agenda.*
 import org.br.dietamais.recursos.*
 import org.br.dietamais.ui.comum.*
@@ -24,9 +26,13 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
 
 data class AcoesFormularioConsulta(val aoPaciente: (Uuid) -> Unit = {}, val aoData: (String) -> Unit = {}, val aoHora: (String) -> Unit = {}, val aoDuracao: (String) -> Unit = {},
-    val aoTipo: (TipoConsulta) -> Unit = {}, val aoLugar: (String) -> Unit = {}, val aoSalvar: () -> Unit = {}, val aoFechar: () -> Unit = {})
+    val aoTipo: (TipoConsulta) -> Unit = {}, val aoLugar: (String) -> Unit = {}, val aoSalvar: () -> Unit = {}, val aoFechar: () -> Unit = {},
+    // MOB-84 (artboard A-Consulta-Form)
+    val aoModalidade: (ModalidadeConsulta) -> Unit = {}, val aoLink: (String) -> Unit = {}, val aoOrientacao: (String) -> Unit = {}, val aoObservacao: (String) -> Unit = {})
 
-private val tiposEscolhiveis = listOf(TipoConsulta.PRIMEIRA, TipoConsulta.RETORNO, TipoConsulta.ONLINE)
+// RN-AGE-04: "Online" deixou de ser tipo e virou modalidade (C-02)
+private val tiposEscolhiveis = listOf(TipoConsulta.PRIMEIRA, TipoConsulta.RETORNO, TipoConsulta.AVALIACAO)
+private val modalidades = listOf(ModalidadeConsulta.PRESENCIAL, ModalidadeConsulta.ONLINE)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -62,7 +68,23 @@ fun FormularioConsultaTela(estado: EstadoAgenda, acoes: AcoesFormularioConsulta)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                         tiposEscolhiveis.forEach { tipo -> ChipEscolha(form.tipo == tipo, { acoes.aoTipo(tipo) }, label = { Text(rotuloTipoConsulta(tipo)) }, enabled = habilitado) }
                     }
-                    CampoTexto(stringResource(Res.string.agenda_form_lugar), form.lugar, acoes.aoLugar, habilitado = habilitado)
+                    Text(stringResource(Res.string.agenda_form_modalidade), style = MaterialTheme.typography.labelLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
+                        modalidades.forEach { m -> ChipEscolha(form.modalidade == m, { acoes.aoModalidade(m) }, label = { Text(rotuloModalidade(m)) }, enabled = habilitado) }
+                    }
+                    if (form.modalidade == ModalidadeConsulta.ONLINE) {
+                        CampoTexto(stringResource(Res.string.agenda_form_link), form.link, acoes.aoLink, Modifier.fillMaxWidth().testTag("consulta-link"), habilitado = habilitado,
+                            erro = erros.firstOrNull { it == ErroConsulta.LINK }?.let { textoErroConsulta(it) },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri))
+                        Text(stringResource(Res.string.agenda_form_link_ajuda), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else CampoTexto(stringResource(Res.string.agenda_form_local), form.lugar, acoes.aoLugar, Modifier.fillMaxWidth().testTag("consulta-local"), habilitado = habilitado)
+                    CampoTexto(stringResource(Res.string.agenda_form_orientacao), form.orientacao, acoes.aoOrientacao, Modifier.fillMaxWidth().testTag("consulta-orientacao"),
+                        habilitado = habilitado, singleLine = false)
+                    Text(stringResource(Res.string.agenda_form_orientacao_ajuda, form.orientacao.length, LIMITE_TEXTO_CONSULTA), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    CampoTexto(stringResource(Res.string.agenda_form_observacao), form.observacao, acoes.aoObservacao, Modifier.fillMaxWidth().testTag("consulta-observacao"),
+                        habilitado = habilitado, singleLine = false)
+                    Text(stringResource(Res.string.agenda_form_observacao_ajuda), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (estado.conflitosAvisados > 0) Text(stringResource(Res.string.agenda_conflito_aviso, estado.conflitosAvisados), color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
@@ -94,10 +116,13 @@ fun AgendaRota(viewModel: AgendaViewModel, financeiro: FinanceiroViewModel = org
     val estadoFinanceiro by financeiro.estado.collectAsState()
     LaunchedEffect(Unit) { viewModel.abrir(); financeiro.carregarResumo() }
     val abrirFinanceiro: (Uuid) -> Unit = { id -> estado.consultas.firstOrNull { it.id == id }?.let { financeiro.abrir(it, estado.nomeDo(it.pacienteId)) } }
-    AgendaTela(estado, AcoesAgenda(viewModel::mudarModo, viewModel::anterior, viewModel::proximo, viewModel::hoje, { viewModel.nova() }, viewModel::remarcar, viewModel::pedirCancelamento, viewModel::recarregar, abrirFinanceiro),
+    AgendaTela(estado, AcoesAgenda(viewModel::mudarModo, viewModel::anterior, viewModel::proximo, viewModel::hoje, { viewModel.nova() }, viewModel::remarcar, viewModel::pedirCancelamento, viewModel::recarregar, abrirFinanceiro,
+        aoMarcar = viewModel::marcar),
         rodape = { ResumoFinanceiroCard(estadoFinanceiro) })
     FinanceiroTela(estadoFinanceiro, AcoesFinanceiro(financeiro::mudarComparecimento, financeiro::mudarValor, financeiro::mudarForma, financeiro::mudarPago, financeiro::salvar, financeiro::fechar))
     FormularioConsultaTela(estado, AcoesFormularioConsulta(viewModel::mudarPaciente, viewModel::mudarData, viewModel::mudarHora, viewModel::mudarDuracao, viewModel::mudarTipo,
-        viewModel::mudarLugar, viewModel::salvar, viewModel::fechar))
+        viewModel::mudarLugar, viewModel::salvar, viewModel::fechar, viewModel::mudarModalidade, viewModel::mudarLink, viewModel::mudarOrientacao, viewModel::mudarObservacao))
+    // o financeiro muda o status no servidor quando lança comparecimento (RN-FIN-01): traz a agenda de novo
+    LaunchedEffect(estadoFinanceiro.aviso) { if (estadoFinanceiro.aviso == MensagemFinanceiro.SALVO) viewModel.recarregar() }
     ConfirmarCancelamentoDialog(estado, viewModel::confirmarCancelamento, viewModel::desistirDoCancelamento)
 }

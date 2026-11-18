@@ -82,6 +82,10 @@ class AgendaViewModel(private val consultas: PortaConsultas, private val pacient
     fun mudarDuracao(valor: String) = formulario { it.copy(duracao = valor.filter(Char::isDigit).take(3)) }
     fun mudarTipo(tipo: TipoConsulta) = formulario { it.copy(tipo = tipo) }
     fun mudarLugar(valor: String) = formulario { it.copy(lugar = valor.take(200)) }
+    fun mudarModalidade(modalidade: ModalidadeConsulta) = formulario { it.copy(modalidade = modalidade) }
+    fun mudarLink(valor: String) = formulario { it.copy(link = valor.take(LIMITE_LINK)) }
+    fun mudarOrientacao(valor: String) = formulario { it.copy(orientacao = valor.take(LIMITE_TEXTO_CONSULTA)) }
+    fun mudarObservacao(valor: String) = formulario { it.copy(observacao = valor.take(LIMITE_TEXTO_CONSULTA)) }
 
     fun salvar() {
         val e = atual.value; val form = e.formulario ?: return
@@ -96,18 +100,43 @@ class AgendaViewModel(private val consultas: PortaConsultas, private val pacient
         operacao = viewModelScope.launch(dispatcher) {
             try {
                 if (form.id == null) {
-                    consultas.criar(CriarConsultaRequisicao(form.chave, checkNotNull(form.pacienteId), inicio, duracao, form.tipo, form.lugar.trim().ifEmpty { null }))
+                    val online = form.modalidade == ModalidadeConsulta.ONLINE
+                    consultas.criar(CriarConsultaRequisicao(form.chave, checkNotNull(form.pacienteId), inicio, duracao, form.tipo, form.lugar.trim().ifEmpty { null },
+                        form.modalidade, form.link.trim().takeIf { online && it.isNotEmpty() }, form.orientacao.trim().ifEmpty { null }, form.observacao.trim().ifEmpty { null }))
                     atual.update { it.copy(formulario = null, conflitosAvisados = 0, aviso = MensagemAgenda.AGENDADA, dia = diaLocal(inicio, fuso())) }
                 } else {
                     val original = e.consultas.firstOrNull { it.id == form.id }
+                    val antes = original?.let { formularioDe(it, fuso()) }
+                    val link = form.link.trim().takeIf { form.modalidade == ModalidadeConsulta.ONLINE && it != antes?.link.orEmpty() }
+                    // texto vazio limpa no servidor (campo nulo = não muda)
                     val pedido = AtualizarConsultaRequisicao(inicio.takeIf { original == null || it != original.inicio }, duracao.takeIf { original == null || it != original.duracaoMin },
-                        form.tipo.takeIf { original == null || it != original.tipo }, form.lugar.trim().takeIf { it != original?.lugar.orEmpty() })
+                        form.tipo.takeIf { original == null || it != original.tipo }, form.lugar.trim().takeIf { it != original?.lugar.orEmpty() },
+                        modalidade = form.modalidade.takeIf { antes == null || it != antes.modalidade }, linkOnline = link,
+                        orientacaoPaciente = form.orientacao.trim().takeIf { it != antes?.orientacao.orEmpty() },
+                        observacaoInterna = form.observacao.trim().takeIf { it != antes?.observacao.orEmpty() })
                     if (pedido == AtualizarConsultaRequisicao()) atual.update { it.copy(formulario = null) }
                     else {
                         consultas.alterar(form.id, checkNotNull(form.versao), pedido)
                         atual.update { it.copy(formulario = null, conflitosAvisados = 0, aviso = MensagemAgenda.REMARCADA, dia = diaLocal(inicio, fuso())) }
                     }
                 }
+            }
+            catch (c: CancellationException) { throw c }
+            catch (falha: Exception) { apresentar(falha) }
+            finally { atual.update { it.copy(enviando = false) } }
+        }
+    }
+
+    /** MOB-84 (RN-AGE-03): "Realizada" ou "Faltou"; grava offline como as outras mudanças, e o financeiro lê o comparecimento do status (RN-FIN-01). */
+    fun marcar(id: Uuid, destino: StatusConsulta) {
+        val e = atual.value
+        if (e.enviando) return
+        val consulta = e.consultas.firstOrNull { it.id == id }?.takeIf { podeMarcar(it, destino) } ?: return
+        atual.update { it.copy(enviando = true, erro = null, aviso = null) }
+        operacao = viewModelScope.launch(dispatcher) {
+            try {
+                consultas.alterar(id, consulta.versao, AtualizarConsultaRequisicao(status = destino))
+                atual.update { it.copy(aviso = if (destino == StatusConsulta.REALIZADA) MensagemAgenda.MARCADA_REALIZADA else MensagemAgenda.MARCADA_FALTA) }
             }
             catch (c: CancellationException) { throw c }
             catch (falha: Exception) { apresentar(falha) }
@@ -145,12 +174,14 @@ class AgendaViewModel(private val consultas: PortaConsultas, private val pacient
                 "ACESSO_NEGADO" -> MensagemAgenda.VINCULO_ENCERRADO
                 "RECURSO_NAO_ENCONTRADO" -> MensagemAgenda.NAO_ENCONTRADA
                 "TAXA_EXCEDIDA" -> MensagemAgenda.TAXA_EXCEDIDA
+                "TRANSICAO_STATUS_INVALIDA" -> MensagemAgenda.TRANSICAO_INVALIDA
+                "LINK_INVALIDO" -> MensagemAgenda.LINK_INVALIDO
                 else -> MensagemAgenda.ERRO
             }
             else -> MensagemAgenda.ERRO
         }
         atual.update { it.copy(erro = mensagem, semConexao = it.semConexao || falha is FalhaComunicacao) }
         // outra versão (ou cancelamento) já está no servidor: fecha o formulário e traz o estado novo
-        if (mensagem == MensagemAgenda.CONFLITO || mensagem == MensagemAgenda.JA_CANCELADA) { atual.update { it.copy(formulario = null) }; recarregar() }
+        if (mensagem == MensagemAgenda.CONFLITO || mensagem == MensagemAgenda.JA_CANCELADA || mensagem == MensagemAgenda.TRANSICAO_INVALIDA) { atual.update { it.copy(formulario = null) }; recarregar() }
     }
 }

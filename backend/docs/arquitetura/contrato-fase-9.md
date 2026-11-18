@@ -63,6 +63,10 @@ Endpoints em `integracao.md`. `produtoId` e `nome` juntos ou nenhum dos dois: `4
 
 Endpoints em `integracao.md`. `GET /documentos/{id}/pdf` e `GET /eu/documentos/{id}/pdf` devolvem `PdfResposta` (link assinado, `Cache-Control: no-store`). Modelo do sistema editado ou apagado: `403 ACESSO_NEGADO`. Anular de novo: `422 DOCUMENTO_JA_ANULADO`. A rota pública de conferência não exige autenticação, tem limite de requisições (BE-31) e devolve `ConferenciaDocumentoResposta`; código inexistente: `404 RECURSO_NAO_ENCONTRADO`.
 
+Detalhes da emissão (BE-78): os dois modelos do sistema têm ids fixos (`019a9000-0000-7000-8000-00000000d001` atestado, `…d002` declaração) e vêm primeiro na lista. O código de conferência tem o formato `XXXX-XXXX-XXXX`, sem `0`, `O`, `1`, `I` e `L`. `{{data}}` e `{{horario}}` vêm da consulta quando há `consultaId`; sem ela, `data` (padrão: hoje no fuso da nutri) e `horario` (`HH:mm`). Campo do texto sem valor ou desconhecido, ou consulta que não está `REALIZADA`: `400 FORMATO_INVALIDO` com a mensagem dizendo o que falta. Consulta de outra nutri ou de outro paciente, ou modelo de outra nutri: `404`. Vínculo encerrado: `403 ACESSO_NEGADO` (só lê). Mesmo `id` de novo sem a mesma `Idempotency-Key`: `409 CONFLITO_VERSAO`. O PDF é gerado e gravado na emissão e o link devolve sempre o mesmo arquivo, também depois de anulado.
+
+Conferência e visão do paciente (BE-79): a conferência aceita o código com ou sem hífen e em minúsculas; fora do formato também é `404`. O limite é por IP (`dieta.documentos.conferir-limite-ip`, padrão 30 por minuto; acima: `429 TAXA_EXCEDIDA` com `Retry-After`). Toda tentativa, achada ou não, fica registrada (documento, se achado, IP e hora). `GET /eu/documentos` e a coleção `documentos` do sync (nutri e paciente) trazem só `DocumentoPacienteResposta` (sem texto, código ou motivo); o anulado continua na lista com `anulado=true`, e o paciente segue lendo e baixando com o vínculo encerrado. De outro paciente: `404`.
+
 ## H-07 Planos (BE-C10)
 
 - `GET /api/v1/planos` (pública): `PlanosPublicosResposta`, só planos à venda; sem nenhum valor fixo no código (os valores entram pelo admin, C-05).

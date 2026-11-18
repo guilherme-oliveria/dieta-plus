@@ -107,6 +107,8 @@ fun moduloPerfilNutri(ambiente: AmbienteDieta?) = module {
     viewModel { org.br.dietamais.ui.nutri.assinatura.PerfilNutriViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaProtocolosNutri> { org.br.dietamais.data.repositorio.ProtocolosNutriRepositorio(get()) }
     viewModel { org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
+    single<org.br.dietamais.data.repositorio.PortaPreferenciasAgenda> { org.br.dietamais.data.repositorio.PreferenciasAgendaRepositorio(get()) }
+    viewModel { org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaPrivacidade> { org.br.dietamais.data.repositorio.PrivacidadeRepositorio(get()) }
     viewModel { p -> org.br.dietamais.ui.privacidade.PrivacidadeViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }, exportacaoDisponivel = p.get()) }
     single<org.br.dietamais.data.repositorio.PortaPdf> { org.br.dietamais.data.repositorio.PdfRepositorio(get()) }

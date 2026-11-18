@@ -38,7 +38,12 @@ class FinanceiroViewModel(private val financeiro: PortaFinanceiro, private val d
         carga?.cancel()
         atual.update { it.copy(consulta = consulta, paciente = paciente, versao = 0, formulario = FormularioFinanceiro(), erros = emptySet(), carregando = true, erro = null, aviso = null) }
         carga = viewModelScope.launch(dispatcher) {
-            try { val r = financeiro.da(consulta.id); atual.update { it.copy(versao = r.versao, formulario = formularioDeFinanceiro(r), semConexao = false) } }
+            try {
+                val r = financeiro.da(consulta.id)
+                // MOB-84: "Realizada"/"Faltou" marcados no aparelho e ainda na fila valem antes do que o servidor devolveu
+                val f = formularioDeFinanceiro(r).let { f -> comparecimentoDoStatus(consulta.status)?.let { f.copy(comparecimento = it) } ?: f }
+                atual.update { it.copy(versao = r.versao, formulario = f, semConexao = false) }
+            }
             catch (c: CancellationException) { throw c }
             catch (falha: Exception) { apresentar(falha) }
             finally { atual.update { it.copy(carregando = false) } }

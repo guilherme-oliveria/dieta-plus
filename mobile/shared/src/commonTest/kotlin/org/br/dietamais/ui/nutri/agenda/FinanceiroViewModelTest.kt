@@ -37,6 +37,16 @@ class FinanceiroViewModelTest {
         assertTrue(e.aberto); assertEquals("Ana", e.paciente); assertEquals(3, e.versao); assertEquals("150,50", e.formulario.valor); assertFalse(e.carregando)
     }
 
+    @Test fun comparecimentoVemDoStatusDaConsultaMarcadoNoAparelho() = runTest {
+        // MOB-84 (RN-FIN-01): "Realizada" ainda na fila vale antes do PENDENTE que o servidor devolveu
+        val vm = vm(PortaFinanceiroFalsa()); vm.abrir(consulta.copy(status = StatusConsulta.REALIZADA), "Ana"); advanceUntilIdle()
+        assertEquals(ComparecimentoConsulta.COMPARECEU, vm.estado.value.formulario.comparecimento)
+        vm.abrir(consulta.copy(status = StatusConsulta.FALTA), "Ana"); advanceUntilIdle()
+        assertEquals(ComparecimentoConsulta.FALTOU, vm.estado.value.formulario.comparecimento)
+        vm.abrir(consulta, "Ana"); advanceUntilIdle()
+        assertEquals(ComparecimentoConsulta.PENDENTE, vm.estado.value.formulario.comparecimento)
+    }
+
     @Test fun salvaComAVersaoLidaEAtualizaOResumoDoMes() = runTest {
         val p = PortaFinanceiroFalsa(); val vm = vm(p); vm.abrir(consulta, null); advanceUntilIdle()
         vm.mudarComparecimento(ComparecimentoConsulta.COMPARECEU); vm.mudarValor("200"); vm.mudarForma(FormaPagamento.PIX); vm.mudarPago(true); vm.salvar(); advanceUntilIdle()
