@@ -202,6 +202,11 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
 - A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
 - A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.
+## MOB-82 · Saúde e restrições na ficha (18/11/2026)
+
+- Artboards `A-Saude-Ficha` e `A-Saude-Item` (DES-16). O formulário do item abre dentro da aba "Saúde", no lugar da lista, como no artboard; não é uma folha sobreposta.
+- Marcadores da folha: o artboard mostra "Castanhas", que não existe como marcador de alimento no backend (BE-69); ficou de fora. "Soja" entrou, porque o backend tem. "Leite" aparece como "Leite e lactose" (`CONTEM_LACTOSE`).
+- Cada item ganhou "Remover" ao lado de "Editar", com confirmação; o artboard só mostra "Editar".
 
 ## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
 

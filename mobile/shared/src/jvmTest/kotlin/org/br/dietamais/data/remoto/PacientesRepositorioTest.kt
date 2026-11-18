@@ -115,6 +115,24 @@ class PacientesRepositorioTest {
         }
     }
 
+    /** MOB-82 (RN-SAU-01): as restrições vão com a ficha inteira na fila, a partir da versão lida, e a ficha local já mostra a lista nova. */
+    @Test fun salvarRestricoesEnfileiraAFichaInteiraEAtualizaOCache() = runTest {
+        comRepositorio(MockEngine { json(recursoContrato("puxarMudancas/resposta.json")) }) { repo, _, banco ->
+            repo.atualizar()
+            val ficha = repo.observar().first().first()
+            val alergia = RestricaoSaudeDto(Uuid.random(), TipoRestricaoSaude.ALERGIA, "Amendoim", GravidadeRestricao.GRAVE, marcadores = listOf("AMENDOIM"))
+            val salvo = repo.salvarRestricoes(ficha, listOf(alergia))
+            assertEquals(listOf(alergia), salvo.restricoesSaude); assertEquals(ficha.versao + 1, salvo.versao)
+            assertEquals(listOf(alergia), repo.observar().first().first { it.id == ficha.id }.restricoesSaude)
+            val sessao = banco.sessaoQueries.atual().executeAsOne()
+            val mutacao = banco.mutacaoPendenteQueries.doEscopo(sessao.usuario_id, sessao.perfil).executeAsList().single()
+            assertEquals("pacientes", mutacao.entidade); assertEquals("ATUALIZAR", mutacao.operacao); assertEquals(ficha.id.toString(), mutacao.id); assertEquals(ficha.versao, mutacao.versao_base)
+            val enviado = JsonContrato.decodeFromString<AtualizarPacienteRequisicao>(mutacao.dados_json)
+            assertEquals(ficha.nome, enviado.nome); assertEquals(ficha.email, enviado.email); assertEquals(listOf(alergia), enviado.restricoesSaude)
+            assertNull(enviado.cadastroAmpliado) // nulo = o servidor mantém o cadastro ampliado
+        }
+    }
+
     @Test fun conviteEnviaPostSemCorpoESemDadoClinicoArtificial() = runTest {
         val id = paciente().id; val chave = Uuid.random()
         comRepositorio(MockEngine { req ->

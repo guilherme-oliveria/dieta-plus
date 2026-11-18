@@ -37,6 +37,16 @@ class PacientesOnline(private val api: ApiDieta) : PortaPacientes {
         return resposta
     }
 
+    override suspend fun salvarRestricoes(paciente: PacienteResposta, restricoes: List<RestricaoSaudeDto>): PacienteResposta {
+        val esperado = contexto()
+        val salvo = api.alterar<PacienteResposta>("pacientes/${paciente.id}",
+            JsonContrato.encodeToJsonElement(org.br.dietamais.data.repositorio.requisicaoRestricoes(paciente, restricoes)), paciente.versao)
+        conferir(esperado)
+        if (salvo.id != paciente.id) throw RespostaInvalida()
+        recurso.gravado(salvo) { it.vinculoId == salvo.vinculoId }
+        return salvo
+    }
+
     override suspend fun resumos() = org.br.dietamais.data.repositorio.carregarResumosPacientes(api)
 
     override suspend fun assinatura(): AssinaturaResumoResposta? {
