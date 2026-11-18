@@ -12,12 +12,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class FonteDocumentosSync implements FonteSync<DocumentoPacienteResposta> {
-	private final DiarioSync diario;private final DocumentoStore documentos;
-	public FonteDocumentosSync(DiarioSync diario,DocumentoStore documentos){this.diario=diario;this.documentos=documentos;}
+	private final DiarioSync diario;private final DocumentoStore documentos;private final AuditoriaClinica auditoria;
+	public FonteDocumentosSync(DiarioSync diario,DocumentoStore documentos,AuditoriaClinica auditoria){this.diario=diario;this.documentos=documentos;this.auditoria=auditoria;}
 	@Override public ColecaoSync colecao(){return ColecaoSync.DOCUMENTOS;}
 	@Override public List<ReferenciaSync> mudancasDesde(long seq,ContextoUsuario usuario,int limite){return diario.mudancasDesde(colecao(),seq,usuario,limite);}
 	@Override public DocumentoPacienteResposta carregar(ReferenciaSync referencia,ContextoUsuario usuario){
-		var m=usuario.perfil()==Perfil.NUTRICIONISTA?documentos.metadadosDaNutri(referencia.id(),usuario.exigirNutricionista()):documentos.metadadosDoPaciente(referencia.id(),usuario.exigirPaciente());
-		return m==null?null:m.resposta();
+		boolean nutri=usuario.perfil()==Perfil.NUTRICIONISTA;
+		var m=nutri?documentos.metadadosDaNutri(referencia.id(),usuario.exigirNutricionista()):documentos.metadadosDoPaciente(referencia.id(),usuario.exigirPaciente());
+		if(m==null)return null;
+		// BE-84: leitura clínica pela nutri vai para o log_acesso
+		if(nutri)auditoria.leitura(new ReferenciaClinica("documento",referencia.id(),m.nutri(),m.paciente(),usuario.organizacaoId()));
+		return m.resposta();
 	}
 }

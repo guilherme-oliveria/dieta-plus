@@ -77,7 +77,11 @@ fun ShellWebPaciente(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (and
                 Column(Modifier.fillMaxSize()) {
                     AnamnesePacienteRota(koinViewModel<AnamnesePacienteViewModel>(viewModelStoreOwner = dono))
                     ProximaConsultaRota(koinViewModel<ConsultasPacienteViewModel>(viewModelStoreOwner = dono))
-                    HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua), Modifier.weight(1f))
+                    HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua,
+                    aoFome = vm::escolherFome, aoSensacao = vm::escolherSensacao, aoSalvarHumor = vm::salvarHumor, aoPularHumor = vm::pularHumor,
+                    aoAbrirFora = vm::abrirForaDoPlano, aoTextoFora = vm::mudarTextoFora, aoRefeicaoFora = vm::mudarRefeicaoFora,
+                    aoHoraFora = vm::mudarHoraFora, aoRegistrarFora = vm::registrarForaDoPlano, aoFecharFora = vm::fecharForaDoPlano,
+                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f))
                 }
                 TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
             },
@@ -100,7 +104,7 @@ fun ShellWebPaciente(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (and
                 val estadoPriv by priv.estado.collectAsState()
                 androidx.compose.runtime.LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoSair() }
                 PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
-                    perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink),
+                    perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink, perfil::mudarPerguntaHumor),
                     extras = {
                     // MOB-95: documentos emitidos pela nutri
                     org.br.dietamais.ui.paciente.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.paciente.documentos.DocumentosPacienteViewModel>(viewModelStoreOwner = dono), koinInject())

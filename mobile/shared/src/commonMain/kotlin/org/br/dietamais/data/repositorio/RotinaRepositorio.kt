@@ -31,6 +31,12 @@ interface PortaRotina {
     fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant)
     fun registrarAgua(ml: Int, agora: Instant)
     fun registrarPeso(pesoKg: Double, agora: Instant)
+    /** MOB-88 (RN-ROT-01): check-in com fome antes e sensação depois (1 a 5, opcionais), no mesmo registro. */
+    fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
+        if (fomeAntes == null && sensacaoDepois == null) registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora) else throw UnsupportedOperationException()
+    }
+    /** MOB-88 (RN-ROT-06): "Comi algo fora do plano", só inclusão. */
+    fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant): Unit = throw UnsupportedOperationException()
 }
 
 class RotinaRepositorio(private val banco: BancoDieta, private val fila: FilaMutacoes = FilaMutacoes(banco)) : PortaRotina {
@@ -47,18 +53,31 @@ class RotinaRepositorio(private val banco: BancoDieta, private val fila: FilaMut
     override val falhas: Flow<Unit> = flow {
         var vistas: Set<String>? = null
         banco.mutacaoPendenteQueries.daSessaoAtual().asFlow().mapToList(Dispatchers.Default).collect { lista ->
-            val agora = lista.filter { it.status == "REJEITADA" && it.entidade in setOf("checkins", "agua", "pesos") }.map { it.id_mutacao }.toSet()
+            val agora = lista.filter { it.status == "REJEITADA" && it.entidade in setOf("checkins", "agua", "pesos", "registrosForaDoPlano") }.map { it.id_mutacao }.toSet()
             val antes = vistas
             vistas = agora
             if (antes != null && (agora - antes).isNotEmpty()) emit(Unit)
         }
     }
 
-    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) {
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant) =
+        registrarCheckin(dietaId, refeicaoId, data, status, trocas, agora, null, null)
+
+    override fun registrarCheckin(dietaId: Uuid, refeicaoId: Uuid, data: LocalDate, status: StatusCheckin, trocas: List<TrocaCheckin>, agora: Instant, fomeAntes: Int?, sensacaoDepois: Int?) {
         require((status == StatusCheckin.TROCADO) == trocas.isNotEmpty() && status != StatusCheckin.OUTRO)
+        require(fomeAntes == null || fomeAntes in 1..5); require(sensacaoDepois == null || sensacaoDepois in 1..5)
         val id = novoIdLocal()
-        gravar("checkins", id, JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora)).jsonObject) { paciente ->
-            JsonContrato.encodeToString(CheckinResposta(id, paciente, dietaId, refeicaoId, data, status, trocas, agora))
+        gravar("checkins", id, JsonContrato.encodeToJsonElement(CheckinRequisicao(id, dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois)).jsonObject) { paciente ->
+            JsonContrato.encodeToString(CheckinResposta(id, paciente, dietaId, refeicaoId, data, status, trocas, agora, fomeAntes, sensacaoDepois))
+        }
+    }
+
+    override fun registrarForaDoPlano(data: LocalDate, texto: String, refeicaoId: Uuid?, registradoEm: Instant) {
+        val limpo = texto.trim()
+        require(limpo.isNotEmpty() && limpo.length <= 280)
+        val id = novoIdLocal()
+        gravar("registrosForaDoPlano", id, JsonContrato.encodeToJsonElement(RegistroForaDoPlanoRequisicao(id, data, limpo, refeicaoId, registradoEm)).jsonObject) {
+            JsonContrato.encodeToString(RegistroForaDoPlanoResposta(id, data, limpo, refeicaoId, registradoEm))
         }
     }
 
