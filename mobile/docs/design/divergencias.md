@@ -196,3 +196,10 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
 - O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
+
+## MOB-89 · Humor e fora do plano na adesão (18/11/2026)
+
+- Artboard `A-Adesao-Humor` (DES-18). O app ainda não tem a aba "Adesão" do artboard: o cartão "Adesão · últimos 7 dias" entra no Resumo da ficha, abaixo da última avaliação. Uma aba própria fica para quando houver mais conteúdo de adesão (metas da MOB-91).
+- A linha de cada registro fora do plano mostra dia e hora, sem "no lugar do lanche da tarde": a ficha da nutri não tem a dieta do paciente carregada no Resumo. Se a nutri pedir, o backend pode mandar o nome da refeição junto (campo novo e opcional).
+- Período em "10/11 a 16/11" (o artboard abrevia "10 a 16/11").
+- Leitura online: sem rede o cartão avisa e busca de novo quando a conexão volta.
