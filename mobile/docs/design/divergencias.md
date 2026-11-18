@@ -203,3 +203,19 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 - A linha de cada registro fora do plano mostra dia e hora, sem "no lugar do lanche da tarde": a ficha da nutri não tem a dieta do paciente carregada no Resumo. Se a nutri pedir, o backend pode mandar o nome da refeição junto (campo novo e opcional).
 - Período em "10/11 a 16/11" (o artboard abrevia "10 a 16/11").
 - Leitura online: sem rede o cartão avisa e busca de novo quando a conexão volta.
+
+## MOB-87 · Paciente: próxima consulta (18/11/2026)
+
+Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
+
+- o título com o selo da modalidade;
+- "Hoje, 15:00", "Amanhã, 15:00" ou a data;
+- "Retorno · 50 min";
+- o local, quando presencial;
+- "Entrar na consulta" com a explicação, só quando a consulta é online e o link é `https`;
+- a "Orientação da nutri".
+
+O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
+
+- A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
+- O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.

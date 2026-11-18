@@ -4,7 +4,6 @@ import com.br.dietamais.avaliacoes.api.*;
 import com.br.dietamais.comum.api.*;
 import com.br.dietamais.dietas.api.*;
 import com.br.dietamais.pacientes.api.ConsultaCabecalhoRelatorio;
-import com.br.dietamais.relatorios.api.PdfResposta;
 import com.br.dietamais.relatorios.api.TamanhoListaPdf;
 import com.br.dietamais.alimentos.api.ConsultarAlimentosParaDieta;
 import com.br.dietamais.referencias.api.ConsultaPorcoes;

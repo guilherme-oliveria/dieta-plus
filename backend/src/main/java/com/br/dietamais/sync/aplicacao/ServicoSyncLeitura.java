@@ -45,6 +45,7 @@ public class ServicoSyncLeitura {
 		var protocolos=new ArrayList<MudancaSyncResposta<ProtocolosNutriResposta>>();var modelosDieta=new ArrayList<MudancaSyncResposta<ModeloDietaResposta>>();var produtos=new ArrayList<MudancaSyncResposta<ProdutoResposta>>();var checkins=new ArrayList<MudancaSyncResposta<CheckinResposta>>();var metas=new ArrayList<MudancaSyncResposta<com.br.dietamais.metas.api.MetaResposta>>();var registrosMeta=new ArrayList<MudancaSyncResposta<com.br.dietamais.metas.api.RegistroMetaResposta>>();var foraDoPlano=new ArrayList<MudancaSyncResposta<RegistroForaDoPlanoResposta>>();var agua=new ArrayList<MudancaSyncResposta<AguaResposta>>();var pesos=new ArrayList<MudancaSyncResposta<PesoResposta>>();var avaliacoes=new ArrayList<MudancaSyncResposta<AvaliacaoResposta>>();var modelos=new ArrayList<MudancaSyncResposta<ModeloQuestionarioResposta>>();var questionarios=new ArrayList<MudancaSyncResposta<QuestionarioResposta>>();var consultas=new ArrayList<MudancaSyncResposta<ConsultaResposta>>();var avisos=new ArrayList<MudancaSyncResposta<AvisoResposta>>();
 		var suplementos=new ArrayList<MudancaSyncResposta<com.br.dietamais.prescricoes.api.SuplementoResposta>>();
 		var orientacoes=new ArrayList<MudancaSyncResposta<com.br.dietamais.prescricoes.api.OrientacaoResposta>>();
+		var documentos=new ArrayList<MudancaSyncResposta<com.br.dietamais.documentos.api.DocumentoPacienteResposta>>();
 		long ultimo=cursor;
 		for(var entrada:candidatos.subList(0,Math.min(limite,candidatos.size()))) {
 			var referencia=entrada.referencia();Object dados=entrada.fonte().carregar(referencia,contexto);ultimo=referencia.seq();
@@ -68,6 +69,7 @@ public class ServicoSyncLeitura {
 				case AVISOS->avisos.add(mudanca(referencia,dados,AvisoResposta.class));
 				case MODELOS_DIETA->modelosDieta.add(mudanca(referencia,dados,ModeloDietaResposta.class));
 				case METAS->metas.add(mudanca(referencia,dados,com.br.dietamais.metas.api.MetaResposta.class));
+				case DOCUMENTOS->documentos.add(mudanca(referencia,dados,com.br.dietamais.documentos.api.DocumentoPacienteResposta.class));
 				case ORIENTACOES->orientacoes.add(mudanca(referencia,dados,com.br.dietamais.prescricoes.api.OrientacaoResposta.class));
 				case SUPLEMENTOS->suplementos.add(mudanca(referencia,dados,com.br.dietamais.prescricoes.api.SuplementoResposta.class));
 				case REGISTROS_META->registrosMeta.add(mudanca(referencia,dados,com.br.dietamais.metas.api.RegistroMetaResposta.class));
@@ -76,7 +78,7 @@ public class ServicoSyncLeitura {
 				case PROTOCOLOS->protocolos.add(mudanca(referencia,dados,ProtocolosNutriResposta.class));
 			}
 		}
-		return new SyncResposta(Long.toString(mais?ultimo:marco),mais,new MudancasFase1Resposta(pacientes,vinculos,nutris,grupos,alimentos,listas,dietas,snapshots,emUso,checkins,agua,pesos,avaliacoes,modelos,questionarios,consultas,avisos,protocolos,modelosDieta,produtos,foraDoPlano,metas,registrosMeta,suplementos,orientacoes));
+		return new SyncResposta(Long.toString(mais?ultimo:marco),mais,new MudancasFase1Resposta(pacientes,vinculos,nutris,grupos,alimentos,listas,dietas,snapshots,emUso,checkins,agua,pesos,avaliacoes,modelos,questionarios,consultas,avisos,protocolos,modelosDieta,produtos,foraDoPlano,metas,registrosMeta,suplementos,orientacoes,documentos));
 	}
 	private <T> MudancaSyncResposta<T> mudanca(ReferenciaSync referencia,Object dados,Class<T> tipo){return new MudancaSyncResposta<>(referencia.id(),referencia.seq(),dados==null,tipo.cast(dados));}
 	private record Entrada(FonteSync<?> fonte,ReferenciaSync referencia){}
