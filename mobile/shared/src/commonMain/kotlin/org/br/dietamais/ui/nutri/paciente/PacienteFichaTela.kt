@@ -44,6 +44,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                     AbaFicha.entries.forEach { aba -> Tab(selected = estado.abaFicha == aba, onClick = { aoAba(aba) },
                         text = { Text(stringResource(when (aba) {
                             AbaFicha.RESUMO -> Res.string.pacientes_resumo
+                            AbaFicha.METAS -> Res.string.pacientes_metas
                             AbaFicha.AVALIACOES -> Res.string.pacientes_avaliacoes
                             AbaFicha.EVOLUCAO -> Res.string.pacientes_evolucao
                             AbaFicha.DIETA -> Res.string.aba_dieta
@@ -51,7 +52,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                             AbaFicha.ANAMNESE -> Res.string.pacientes_anamnese
                         })) }) }
                 }
-                if (estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
+                if (estado.abaFicha == AbaFicha.METAS || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
                 else if (estado.abaFicha != AbaFicha.RESUMO) EstadoVazio()
                 else {
                     // Atalhos dentro do Resumo (abaixo das abas): acima delas, ao trocar de aba a faixa sumia e as abas pulavam de lugar.
