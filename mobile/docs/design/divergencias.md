@@ -329,3 +329,26 @@ Nenhum preço fica no app. Sem a chave `exibePrecoEBotao` (D-09), aparecem só o
 - Sem a chave, os planos aparecem um por linha ("Básico: até 20 pacientes") em vez da frase corrida do artboard, que não fica boa com quantidade variável de planos.
 - No anual, plano sem preço anual aparece como "Só no plano mensal" e não pode ser escolhido para assinar; o artboard não mostra esse caso.
 - O aviso do painel conta dias de calendário no fuso do aparelho (0 = "termina hoje", 1 = "amanhã").
+
+## MOB-83 · Montador: alerta e confirmação de alergia (18/11/2026)
+
+Artboards `A-Montador-Alerta` e `A-Montador-Confirmar` (DES-16). Registrado no fechamento (MOB-98), a partir do PR #51. Divergências:
+
+- A confirmação é um `AlertDialog`, como as outras confirmações do montador, e não uma folha inferior.
+- O nome mostrado no alerta é o da restrição da ficha.
+- O planejador por porções ainda não mostra os alertas: os itens dele são por grupo, não por alimento.
+
+## MOB-84 · Agenda: formulário e status (18/11/2026)
+
+Artboards `A-Consulta-Form` e `A-Consulta-Status` (DES-17). Registrado no fechamento (MOB-98), a partir do PR #52. Divergências:
+
+- Não há tela própria de detalhe da consulta: o cartão da agenda faz esse papel, com "Realizada", "Faltou", Remarcar e Cancelar no menu.
+- A duração fica num campo próprio, e não junto do horário.
+
+## MOB-97 · Ponta a ponta da web da 1.4.0 (18/11/2026)
+
+O que o e2e (`e2e/historias-1-4-0.spec.ts`) mostrou sobre a web, sem mudar as telas:
+
+- O rótulo do `CampoTexto` não sai como texto no DOM: ele é o nome acessível do próprio campo (`contentDescription`). Leitor de tela anuncia; quem procura o texto na página não acha.
+- Enquanto um campo de texto tem foco, o Compose cria um `<input class="compose-backing-field">` oculto, sem rótulo, para receber o teclado. O axe acusa "label" nele; a trava de acessibilidade tira só esse nó do resultado. O nome do campo continua conferido no nó de semantics.
+- Na web, os planos da Conta aparecem como cartões de escolha com preço; o título "Planos" só existe na versão sem preço das lojas (D-09).

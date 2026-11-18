@@ -113,24 +113,24 @@ Ainda **sem artboard** (pedir ao Design antes de implementar): micronutrientes e
 
 ## Release 1.4.0 (ondas 24 a 27)
 
-Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4.0.md) (seção 4.1). **Todas faltando**: cada tela entra com o artboard da `DES-NN` aprovado no canvas, copiado para [artboards/](artboards/README.md), e o status muda aqui para "desenhada" no PR da própria DES (branch `feature/DES-NN-…`). O benchmark é referência de fluxo: textos, ícones, cores e layout são do Dieta+ ([padrao-ui.md](padrao-ui.md)). Estados de carregando, vazio, erro e sem internet seguem [componentes.md](componentes.md). A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOffline`.
+Plano em [`docs/plano-de-execucao-1.4.0.md`](../../../docs/plano-de-execucao-1.4.0.md) (seção 4.1). **Todas desenhadas e implementadas** (fechamento na MOB-98, 18/11/2026). Regra que valeu para elas: cada tela entra com o artboard da `DES-NN` aprovado no canvas, copiado para [artboards/](artboards/README.md), e o status muda aqui para "desenhada" no PR da própria DES (branch `feature/DES-NN-…`). O benchmark é referência de fluxo: textos, ícones, cores e layout são do Dieta+ ([padrao-ui.md](padrao-ui.md)). Estados de carregando, vazio, erro e sem internet seguem [componentes.md](componentes.md). A MOB-29b não tem tela nova: usa `IndicadorSync`, `DialogoConflito` e `FaixaOffline`.
 
 | Tela | Pacote | DES | Status | MOB |
 | --- | --- | --- | --- | --- |
-| Ficha: seção "Saúde e restrições" e selo no cabeçalho; folha de novo item | `ui/nutri/paciente` | DES-16 | desenhada: `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html` | 82 |
-| Montador: alerta de intolerância e confirmação de alergia | `ui/nutri/dieta` | DES-16 | desenhada: `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html` | 83 |
-| Consulta: formulário (tipo, modalidade, link, orientação, observação) e ações de status | `ui/nutri/agenda` | DES-17 | desenhada: `A-Consulta-Form.dc.html`, `A-Consulta-Status.dc.html` | 84 |
-| Agenda: visão do mês | `ui/nutri/agenda` | DES-17 | desenhada: `A-Agenda-Mes.dc.html` | 85 |
-| Conta da nutri: preferência de lembrete | `ui/nutri/assinatura` (conta) | DES-17 | desenhada: `A-Conta-Lembrete.dc.html` | 86 |
-| Paciente: próxima consulta com "Entrar na consulta" e orientação | `ui/paciente/hoje` | DES-17 | desenhada: `P-Proxima-Consulta.dc.html` | 87 |
-| Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano"; preferência no perfil | `ui/paciente/hoje`, `ui/paciente/perfil` | DES-18 | desenhada: `P-Refeicao-Humor.dc.html`, `P-Fora-Plano.dc.html`, `P-Perfil-Preferencias.dc.html` | 88 |
-| Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | desenhada: `A-Adesao-Humor.dc.html` | 89 |
+| Ficha: seção "Saúde e restrições" e selo no cabeçalho; folha de novo item | `ui/nutri/paciente` | DES-16 | desenhada: `A-Saude-Ficha.dc.html`, `A-Saude-Item.dc.html`; implementada MOB-82 | 82 |
+| Montador: alerta de intolerância e confirmação de alergia | `ui/nutri/dieta` | DES-16 | desenhada: `A-Montador-Alerta.dc.html`, `A-Montador-Confirmar.dc.html`; implementada MOB-83 | 83 |
+| Consulta: formulário (tipo, modalidade, link, orientação, observação) e ações de status | `ui/nutri/agenda` | DES-17 | desenhada: `A-Consulta-Form.dc.html`, `A-Consulta-Status.dc.html`; implementada MOB-84 | 84 |
+| Agenda: visão do mês | `ui/nutri/agenda` | DES-17 | desenhada: `A-Agenda-Mes.dc.html`; implementada MOB-85 | 85 |
+| Conta da nutri: preferência de lembrete | `ui/nutri/assinatura` (conta) | DES-17 | desenhada: `A-Conta-Lembrete.dc.html`; implementada MOB-86 | 86 |
+| Paciente: próxima consulta com "Entrar na consulta" e orientação | `ui/paciente/hoje` | DES-17 | desenhada: `P-Proxima-Consulta.dc.html`; implementada MOB-87 | 87 |
+| Registro da refeição: fome antes e sensação depois; "Comi algo fora do plano"; preferência no perfil | `ui/paciente/hoje`, `ui/paciente/perfil` | DES-18 | desenhada: `P-Refeicao-Humor.dc.html`, `P-Fora-Plano.dc.html`, `P-Perfil-Preferencias.dc.html`; implementada MOB-88 | 88 |
+| Adesão do paciente: humor da semana e registros fora do plano | `ui/nutri/paciente` | DES-18 | desenhada: `A-Adesao-Humor.dc.html`; implementada MOB-89 | 89 |
 | Hoje com as metas (a água é uma delas, com desfazer e valor livre); registro, sequência e progresso | `ui/paciente/hoje`, `ui/paciente/metas` | DES-19 | desenhada: `P-Hoje-Metas.dc.html`, `P-Metas-Semana.dc.html`; implementada MOB-90, MOB-99 (a água no cartão próprio, com sequência e semana) e MOB-90b (lembrete por meta, água incluída) | 90, 90b, 99 |
-| Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | desenhada: `A-Metas-Paciente.dc.html`, `A-Meta-Nova.dc.html`, `A-Modelos-Meta.dc.html` | 91 |
-| Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | desenhada: `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html` | 92 |
-| "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | desenhada: `P-Suplementos.dc.html`, `P-Orientacoes.dc.html` | 93 |
-| Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | desenhada: `A-Documentos-Paciente.dc.html`, `A-Documento-Emitir.dc.html`, `A-Documento-Anular.dc.html`, `A-Modelos-Documento.dc.html`, `PDF-Declaracao.dc.html`, `W-Conferir-Documento.dc.html` | 94 |
-| "Documentos" do paciente | `ui/paciente/perfil` | DES-21 | desenhada: `P-Documentos.dc.html` | 95 |
-| Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | desenhada: `A-Assinatura-Planos.dc.html`, `A-Assinatura-Ativa.dc.html`, `A-Assinatura-Sem-Preco.dc.html`, `A-Painel-Fim-Teste.dc.html` | 96 |
+| Metas do paciente: cadastro, modelos e cumprimento na ficha | `ui/nutri/paciente` | DES-19 | desenhada: `A-Metas-Paciente.dc.html`, `A-Meta-Nova.dc.html`, `A-Modelos-Meta.dc.html`; implementada MOB-91 | 91 |
+| Prescrever suplemento, orientação avulsa e modelos | `ui/nutri/paciente` | DES-20 | desenhada: `A-Suplementos-Paciente.dc.html`, `A-Suplemento-Novo.dc.html`, `A-Orientacao-Nova.dc.html`; implementada MOB-92 | 92 |
+| "Suplementos" e "Orientações" do paciente | `ui/paciente/dieta` | DES-20 | desenhada: `P-Suplementos.dc.html`, `P-Orientacoes.dc.html`; implementada MOB-93 | 93 |
+| Documentos: modelos, emitir, anular e lista na ficha; layout do PDF e da página de conferência | `ui/nutri/paciente` | DES-21 | desenhada: `A-Documentos-Paciente.dc.html`, `A-Documento-Emitir.dc.html`, `A-Documento-Anular.dc.html`, `A-Modelos-Documento.dc.html`, `PDF-Declaracao.dc.html`, `W-Conferir-Documento.dc.html`; implementada MOB-94 | 94 |
+| "Documentos" do paciente | `ui/paciente/perfil` | DES-21 | desenhada: `P-Documentos.dc.html`; implementada MOB-95 | 95 |
+| Assinatura: comparar planos (mensal/anual), uso dos limites, contagem do teste e aviso no painel | `ui/nutri/assinatura` | DES-22 | desenhada: `A-Assinatura-Planos.dc.html`, `A-Assinatura-Ativa.dc.html`, `A-Assinatura-Sem-Preco.dc.html`, `A-Painel-Fim-Teste.dc.html`; implementada MOB-96 | 96 |
 
 Os pacotes são a proposta do PO; a DES e a tarefa MOB podem ajustar, dizendo no PR.
