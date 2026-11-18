@@ -14,7 +14,7 @@
 // tem teste de API no backend) e o humor depois do "Comi" (o diálogo já abre no fluxo-completo.spec.ts).
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import {
-  buscarPaciente, clicar, conferirAcessibilidade, digitar, entrar, NUTRI_EXEMPLO, SENHA_EXEMPLO, tocar, tocarAba, veTexto,
+  botao, buscarPaciente, clicar, conferirAcessibilidade, digitar, entrar, NUTRI_EXEMPLO, SENHA_EXEMPLO, tocar, tocarAba, veTexto,
 } from "./apoio.ts";
 
 const sufixo = Date.now().toString(36);
@@ -115,8 +115,11 @@ test("H-04 e H-05: meta, suplemento e orientação aparecem na ficha", async ({ 
 
   await tocarAba(page, "Prescrições");
   await veTexto(page, suplemento);
-  await veTexto(page, orientacao);
   await conferirAcessibilidade(page, "Ficha: Prescrições");
+  // Suplementos e Orientações são seções da aba, trocadas por chip (FilterChip: no DOM pode sair como checkbox).
+  await clicar(page, page.getByRole("checkbox", { name: "Orientações", exact: true }).or(botao(page, "Orientações")).first());
+  await veTexto(page, orientacao);
+  await conferirAcessibilidade(page, "Ficha: Prescrições, Orientações");
 });
 
 test("H-02 e H-06: consulta online realizada vira declaração conferível", async ({ page, browser }) => {
