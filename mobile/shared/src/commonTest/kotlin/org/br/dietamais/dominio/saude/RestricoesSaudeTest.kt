@@ -28,7 +28,7 @@ class RestricoesSaudeTest {
         assertEquals(setOf("FRUTOS_DO_MAR"), RestricoesSaude.sugerirMarcadores("Camarão"))
         assertEquals(setOf("OVO"), RestricoesSaude.sugerirMarcadores("Ovos"))
         assertEquals(emptySet(), RestricoesSaude.sugerirMarcadores("Novo remédio"))
-        assertEquals(emptySet(), RestricoesSaude.sugerirMarcadores("Polvo"))
+        assertEquals(setOf("FRUTOS_DO_MAR"), RestricoesSaude.sugerirMarcadores("Polvo")) // polvo é fruto do mar e não liga OVO
         assertEquals(emptySet(), RestricoesSaude.sugerirMarcadores(" "))
     }
 
