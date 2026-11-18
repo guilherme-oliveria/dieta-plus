@@ -22,7 +22,8 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVoltar: () -> Unit, aoConvidar: () -> Unit,
-    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> }) {
+    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> },
+    resumoExtra: @Composable (PacienteResposta) -> Unit = {}) {
     val paciente = estado.selecionado
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.margemCompacta), verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
@@ -63,6 +64,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                         BotaoContornado(stringResource(Res.string.ficha_atalho_graficos), { aoAba(AbaFicha.EVOLUCAO) }, Modifier.weight(1f))
                     }
                     estado.resumos?.get(paciente.vinculoId)?.ultimaAvaliacao?.let { u -> CartaoUltimaAvaliacao(u) { aoAba(AbaFicha.AVALIACOES) } }
+                    resumoExtra(paciente) // MOB-89: adesão, humor e fora do plano
                     CardDieta(Modifier.fillMaxWidth()) {
                     DadoFicha(stringResource(Res.string.auth_email), paciente.email)
                     DadoFicha(stringResource(Res.string.pacientes_nascimento), paciente.dataNascimento?.let { "${it.day.toString().padStart(2, '0')}/${(it.month.ordinal + 1).toString().padStart(2, '0')}/${it.year}" })

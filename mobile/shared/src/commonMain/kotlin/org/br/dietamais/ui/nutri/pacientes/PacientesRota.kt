@@ -14,7 +14,8 @@ import kotlin.uuid.Uuid
 @Composable
 fun PacientesRota(viewModel: PacientesViewModel, classe: WindowSizeClass, vinculoId: String?,
     aoAbrir: (String, String) -> Unit, aoVoltar: () -> Unit,
-    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> }) {
+    abaConteudo: @Composable (AbaFicha, PacienteResposta) -> Unit = { _, _ -> },
+    resumoExtra: @Composable (PacienteResposta) -> Unit = {}) {
     val estado by viewModel.estado.collectAsState()
     LaunchedEffect(vinculoId) { viewModel.selecionar(vinculoId?.let(Uuid::parse)) }
     LayoutListaDetalhe(classe, mostrarDetalhe = vinculoId != null,
@@ -22,7 +23,7 @@ fun PacientesRota(viewModel: PacientesViewModel, classe: WindowSizeClass, vincul
             viewModel::atualizar, { aoAbrir(it.id.toString(), it.vinculoId.toString()) }, viewModel::mudarFiltroAtencao, viewModel::alternarFixado, viewModel::limparFiltros, viewModel::mudarOrdem,
             largo = classe.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) },
         detalhe = {
-            if (vinculoId != null) PacienteFichaTela(estado, viewModel::mudarAba, aoVoltar, viewModel::gerarConvite, abaConteudo)
+            if (vinculoId != null) PacienteFichaTela(estado, viewModel::mudarAba, aoVoltar, viewModel::gerarConvite, abaConteudo, resumoExtra)
             else EstadoVazio(mensagem = stringResource(Res.string.selecione_paciente))
         })
     if (estado.formulario != null) ModalBottomSheet(onDismissRequest = viewModel::fecharCriacao) {

@@ -43,3 +43,12 @@ data class RegistroForaDoPlanoResposta(val id: Uuid, val data: LocalDate, val te
 /** Médias da semana de fome e sensação (BE-73), em `GET /pacientes/{id}/adesao`. */
 @Serializable
 data class HumorAdesaoDto(val mediaFomeAntes: Double? = null, val mediaSensacaoDepois: Double? = null, val registros: Int)
+
+/** Uma janela de `GET /pacientes/{id}/adesao`; [percentual] é nulo quando não há refeição esperada. */
+@Serializable
+data class JanelaAdesaoDto(val dias: Int, val esperadas: Int, val feitas: Int, val trocadas: Int, val puladas: Int, val percentual: Double? = null)
+
+/** `GET /pacientes/{id}/adesao` (BE-50, BE-73). [humor] e [foraDoPlano] são opcionais (1.4.0). */
+@Serializable
+data class AdesaoDto(val pacienteId: Uuid, val dias7: JanelaAdesaoDto, val dias30: JanelaAdesaoDto, val humor: HumorAdesaoDto? = null,
+    val foraDoPlano: List<RegistroForaDoPlanoResposta>? = null)

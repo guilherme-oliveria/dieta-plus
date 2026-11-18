@@ -1753,4 +1753,22 @@
     <string name="presc_msg_arquivada">Orientação arquivada.</string>
     <string name="presc_msg_modelo_excluido">Modelo excluído.</string>
     <string name="pdf_dieta_suplementos">PDF com suplementos</string>
+    <string name="adesao_titulo">Adesão · últimos 7 dias</string>
+    <string name="adesao_registradas">Refeições registradas</string>
+    <string name="adesao_registradas_valor">%1$d de %2$d</string>
+    <string name="adesao_humor">Humor da semana</string>
+    <string name="adesao_humor_periodo_um">%1$s a %2$s · 1 resposta</string>
+    <string name="adesao_humor_periodo">%1$s a %2$s · %3$d respostas</string>
+    <string name="adesao_fome">Fome antes</string>
+    <string name="adesao_depois">Depois de comer</string>
+    <string name="adesao_media">%1$s de 5 · %2$s</string>
+    <string name="adesao_sem_resposta">Sem resposta</string>
+    <string name="adesao_humor_vazio">O paciente ainda não respondeu fome e sensação nesta semana.</string>
+    <string name="adesao_humor_ajuda">Escala de 1 a 5. Só conta as refeições em que o paciente respondeu.</string>
+    <string name="adesao_fora">Fora do plano</string>
+    <string name="adesao_fora_qtd">%1$d na semana</string>
+    <string name="adesao_fora_vazio">Nenhum registro fora do plano nesta semana.</string>
+    <string name="adesao_fora_quando">%1$s %2$s, %3$s</string>
+    <string name="adesao_sem_conexao">Sem conexão. A adesão aparece quando a internet voltar.</string>
+    <string name="adesao_erro">Não foi possível carregar a adesão.</string>
 </resources>
