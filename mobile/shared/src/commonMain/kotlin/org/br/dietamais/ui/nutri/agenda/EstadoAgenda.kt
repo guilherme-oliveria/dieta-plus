@@ -8,7 +8,8 @@ import org.br.dietamais.dominio.agenda.ErroConsulta
 import org.br.dietamais.dominio.agenda.FormularioConsulta
 import kotlin.uuid.Uuid
 
-enum class ModoAgenda { DIA, SEMANA }
+/** MOB-85: MES mostra o calendário do mês com a lista do dia escolhido. */
+enum class ModoAgenda { DIA, SEMANA, MES }
 
 enum class MensagemAgenda { SEM_CONEXAO, CONFLITO, ASSINATURA_INATIVA, VINCULO_ENCERRADO, NAO_ENCONTRADA, JA_CANCELADA, TAXA_EXCEDIDA, DATA_INVALIDA, ERRO, AGENDADA, REMARCADA, CANCELADA,
     /** MOB-84 (RN-AGE-03/04) */
