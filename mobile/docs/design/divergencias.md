@@ -191,3 +191,9 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Conferido: `CampoNumero` já abria o teclado decimal e a vírgula já era aceita. Faltava a tecla de ação: agora é "Próximo" (leva o foco ao campo seguinte) e "Concluir" no último campo de cada seção de medidas do `AvaliacaoTela`. Nos demais usos de `CampoNumero` (infantil, exames, necessidades) fica "Próximo"; marcar o último campo desses passos fica para quando houver necessidade.
 - Sem mudança visual: nada a atualizar no canvas.
+
+## MOB-82 · Saúde e restrições na ficha (18/11/2026)
+
+- Artboards `A-Saude-Ficha` e `A-Saude-Item` (DES-16). O formulário do item abre dentro da aba "Saúde", no lugar da lista, como no artboard; não é uma folha sobreposta.
+- Marcadores da folha: o artboard mostra "Castanhas", que não existe como marcador de alimento no backend (BE-69); ficou de fora. "Soja" entrou, porque o backend tem. "Leite" aparece como "Leite e lactose" (`CONTEM_LACTOSE`).
+- Cada item ganhou "Remover" ao lado de "Editar", com confirmação; o artboard só mostra "Editar".

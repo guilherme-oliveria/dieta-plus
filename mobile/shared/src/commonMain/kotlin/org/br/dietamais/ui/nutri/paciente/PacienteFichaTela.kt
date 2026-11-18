@@ -35,6 +35,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                     Text(paciente.nome, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f).semantics { heading() })
                 }
                 StatusPaciente(paciente.status)
+                SeloSaudeFicha(paciente.restricoesSaude)
                 if (estado.semConexao) FaixaOffline()
                 estado.erro?.let { MensagemPaciente(it, alerta = true) }
                 estado.aviso?.let { MensagemPaciente(it) }
@@ -43,6 +44,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                     AbaFicha.entries.forEach { aba -> Tab(selected = estado.abaFicha == aba, onClick = { aoAba(aba) },
                         text = { Text(stringResource(when (aba) {
                             AbaFicha.RESUMO -> Res.string.pacientes_resumo
+                            AbaFicha.SAUDE -> Res.string.pacientes_saude
                             AbaFicha.AVALIACOES -> Res.string.pacientes_avaliacoes
                             AbaFicha.EVOLUCAO -> Res.string.pacientes_evolucao
                             AbaFicha.DIETA -> Res.string.aba_dieta
@@ -50,7 +52,7 @@ fun PacienteFichaTela(estado: EstadoPacientes, aoAba: (AbaFicha) -> Unit, aoVolt
                             AbaFicha.ANAMNESE -> Res.string.pacientes_anamnese
                         })) }) }
                 }
-                if (estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
+                if (estado.abaFicha == AbaFicha.SAUDE || estado.abaFicha == AbaFicha.LISTA || estado.abaFicha == AbaFicha.DIETA || estado.abaFicha == AbaFicha.AVALIACOES || estado.abaFicha == AbaFicha.EVOLUCAO) abaConteudo(estado.abaFicha, paciente)
                 else if (estado.abaFicha != AbaFicha.RESUMO) EstadoVazio()
                 else {
                     // Atalhos dentro do Resumo (abaixo das abas): acima delas, ao trocar de aba a faixa sumia e as abas pulavam de lugar.
