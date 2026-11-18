@@ -29,6 +29,9 @@ class AcoesMontador(
     val aoAdicionarItem: (Uuid, Uuid) -> Unit = { _, _ -> }, val aoRemoverItem: (Uuid, Uuid) -> Unit = { _, _ -> },
     val aoPorcoes: (Uuid, Uuid, String) -> Unit = { _, _, _ -> }, val aoSalvar: () -> Unit = {}, val aoPublicar: () -> Unit = {},
     val aoConfirmarPublicacao: () -> Unit = {}, val aoCancelarPublicacao: () -> Unit = {}, val aoDuplicar: () -> Unit = {},
+    // MOB-83: alergia e intolerância da ficha
+    val aoRevisarAlergia: (Uuid, Uuid) -> Unit = { _, _ -> }, val aoConfirmarAlergia: () -> Unit = {}, val aoCancelarAlergia: () -> Unit = {},
+    val aoDesfazerConfirmacao: (Uuid, Uuid) -> Unit = { _, _ -> }, val aoTrocarAlimento: (Uuid, Uuid) -> Unit = { _, _ -> },
 )
 
 @Composable
@@ -47,6 +50,7 @@ fun MontarDietaTela(estado: EstadoDieta, acoes: AcoesMontador, classe: WindowSiz
                 Resumo(estado, rascunho, acoes, comBotoes = false); Corpo(estado, rascunho, acoes)
             }
             val habilitado = estado.online
+            if (rascunho.editavel && estado.alergiasSemConfirmacao > 0) Box(Modifier.fillMaxWidth().padding(horizontal = Dimens.margemCompacta)) { AvisoAlergiasPendentes(estado.alergiasSemConfirmacao) }
             RodapeAcoes {
                 if (rascunho.editavel) {
                     BotaoContornado(stringResource(Res.string.dieta_publicar), acoes.aoPublicar, Modifier.weight(1f), habilitado = habilitado && podePublicar(estado, rascunho))
@@ -60,6 +64,7 @@ fun MontarDietaTela(estado: EstadoDieta, acoes: AcoesMontador, classe: WindowSiz
         text = { Text(stringResource(Res.string.dieta_publicar_resumo, formatar(estado.totais.kcalReais), rascunho.refeicoes.size)) },
         confirmButton = { BotaoPrincipal(stringResource(Res.string.dieta_publicar), acoes.aoConfirmarPublicacao, carregando = estado.enviando) },
         dismissButton = { BotaoTexto(stringResource(Res.string.dieta_cancelar), acoes.aoCancelarPublicacao) })
+    ConfirmarAlergiaDialogo(estado, acoes)
 }
 
 @Composable
@@ -69,6 +74,7 @@ private fun ColumnScope.Resumo(estado: EstadoDieta, r: RascunhoDieta, a: AcoesMo
     Text(stringResource(textoStatus(r.status)), style = MaterialTheme.typography.labelLarge)
     if (r.versao != null && estado.pendente(r.dietaId)) SeloPendenteEnvio()
     if (estado.semConexao) FaixaOffline()
+    FaixaRestricoesFicha(estado.restricoes)
     estado.erro?.let { Text(textoMensagemDieta(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
     estado.aviso?.let { Text(textoMensagemDieta(it), style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
     CardDieta(Modifier.fillMaxWidth().testTag("totais-dieta")) {
@@ -81,6 +87,7 @@ private fun ColumnScope.Resumo(estado: EstadoDieta, r: RascunhoDieta, a: AcoesMo
         if (comBotoes) {
             BotaoPrincipal(stringResource(Res.string.dieta_salvar), a.aoSalvar, Modifier.fillMaxWidth(), habilitado = estado.podeSalvar && r.alterado, carregando = estado.enviando)
             BotaoContornado(stringResource(Res.string.dieta_publicar), a.aoPublicar, Modifier.fillMaxWidth(), habilitado = habilitado && podePublicar(estado, r))
+            AvisoAlergiasPendentes(estado.alergiasSemConfirmacao)
         }
         if (r.versao == null || r.alterado) Text(stringResource(Res.string.dieta_salvar_antes), style = MaterialTheme.typography.bodySmall)
     } else if (comBotoes) BotaoContornado(stringResource(Res.string.dieta_duplicar), a.aoDuplicar, Modifier.fillMaxWidth(), habilitado = habilitado)
@@ -103,6 +110,8 @@ private fun ColumnScope.Corpo(estado: EstadoDieta, r: RascunhoDieta, a: AcoesMon
                 alimento?.let { Text(it.medidaCaseira, style = MaterialTheme.typography.bodySmall) }
                 CampoTexto(stringResource(Res.string.dieta_porcoes), item.porcoes, { a.aoPorcoes(ref.chave, item.chave, it) }, Modifier.fillMaxWidth(), habilitado = editavel,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), erro = estado.errosCampos["porcoes:${item.chave}"]?.let { textoMensagemDieta(it) })
+                AlertasDoItem(estado.alertas[item.chave].orEmpty(), item, editavel, { a.aoRevisarAlergia(ref.chave, item.chave) },
+                    { a.aoTrocarAlimento(ref.chave, item.chave) }, { a.aoDesfazerConfirmacao(ref.chave, item.chave) })
                 if (editavel) BotaoTexto(stringResource(Res.string.dieta_remover_item), { a.aoRemoverItem(ref.chave, item.chave) })
             }
             val total = estado.totaisRefeicao[ref.chave] ?: TotaisCent()
@@ -143,8 +152,8 @@ internal fun formatar(valor: Double): String {
     return "$inteiro,$frac"
 }
 
-/** MOB-29b: publicar exige a versão que o servidor já conhece; com edição na fila, espera o envio. */
-private fun podePublicar(estado: EstadoDieta, r: RascunhoDieta) = r.versao != null && !r.alterado && !estado.pendente(r.dietaId)
+/** MOB-29b: publicar exige a versão que o servidor já conhece; com edição na fila, espera o envio. MOB-83: e nenhuma alergia sem confirmação. */
+private fun podePublicar(estado: EstadoDieta, r: RascunhoDieta) = r.versao != null && !r.alterado && !estado.pendente(r.dietaId) && estado.alergiasSemConfirmacao == 0
 
 /** Selo "Aguardando envio" (mesmo texto da tela de pendências): gravada no aparelho, ainda não no servidor. */
 @Composable
@@ -183,4 +192,5 @@ fun textoMensagemDieta(mensagem: MensagemDieta): String = stringResource(when (m
     MensagemDieta.SALVA_NO_APARELHO -> Res.string.dieta_salva_no_aparelho
     MensagemDieta.PENDENTE_DE_ENVIO -> Res.string.dieta_erro_pendente_envio
     MensagemDieta.DESCARTADA -> Res.string.dieta_descartada
+    MensagemDieta.ALERGIA_NAO_CONFIRMADA -> Res.string.dieta_erro_alergia
 })

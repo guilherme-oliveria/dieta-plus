@@ -75,6 +75,85 @@ class AgendaTest {
     @Test fun remarcarPreencheOFormularioNoFusoLocal() {
         val c = consultaFalsa(paciente, Instant.parse("2026-10-29T17:30:00Z"), 45, TipoConsulta.ONLINE, lugar = "https://meet.exemplo.invalid/x", versao = 3)
         val f = formularioDe(c, fuso)
-        assertEquals(FormularioConsulta(c.id, 3, paciente, "29/10/2026", "14:30", "45", TipoConsulta.ONLINE, "https://meet.exemplo.invalid/x"), f)
+        // C-02 (MOB-84): o tipo legado ONLINE abre como Retorno + Online, com o link antigo que estava em `lugar`
+        assertEquals(FormularioConsulta(c.id, 3, paciente, "29/10/2026", "14:30", "45", TipoConsulta.RETORNO, "https://meet.exemplo.invalid/x",
+            modalidade = ModalidadeConsulta.ONLINE, link = "https://meet.exemplo.invalid/x"), f)
+    }
+
+    @Test fun remarcarTrazModalidadeLinkETextosDaConsulta() {
+        val c = consultaFalsa(paciente, Instant.parse("2026-10-29T17:30:00Z"), 50, TipoConsulta.AVALIACAO).copy(modalidade = ModalidadeConsulta.ONLINE,
+            linkOnline = "https://meet.exemplo.invalid/y", orientacaoPaciente = "Venha em jejum", observacaoInterna = "Revisar adesão")
+        val f = formularioDe(c, fuso)
+        assertEquals(TipoConsulta.AVALIACAO, f.tipo); assertEquals(ModalidadeConsulta.ONLINE, f.modalidade); assertEquals("https://meet.exemplo.invalid/y", f.link)
+        assertEquals("Venha em jejum", f.orientacao); assertEquals("Revisar adesão", f.observacao)
+        assertEquals(ModalidadeConsulta.PRESENCIAL, formularioDe(consultaFalsa(paciente, c.inicio), fuso).modalidade)
+    }
+
+    @Test fun linkSoHttpsComHostEAte300Caracteres() {
+        assertTrue(linkValido("https://meet.google.com/abc-defg-hij")); assertTrue(linkValido(" https://zoom.us/j/1 "))
+        assertFalse(linkValido("http://meet.google.com/abc")); assertFalse(linkValido("meet.google.com/abc")); assertFalse(linkValido("https://"))
+        assertFalse(linkValido("https://exemplo.invalid/a b")); assertFalse(linkValido("https://exemplo.invalid/" + "a".repeat(300)))
+        val base = FormularioConsulta(pacienteId = paciente, data = "29/10/2026", hora = "14:30")
+        assertEquals(setOf(ErroConsulta.LINK), validarFormulario(base.copy(modalidade = ModalidadeConsulta.ONLINE, link = "http://x.invalid"), fuso, agoraFalso).erros)
+        assertTrue(validarFormulario(base.copy(modalidade = ModalidadeConsulta.ONLINE), fuso, agoraFalso).erros.isEmpty()) // link é opcional
+        assertTrue(validarFormulario(base.copy(link = "http://x.invalid"), fuso, agoraFalso).erros.isEmpty()) // presencial ignora o link
+    }
+
+    @Test fun statusRealizadaEFaltaSeguemAsTransicoes() {
+        val agendada = consultaFalsa(paciente, agoraFalso)
+        assertTrue(podeMarcar(agendada, StatusConsulta.REALIZADA)); assertTrue(podeMarcar(agendada, StatusConsulta.FALTA))
+        assertTrue(podeMarcar(agendada.copy(status = StatusConsulta.REALIZADA), StatusConsulta.FALTA))
+        assertFalse(podeMarcar(agendada.copy(status = StatusConsulta.REALIZADA), StatusConsulta.REALIZADA))
+        assertTrue(podeMarcar(agendada.copy(status = StatusConsulta.FALTA), StatusConsulta.REALIZADA))
+        assertFalse(podeMarcar(agendada.copy(status = StatusConsulta.CANCELADA), StatusConsulta.REALIZADA))
+        assertFalse(podeMarcar(agendada, StatusConsulta.CANCELADA))
+        assertEquals(ComparecimentoConsulta.COMPARECEU, comparecimentoDoStatus(StatusConsulta.REALIZADA))
+        assertEquals(ComparecimentoConsulta.FALTOU, comparecimentoDoStatus(StatusConsulta.FALTA)); assertNull(comparecimentoDoStatus(StatusConsulta.AGENDADA))
+    }
+
+    // MOB-85: visão do mês
+    @Test fun gradeDoMesComecaNoDomingoECompletaASemana() {
+        val novembro = gradeDoMes(LocalDate(2026, 11, 19)) // 1/11/2026 é domingo
+        assertEquals(LocalDate(2026, 11, 1), novembro.first()); assertEquals(35, novembro.size)
+        assertEquals(30, novembro.count { it != null }); assertNull(novembro.last())
+        val outubro = gradeDoMes(quarta) // 1/10/2026 é quinta: 4 vazios antes
+        assertEquals(List(4) { null }, outubro.take(4)); assertEquals(LocalDate(2026, 10, 1), outubro[4]); assertEquals(0, outubro.size % 7)
+        val fevereiro = gradeDoMes(LocalDate(2026, 2, 10)) // 1/2/2026 é domingo, 28 dias: 4 semanas exatas
+        assertEquals(28, fevereiro.size); assertTrue(fevereiro.all { it != null })
+    }
+
+    @Test fun contagemPorDiaIgnoraCanceladaEOutroMes() {
+        val lista = listOf(consultaFalsa(paciente, hora(9)), consultaFalsa(paciente, hora(15)), consultaFalsa(paciente, hora(11), status = StatusConsulta.CANCELADA),
+            consultaFalsa(paciente, Instant.parse("2026-11-03T13:00:00Z")))
+        assertEquals(mapOf(quarta to 2), consultasPorDiaDoMes(lista, quarta, fuso))
+        assertEquals(mapOf(LocalDate(2026, 11, 3) to 1), consultasPorDiaDoMes(lista, LocalDate(2026, 11, 20), fuso))
+    }
+
+    @Test fun linhasDoDiaJuntamConsultasEHorariosLivresSemRepetir() {
+        val nove = consultaFalsa(paciente, hora(9), 50); val quinze = consultaFalsa(paciente, hora(15), 60)
+        val cancelada = consultaFalsa(paciente, hora(12), status = StatusConsulta.CANCELADA)
+        val linhas = linhasDoDia(listOf(quinze, nove, cancelada), quarta, fuso, agora = hora(7))
+        // 8h livre; 9h ocupada; 10h a 14h livres viram uma linha (a cancelada não ocupa); 15h ocupada; 16h e 17h viram uma
+        assertEquals(listOf("L8", "C${nove.id}", "L10", "C${cancelada.id}", "C${quinze.id}", "L16"), linhas.map { if (it is LinhaDoDia.Livre) "L${it.hora}" else "C${(it as LinhaDoDia.Consulta).consulta.id}" })
+    }
+
+    @Test fun horarioQueJaPassouNaoEOferecido() {
+        val linhas = linhasDoDia(emptyList(), quarta, fuso, agora = hora(13, 30))
+        assertEquals(listOf(LinhaDoDia.Livre(14)), linhas)
+        assertTrue(linhasDoDia(emptyList(), quarta, fuso, agora = hora(20)).isEmpty())
+        // consulta das 9h30 bloqueia 9h e 10h (sobrepõe as duas horas)
+        val meia = consultaFalsa(paciente, hora(9, 30), 50)
+        assertEquals(listOf(8, 11), linhasDoDia(listOf(meia), quarta, fuso, agora = hora(7)).filterIsInstance<LinhaDoDia.Livre>().map { it.hora })
+    }
+
+    // MOB-87: visão do paciente
+    @Test fun consultaDoPacienteResolveLegadoLinkELocalSemObservacao() {
+        val legado = consultaFalsa(paciente, hora(14), tipo = TipoConsulta.ONLINE, lugar = "https://meet.exemplo.invalid/x").copy(observacaoInterna = "só a nutri")
+        val v = consultaDoPaciente(legado, fuso)
+        assertEquals(TipoConsulta.RETORNO, v.tipo); assertEquals(ModalidadeConsulta.ONLINE, v.modalidade); assertEquals("https://meet.exemplo.invalid/x", v.link); assertNull(v.lugar)
+        val presencial = consultaFalsa(paciente, hora(14), lugar = "Sala 2").copy(modalidade = ModalidadeConsulta.PRESENCIAL, linkOnline = "https://meet.exemplo.invalid/y", orientacaoPaciente = "  ")
+        val p = consultaDoPaciente(presencial, fuso)
+        assertNull(p.link); assertEquals("Sala 2", p.lugar); assertNull(p.orientacao)
+        assertNull(consultaDoPaciente(legado.copy(lugar = "http://inseguro.invalid"), fuso).link)
     }
 }

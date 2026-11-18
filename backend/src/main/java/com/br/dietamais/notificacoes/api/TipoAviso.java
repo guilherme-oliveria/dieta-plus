@@ -6,7 +6,7 @@ import com.br.dietamais.comum.api.Perfil;
 public enum TipoAviso {
 	NOVA_DIETA("NOVA_DIETA",Perfil.PACIENTE,"Nova dieta","Sua nutricionista publicou uma nova dieta."),
 	QUESTIONARIO_ENVIADO("QUESTIONARIO_ENVIADO",Perfil.PACIENTE,"Novo questionário","Você tem um questionário para responder."),
-	CONSULTA_AMANHA("CONSULTA_AMANHA",null,"Consulta em breve","Você tem uma consulta nas próximas 24 horas."),
+	CONSULTA_AMANHA("CONSULTA_AMANHA",null,"Consulta em breve","Você tem uma consulta em breve. Veja os detalhes no app."),
 	QUESTIONARIO_RESPONDIDO("QUESTIONARIO_RESPONDIDO",Perfil.NUTRICIONISTA,"Questionário respondido","Um paciente respondeu a um questionário."),
 	PACIENTE_SEM_CHECKIN("PACIENTE_SEM_CHECKIN",Perfil.NUTRICIONISTA,"Paciente sem registros","Um paciente está há dias sem registrar refeições."),
 	ASSINATURA("ASSINATURA",Perfil.NUTRICIONISTA,"Assinatura","Há uma novidade sobre a sua assinatura."),

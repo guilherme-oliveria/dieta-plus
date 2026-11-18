@@ -1,0 +1,11 @@
+{
+  "type": "https://dietamais.com.br/erros/documento-ja-anulado",
+  "title": "Erro de exemplo",
+  "status": 422,
+  "detail": "Mensagem fictícia; o cliente decide pelo codigo.",
+  "codigo": "DOCUMENTO_JA_ANULADO",
+  "regra": "RN-DOC-02",
+  "campos": [],
+  "traceId": "0000000000000001",
+  "atual": null
+}

@@ -1,0 +1,10 @@
+{
+  "id": "019b0000-0000-7000-8000-000000000012",
+  "tipo": "ATESTADO",
+  "nome": "Atestado",
+  "texto": "Atesto que {{paciente}} está em acompanhamento nutricional.",
+  "doSistema": true,
+  "versao": 1,
+  "criadoEm": "2026-11-20T12:00:00Z",
+  "atualizadoEm": "2026-11-20T12:00:00Z"
+}

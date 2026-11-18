@@ -20,7 +20,8 @@ import org.jetbrains.compose.resources.stringResource
 fun DietasPacienteRota(viewModel: MontadorDietaViewModel, paciente: PacienteResposta, planejador: PlanejadorPorcoesViewModel? = null, modelos: ModelosDietaViewModel? = null,
     aplicar: AplicarModeloViewModel? = null, editorModelo: PlanejadorPorcoesViewModel? = null, adaptadorModelo: DietasDeModelo? = null) {
     val estado by viewModel.estado.collectAsState()
-    LaunchedEffect(paciente.id) { viewModel.abrirPaciente(paciente.id) }
+    // MOB-83: as restrições da ficha alimentam os alertas do montador (mudam sem trocar de paciente)
+    LaunchedEffect(paciente.id, paciente.restricoesSaude) { viewModel.abrirPaciente(paciente.id, paciente.restricoesSaude) }
     val pdf = koinInject<PortaPdf>()
     val plano = planejador?.estado?.collectAsState()?.value
     val biblioteca = modelos?.estado?.collectAsState()?.value
@@ -82,7 +83,9 @@ fun DietasPacienteRota(viewModel: MontadorDietaViewModel, paciente: PacienteResp
             viewModel::removerRefeicao, viewModel::moverRefeicao, viewModel::mudarNomeRefeicao, viewModel::mudarHorario, viewModel::abrirSeletor,
             viewModel::mudarBusca, viewModel::mudarGrupoFiltro, viewModel::adicionarItem, viewModel::removerItem, viewModel::mudarPorcoes,
             viewModel::salvar, viewModel::pedirPublicacao, viewModel::confirmarPublicacao, viewModel::cancelarPublicacao,
-            { estado.dietas.firstOrNull { it.id == estado.rascunho?.dietaId }?.let(viewModel::duplicar); viewModel.fechar() }))
+            { estado.dietas.firstOrNull { it.id == estado.rascunho?.dietaId }?.let(viewModel::duplicar); viewModel.fechar() },
+            aoRevisarAlergia = viewModel::revisarAlergia, aoConfirmarAlergia = viewModel::confirmarAlergia, aoCancelarAlergia = viewModel::cancelarRevisaoAlergia,
+            aoDesfazerConfirmacao = viewModel::desfazerConfirmacao, aoTrocarAlimento = viewModel::trocarAlimento))
     }
 }
 

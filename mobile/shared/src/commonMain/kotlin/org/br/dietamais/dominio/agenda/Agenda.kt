@@ -2,6 +2,7 @@ package org.br.dietamais.dominio.agenda
 
 import kotlinx.datetime.*
 import org.br.dietamais.data.remoto.dto.ConsultaResposta
+import org.br.dietamais.data.remoto.dto.ModalidadeConsulta
 import org.br.dietamais.data.remoto.dto.StatusConsulta
 import org.br.dietamais.data.remoto.dto.TipoConsulta
 import kotlin.time.Duration.Companion.minutes
@@ -24,6 +25,55 @@ fun diasDaSemana(dia: LocalDate): List<LocalDate> = inicioDaSemana(dia).let { se
 /** Dias da semana com a lista (possivelmente vazia) de consultas de cada um. */
 fun consultasDaSemana(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone): List<Pair<LocalDate, List<ConsultaResposta>>> =
     diasDaSemana(dia).map { it to consultasDoDia(consultas, it, fuso) }
+
+/**
+ * MOB-85: grade do mês começando no domingo (como no artboard `A-Agenda-Mes`). Posições antes do dia 1 e depois do último dia são nulas;
+ * o tamanho é sempre múltiplo de 7.
+ */
+fun gradeDoMes(dia: LocalDate): List<LocalDate?> {
+    val primeiro = LocalDate(dia.year, dia.month, 1)
+    val ultimo = primeiro.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    val antes = (primeiro.dayOfWeek.ordinal + 1) % 7 // domingo = 0
+    val dias = (1..ultimo.day).map { LocalDate(dia.year, dia.month, it) }
+    val celulas = List<LocalDate?>(antes) { null } + dias
+    return celulas + List((7 - celulas.size % 7) % 7) { null }
+}
+
+/** Consultas não canceladas por dia do mês de `dia` (dias sem consulta ficam fora do mapa). */
+fun consultasPorDiaDoMes(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone): Map<LocalDate, Int> =
+    consultas.filter { it.status != StatusConsulta.CANCELADA }.map { diaLocal(it.inicio, fuso) }
+        .filter { it.year == dia.year && it.month == dia.month }.groupingBy { it }.eachCount()
+
+/** Linha da lista do dia na visão do mês: uma consulta ou um horário livre (hora cheia) que abre a nova consulta já preenchida. */
+sealed interface LinhaDoDia {
+    val minutoDoDia: Int
+    data class Consulta(val consulta: ConsultaResposta, override val minutoDoDia: Int) : LinhaDoDia
+    data class Livre(val hora: Int) : LinhaDoDia { override val minutoDoDia get() = hora * 60 }
+}
+
+/** Expediente padrão para sugerir horário livre na visão do mês (MOB-85). */
+const val EXPEDIENTE_INICIO = 8
+const val EXPEDIENTE_FIM = 18
+
+/**
+ * MOB-85: consultas do dia (inclusive canceladas, como na visão do dia) e os horários livres do expediente em hora cheia.
+ * Horas livres seguidas viram uma linha só (a primeira do intervalo), para a lista não crescer; horário que já passou não é oferecido.
+ */
+fun linhasDoDia(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone, agora: Instant,
+    inicio: Int = EXPEDIENTE_INICIO, fim: Int = EXPEDIENTE_FIM): List<LinhaDoDia> {
+    val doDia = consultasDoDia(consultas, dia, fuso)
+    val ocupadas = doDia.filter { it.status != StatusConsulta.CANCELADA }
+    val livres = mutableListOf<LinhaDoDia.Livre>()
+    var anteriorLivre = false
+    for (h in inicio until fim) {
+        val comeco = LocalDateTime(dia, LocalTime(h, 0)).toInstant(fuso)
+        val livre = comeco >= agora && ocupadas.none { it.inicio < comeco + 60.minutes && comeco < it.fim }
+        if (livre && !anteriorLivre) livres += LinhaDoDia.Livre(h)
+        anteriorLivre = livre
+    }
+    val linhas = doDia.map { c -> c.inicio.toLocalDateTime(fuso).let { LinhaDoDia.Consulta(c, it.hour * 60 + it.minute) } } + livres
+    return linhas.sortedBy { it.minutoDoDia }
+}
 
 /** Próxima consulta ainda por vir (ou em andamento) que não foi cancelada. */
 fun proximaConsulta(consultas: List<ConsultaResposta>, agora: Instant): ConsultaResposta? =
@@ -56,11 +106,30 @@ fun lerHora(texto: String): Pair<Int, Int>? {
     return if (h in 0..23 && m in 0..59 && partes[1].trim().length == 2) h to m else null
 }
 
-enum class ErroConsulta { PACIENTE, DATA, HORA, DURACAO, PASSADO }
+enum class ErroConsulta { PACIENTE, DATA, HORA, DURACAO, PASSADO, LINK }
 
-/** `id`/`versao` nulos = consulta nova. Data e hora no fuso do aparelho. */
+/**
+ * `id`/`versao` nulos = consulta nova. Data e hora no fuso do aparelho.
+ * MOB-84 (RN-AGE-04): [modalidade] separada do tipo; [link] só vale com modalidade online; [orientacao] o paciente vê; [observacao] só a nutri.
+ */
 data class FormularioConsulta(val id: Uuid? = null, val versao: Long? = null, val pacienteId: Uuid? = null, val data: String = "", val hora: String = "",
-    val duracao: String = "50", val tipo: TipoConsulta = TipoConsulta.RETORNO, val lugar: String = "", val chave: Uuid? = null)
+    val duracao: String = "50", val tipo: TipoConsulta = TipoConsulta.RETORNO, val lugar: String = "", val chave: Uuid? = null,
+    val modalidade: ModalidadeConsulta = ModalidadeConsulta.PRESENCIAL, val link: String = "", val orientacao: String = "", val observacao: String = "") {
+    override fun toString() = "FormularioConsulta(id=$id, tipo=$tipo, modalidade=$modalidade)"
+}
+
+/** RN-AGE-04: até 300 caracteres. */
+const val LIMITE_LINK = 300
+/** RN-AGE-04: orientação para o paciente até 2.000 caracteres (a observação interna segue o mesmo limite no app). */
+const val LIMITE_TEXTO_CONSULTA = 2000
+
+/** RN-AGE-04: link só `https`, com host, até 300 caracteres. O backend decide (`LINK_INVALIDO`); aqui é só feedback. */
+fun linkValido(texto: String): Boolean {
+    val t = texto.trim()
+    if (t.length > LIMITE_LINK || !t.startsWith("https://", ignoreCase = true)) return false
+    val host = t.substring(8).takeWhile { it != '/' && it != '?' && it != '#' }.substringAfterLast('@').substringBefore(':')
+    return host.isNotBlank() && t.none { it.isWhitespace() }
+}
 
 data class ResultadoFormulario(val inicio: Instant?, val duracaoMin: Int?, val erros: Set<ErroConsulta>)
 
@@ -75,8 +144,36 @@ fun validarFormulario(f: FormularioConsulta, fuso: TimeZone, agora: Instant, exi
     if (duracao == null) erros += ErroConsulta.DURACAO
     val inicio = if (data != null && hora != null) data.atTime(hora.first, hora.second).toInstant(fuso) else null
     if (inicio != null && inicio < agora - TOLERANCIA) erros += ErroConsulta.PASSADO
+    if (f.modalidade == ModalidadeConsulta.ONLINE && f.link.isNotBlank() && !linkValido(f.link)) erros += ErroConsulta.LINK
     return ResultadoFormulario(inicio, duracao, erros)
 }
 
-fun formularioDe(consulta: ConsultaResposta, fuso: TimeZone) = FormularioConsulta(consulta.id, consulta.versao, consulta.pacienteId,
-    formatarData(diaLocal(consulta.inicio, fuso)), formatarHora(consulta.inicio, fuso), consulta.duracaoMin.toString(), consulta.tipo, consulta.lugar.orEmpty())
+/** C-02: o tipo legado `ONLINE` abre como Retorno + Online (o link antigo ficava em `lugar`). */
+fun formularioDe(consulta: ConsultaResposta, fuso: TimeZone): FormularioConsulta {
+    val legadoOnline = consulta.tipo == TipoConsulta.ONLINE
+    val modalidade = consulta.modalidade?.takeIf { it != ModalidadeConsulta.OUTRO } ?: if (legadoOnline) ModalidadeConsulta.ONLINE else ModalidadeConsulta.PRESENCIAL
+    val link = consulta.linkOnline ?: consulta.lugar?.takeIf { legadoOnline && linkValido(it) }
+    return FormularioConsulta(consulta.id, consulta.versao, consulta.pacienteId, formatarData(diaLocal(consulta.inicio, fuso)), formatarHora(consulta.inicio, fuso),
+        consulta.duracaoMin.toString(), if (legadoOnline) TipoConsulta.RETORNO else consulta.tipo, consulta.lugar.orEmpty(),
+        modalidade = modalidade, link = link.orEmpty(), orientacao = consulta.orientacaoPaciente.orEmpty(), observacao = consulta.observacaoInterna.orEmpty())
+}
+
+/**
+ * MOB-87 (D-03): o que o paciente vê da consulta. Tipo e modalidade já resolvidos (o tipo legado "Online" vira Retorno + Online, C-02),
+ * link só `https` e só com modalidade online, local que não é o link, e a orientação da nutri. Nunca a observação interna.
+ */
+data class ConsultaDoPaciente(val tipo: TipoConsulta, val modalidade: ModalidadeConsulta, val link: String?, val lugar: String?, val orientacao: String?, val duracaoMin: Int)
+
+fun consultaDoPaciente(consulta: ConsultaResposta, fuso: TimeZone): ConsultaDoPaciente {
+    val f = formularioDe(consulta, fuso)
+    val link = f.link.trim().takeIf { f.modalidade == ModalidadeConsulta.ONLINE && linkValido(it) }
+    val lugar = consulta.lugar?.trim()?.takeIf { it.isNotEmpty() && it != link }
+    return ConsultaDoPaciente(f.tipo, f.modalidade, link, lugar, consulta.orientacaoPaciente?.trim()?.takeIf { it.isNotEmpty() }, consulta.duracaoMin)
+}
+
+/** RN-AGE-03: Realizada e Falta saem de Agendada e se corrigem entre si; Cancelada é final. */
+fun podeMarcar(consulta: ConsultaResposta, destino: StatusConsulta): Boolean = when (destino) {
+    StatusConsulta.REALIZADA -> consulta.status == StatusConsulta.AGENDADA || consulta.status == StatusConsulta.FALTA
+    StatusConsulta.FALTA -> consulta.status == StatusConsulta.AGENDADA || consulta.status == StatusConsulta.REALIZADA
+    else -> false
+}

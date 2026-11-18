@@ -29,7 +29,6 @@ class AcoesModelos(
  */
 @Composable
 fun ModelosDietaTela(estado: EstadoModelos, acoes: AcoesModelos) {
-    val habilitado = !estado.semConexao && !estado.enviando && !estado.carregando
     Surface(Modifier.fillMaxSize().testTag("modelos-dieta"), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
             BarraTopo(stringResource(Res.string.mod_titulo), acoes.aoVoltar, stringResource(Res.string.mod_voltar))
@@ -42,11 +41,11 @@ fun ModelosDietaTela(estado: EstadoModelos, acoes: AcoesModelos) {
                     ChipEscolha(estado.aba == AbaModelos.SISTEMA, { acoes.aoAba(AbaModelos.SISTEMA) }, { Text(stringResource(Res.string.mod_aba_sistema)) })
                     ChipEscolha(estado.aba == AbaModelos.MEUS, { acoes.aoAba(AbaModelos.MEUS) }, { Text(stringResource(Res.string.mod_aba_meus)) })
                 }
-                acoes.aoNovo?.let { novo -> BotaoPrincipal(stringResource(Res.string.mod_novo), novo, habilitado = habilitado) }
+                acoes.aoNovo?.let { novo -> BotaoPrincipal(stringResource(Res.string.mod_novo), novo, habilitado = estado.podeEscrever) }
                 if (estado.aba == AbaModelos.SISTEMA) Text(stringResource(Res.string.mod_somente_leitura), style = MaterialTheme.typography.bodySmall)
                 if (estado.carregando) EstadoCarregando()
                 else if (estado.visiveis.isEmpty()) EstadoVazio(mensagem = stringResource(if (estado.aba == AbaModelos.MEUS) Res.string.mod_vazio_meus else Res.string.mod_vazio_sistema))
-                estado.visiveis.forEach { m -> CartaoModelo(m, habilitado, acoes) }
+                estado.visiveis.forEach { m -> CartaoModelo(m, estado, acoes) }
                 if (estado.erro != null && !estado.carregado) BotaoTexto(stringResource(Res.string.sync_atualizar), acoes.aoRecarregar)
             }
         }
@@ -60,11 +59,12 @@ fun ModelosDietaTela(estado: EstadoModelos, acoes: AcoesModelos) {
 }
 
 @Composable
-private fun CartaoModelo(m: ModeloDietaResposta, habilitado: Boolean, a: AcoesModelos) {
+private fun CartaoModelo(m: ModeloDietaResposta, estado: EstadoModelos, a: AcoesModelos) {
     CardDieta(Modifier.fillMaxWidth().testTag("modelo-${m.id}")) {
         Text(m.titulo, style = MaterialTheme.typography.titleMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno), verticalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
             if (m.doSistema) ChipStatus(EstiloStatus.INFO, texto = stringResource(Res.string.mod_chip_sistema))
+            if (m.id in estado.pendentes) ChipStatus(EstiloStatus.INFO, texto = stringResource(Res.string.dieta_pendente_envio))
             m.restricoes.forEach { ChipStatus(EstiloStatus.DEPOIS, texto = textoRestricao(it)) }
         }
         m.descricao?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
@@ -72,10 +72,10 @@ private fun CartaoModelo(m: ModeloDietaResposta, habilitado: Boolean, a: AcoesMo
         Text(if (kcal != null) stringResource(Res.string.mod_kcal_refeicoes, formatar(kcal), m.refeicoesPrincipais) else stringResource(Res.string.mod_refeicoes, m.refeicoesPrincipais),
             style = MaterialTheme.typography.bodyMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
-            BotaoTexto(stringResource(Res.string.mod_duplicar), { a.aoDuplicar(m) }, habilitado = habilitado)
-            a.aoEditar?.takeIf { ModeloComoDieta.editavel(m) }?.let { editar -> BotaoTexto(stringResource(Res.string.mod_editar), { editar(m) }, habilitado = habilitado) }
-            if (!m.doSistema) BotaoTexto(stringResource(Res.string.mod_apagar), { a.aoApagar(m) }, habilitado = habilitado)
-            a.aoUsar?.let { usar -> BotaoContornado(stringResource(Res.string.mod_usar), { usar(m) }, habilitado = habilitado) }
+            BotaoTexto(stringResource(Res.string.mod_duplicar), { a.aoDuplicar(m) }, habilitado = estado.podeDuplicar(m))
+            a.aoEditar?.takeIf { ModeloComoDieta.editavel(m) }?.let { editar -> BotaoTexto(stringResource(Res.string.mod_editar), { editar(m) }, habilitado = estado.podeEscrever) }
+            if (!m.doSistema) BotaoTexto(stringResource(Res.string.mod_apagar), { a.aoApagar(m) }, habilitado = estado.podeEscrever)
+            a.aoUsar?.let { usar -> BotaoContornado(stringResource(Res.string.mod_usar), { usar(m) }, habilitado = estado.podeUsar(m)) }
         }
     }
 }
@@ -103,4 +103,5 @@ fun textoMensagemModelos(m: MensagemModelos): String = stringResource(when (m) {
     MensagemModelos.DUPLICADO -> Res.string.mod_duplicado
     MensagemModelos.APAGADO -> Res.string.mod_apagado
     MensagemModelos.SALVO -> Res.string.mod_salvo
+    MensagemModelos.PENDENTE_DE_ENVIO -> Res.string.mod_erro_pendente
 })

@@ -40,6 +40,8 @@ import org.br.dietamais.ui.nutri.assinatura.AssinaturaCard
 import org.br.dietamais.ui.nutri.assinatura.AssinaturaViewModel
 import org.br.dietamais.ui.nutri.assinatura.ContaNutriTela
 import org.br.dietamais.ui.nutri.assinatura.PerfilNutriViewModel
+import org.br.dietamais.ui.nutri.assinatura.LembreteConsultasCard
+import org.br.dietamais.ui.nutri.assinatura.AcoesLembreteConsultas
 import org.br.dietamais.ui.privacidade.PrivacidadeCard
 import org.br.dietamais.ui.privacidade.PrivacidadeViewModel
 import org.koin.core.parameter.parametersOf
@@ -97,6 +99,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                             ListaPacienteTela(estadoLista, lista::mudarBusca, lista::remover, lista::adicionar, lista::salvar, lista::descartar, lista::recarregar,
                                 AcoesCopiaLista(lista::escolherOrigem, lista::pedirCopia, lista::confirmarCopia, lista::desistirDaCopia))
                         }
+                        AbaFicha.METAS -> org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
                         AbaFicha.EVOLUCAO -> EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
                         AbaFicha.ANAMNESE -> AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
                         else -> EstadoVazio(mensagem = stringResource(Res.string.web_aba_no_app))
@@ -116,6 +119,9 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                     val protocolos = koinViewModel<org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriViewModel>(viewModelStoreOwner = dono)
                     val estadoProtocolos by protocolos.estado.collectAsState()
                     org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriCard(estadoProtocolos, org.br.dietamais.ui.nutri.protocolos.AcoesProtocolosNutri(protocolos::mudarDobras, protocolos::mudarMassa, protocolos::salvar, protocolos::recarregar))
+                        val lembrete = koinViewModel<org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel>(viewModelStoreOwner = dono)
+                        val estadoLembrete by lembrete.estado.collectAsState()
+                        LembreteConsultasCard(estadoLembrete, AcoesLembreteConsultas(lembrete::mudarAntecedencia, lembrete::mudarExtraUmaHora, lembrete::salvar, lembrete::recarregar))
                         AssinaturaCard(estadoAssinatura, AcoesAssinatura(assinatura::assinar, assinatura::urlAberta, assinatura::recarregar))
                         val priv = koinViewModel<PrivacidadeViewModel>(viewModelStoreOwner = dono) { parametersOf(false) }
                         val estadoPriv by priv.estado.collectAsState()

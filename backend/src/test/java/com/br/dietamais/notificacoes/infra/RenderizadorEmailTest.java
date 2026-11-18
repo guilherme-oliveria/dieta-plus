@@ -36,4 +36,12 @@ class RenderizadorEmailTest {
 		assertThat(sete.assunto()).contains("teste");assertThat(sete.html()).contains("7 dias").doesNotContain("th:text");
 		assertThat(r.renderizar(new EmailTransacional(TipoEmail.FIM_TESTE,"ficticio@example.invalid","1",Instant.parse("2026-10-26T12:00:00Z"))).html()).contains("1 dia").doesNotContain("1 dias");
 	}
+	@Test void confirmacaoDeConsultaTemDataHoraELinkSoNaOnline() {
+		var r=renderizador("dietamais://confirmar-email");var inicio=Instant.parse("2026-12-01T17:00:00Z");
+		var online=r.renderizar(new EmailTransacional(TipoEmail.CONSULTA_AGENDADA,"ficticio@example.invalid",null,inicio,inicio,"https://meet.example.invalid/sala-1"));
+		assertThat(online.assunto()).contains("consulta");
+		assertThat(online.html()).contains("01/12/2026","14:00","https://meet.example.invalid/sala-1").doesNotContain("th:text","ficticio@example.invalid");
+		var presencial=r.renderizar(new EmailTransacional(TipoEmail.CONSULTA_AGENDADA,"ficticio@example.invalid",null,inicio,inicio,null));
+		assertThat(presencial.html()).contains("01/12/2026","14:00").doesNotContain("online","href");
+	}
 }
