@@ -192,10 +192,29 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 - Conferido: `CampoNumero` já abria o teclado decimal e a vírgula já era aceita. Faltava a tecla de ação: agora é "Próximo" (leva o foco ao campo seguinte) e "Concluir" no último campo de cada seção de medidas do `AvaliacaoTela`. Nos demais usos de `CampoNumero` (infantil, exames, necessidades) fica "Próximo"; marcar o último campo desses passos fica para quando houver necessidade.
 - Sem mudança visual: nada a atualizar no canvas.
 
+## MOB-85 · Agenda: visão do mês (18/11/2026)
+
+Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S S (começa no domingo), um ponto por consulta (até 3), o dia de hoje destacado e o dia escolhido com borda verde, cada dia com `contentDescription` "19 de novembro, 2 consultas" (", hoje" no dia de hoje). Abaixo, a lista do dia escolhido com as consultas e os horários livres; tocar em "Horário livre" abre a nova consulta com data e hora preenchidas. Divergências:
+
+- "Dia", "Semana" e "Mês" continuam como os chips que a agenda já usava, não como abas segmentadas. A navegação também é a que já existia ("Anterior" e "Próximo" com o título "Novembro de 2026" no meio), e não as setas redondas do artboard. No mês, ela anda de mês em mês.
+- O título da lista usa a abreviação do dia que a agenda já usa: "qui, 19/11" (o artboard tem "Quinta, 19/11").
+- Os horários livres são sugeridos em hora cheia dentro de um expediente padrão de 8h às 18h, sem os que já passaram. Horas livres seguidas viram uma linha só (a primeira do intervalo), para a lista não crescer. A nutri ainda não configura o expediente.
+- As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
+- A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
+- A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.
+
 ## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
 
 - Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
 - O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
+
+## MOB-91 · Metas do paciente e modelos de metas (18/11/2026)
+
+- Artboards `A-Metas-Paciente`, `A-Meta-Nova` e `A-Modelos-Meta` (DES-19). A aba "Metas" entra na ficha logo depois do Resumo. As abas "Adesão" e "Saúde" do artboard vêm de outras tarefas (MOB-89 pôs a adesão no Resumo; MOB-82 traz Saúde).
+- O título da meta de atividade é o tipo ("Atividade (min)"), não "Caminhada": o backend só aceita nome em "Sim ou não" e "Contador" (RN-MET-01).
+- "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
+- Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
+- Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
 
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 

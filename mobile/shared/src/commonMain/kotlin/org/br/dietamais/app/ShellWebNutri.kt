@@ -99,6 +99,7 @@ fun ShellWebNutri(nome: String, aoSair: () -> Unit, aoPrepararNavegacao: (androi
                             ListaPacienteTela(estadoLista, lista::mudarBusca, lista::remover, lista::adicionar, lista::salvar, lista::descartar, lista::recarregar,
                                 AcoesCopiaLista(lista::escolherOrigem, lista::pedirCopia, lista::confirmarCopia, lista::desistirDaCopia))
                         }
+                        AbaFicha.METAS -> org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
                         AbaFicha.PRESCRICOES -> org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
                         AbaFicha.EVOLUCAO -> EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
                         AbaFicha.ANAMNESE -> AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
