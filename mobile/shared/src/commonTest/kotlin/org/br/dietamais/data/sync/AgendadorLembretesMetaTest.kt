@@ -66,11 +66,13 @@ class AgendadorLembretesMetaTest {
         val notificacao = Notificacao()
         val metas = Metas(mapOf(meta.id to listOf(LocalTime(20, 0))), DadosMetasPaciente(listOf(meta)))
         val agendador = AgendadorLembretes(SemDieta, SemRotina, Preferencias, notificacao, { textos() }, relogio, { TimeZone.UTC }, flowOf(Unit), metas = metas)
-        backgroundScope.launch { agendador.executar() }
+        var erro: Throwable? = null; var terminou = false
+        backgroundScope.launch { try { agendador.executar(); terminou = true } catch (t: Throwable) { erro = t; throw t } }
         advanceUntilIdle()
+        assertNull(erro, "o agendador falhou: ${erro?.stackTraceToString()?.take(1500)}")
         // a meta acaba amanhã: hoje e amanhã às 20h, nada depois
         assertEquals(2, planejarLembretesMeta(listOf(meta), emptyList(), metas.lembretes.value, relogio.now(), TimeZone.UTC).size, "planejador")
-        assertTrue(notificacao.consultas > 0, "o agendador não chegou a conferir a permissão")
+        assertTrue(notificacao.consultas > 0, "o agendador não chegou a conferir a permissão (terminou=$terminou)")
         assertTrue(textosPedidos > 0, "o agendador parou antes de montar os textos (cancelou ${notificacao.cancelou} vez(es))")
         val l = assertNotNull(notificacao.agendados, "nada agendado (cancelou ${notificacao.cancelou} vez(es))")
         assertEquals(listOf(Instant.parse("2026-11-17T20:00:00Z"), Instant.parse("2026-11-18T20:00:00Z")), l.map { it.quando })
