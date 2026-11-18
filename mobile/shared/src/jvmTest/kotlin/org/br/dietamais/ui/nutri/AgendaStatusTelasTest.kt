@@ -13,7 +13,7 @@ import kotlin.test.*
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-/** MOB-84: artboards `A-Consulta-Form` e `A-Consulta-Status`. */
+/** MOB-84: artboards `A-Consulta-Form` e `A-Consulta-Status`; nos três tamanhos conferido na MOB-98. */
 @OptIn(ExperimentalTestApi::class)
 class AgendaStatusTelasTest {
     private val fuso = TimeZone.of("America/Sao_Paulo")
@@ -47,6 +47,20 @@ class AgendaStatusTelasTest {
         onNodeWithText("Como foi a consulta? Marcar aqui também atualiza o comparecimento no financeiro.").assertExists()
         onNodeWithContentDescription("Mais ações").performClick(); onNodeWithText("Faltou").performClick()
         assertEquals(consulta.id to StatusConsulta.FALTA, marcou)
+    }
+
+    @Test fun formularioECartaoNosTresTamanhos() {
+        listOf(Size(390f, 1600f), Size(834f, 1600f), Size(1280f, 1600f)).forEach { tamanho ->
+            runSkikoComposeUiTest(size = tamanho) {
+                val estado = EstadoAgenda(dia, pacientes = listOf(ana), formulario = FormularioConsulta(modalidade = ModalidadeConsulta.ONLINE))
+                setContent { DietaTheme { FormularioConsultaTela(estado, AcoesFormularioConsulta()) } }
+                onNodeWithTag("consulta-link").assertExists(); onNodeWithText("Só você vê. Não vai para o paciente.").assertExists()
+            }
+            runSkikoComposeUiTest(size = tamanho) {
+                setContent { DietaTheme { AgendaTela(EstadoAgenda(dia, consultas = listOf(consulta), pacientes = listOf(ana)), AcoesAgenda(), fuso, depois) } }
+                onNodeWithText("Link: meet.exemplo.invalid/abc").assertExists(); onNodeWithContentDescription("Mais ações").assertExists()
+            }
+        }
     }
 
     @Test fun realizadaMostraSeloEsoCorrigeParaFalta() = runSkikoComposeUiTest(size = Size(390f, 1200f)) {

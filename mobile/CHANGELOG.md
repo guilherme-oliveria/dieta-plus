@@ -8,9 +8,25 @@ Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [S
 
 - MOB-58: carrega a base IANA de fusos no Wasm para abrir e calcular avaliações na web sem `IllegalTimeZoneException` em `America/Sao_Paulo`. Preserva o dia local, a virada do aniversário e o horário de verão histórico; inclui regressão no Chromium para a idade infantil e a prévia adulta.
 - **Web:** cadastro de nutri bloqueado (termos de uso não configurados no `main.kt`); árvore de acessibilidade desatualizada depois que folha ou diálogo fecha; autofill de senha não funciona (campos do Compose não são `<input>`). Detalhes e medições em `docs/arquitetura/web.md`.
-- MOB-18b Ações Comi/Troquei/Pulei na notificação, MOB-27b push no iOS, MOB-29b escrita offline de dietas, listas e modelos, MOB-31b pacotes do desktop no CI, MOB-33b envio da logo, MOB-35a beta interno (assinatura de release, Play Console, TestFlight).
+- MOB-18b Ações Comi/Troquei/Pulei na notificação, MOB-27b push no iOS, MOB-31b pacotes do desktop no CI, MOB-33b envio da logo, MOB-35a beta interno (assinatura de release, Play Console, TestFlight).
 - MOB-46 Publicação da web na VPS (depende do BE-32b).
 - Conferir com leitor de tela real (NVDA, VoiceOver, TalkBack), Safari e Firefox (G-14).
+
+## [1.4.0] — M11: saúde, consultas, hábitos, prescrições, documentos e planos (fechada na develop em 18/11/2026)
+
+Histórias H-01 a H-07 do `docs/plano-de-execucao-1.4.0.md` (raiz do monorepo), com as decisões D-03 a D-12 (a D-07 mudou: a água virou meta).
+
+- **Contrato e offline:** MOB-81 DTOs novos e opcionais da 1.4.0, JSONs do contrato com teste e enums desconhecidos tratados. MOB-29b rascunho de dieta, MOB-29c lista de substituição e modelo de questionário, MOB-29d modelo de dieta: todos gravam no aparelho e na fila na mesma transação.
+- **H-01 Saúde e restrições:** MOB-82 aba "Saúde" na ficha (alergia, intolerância, condição, medicamento, com gravidade, observação e marcadores) e selo no cabeçalho. MOB-83 alerta de intolerância e confirmação de alergia no montador, com os mesmos vetores do backend e a recusa `ALERGIA_NAO_CONFIRMADA` ao publicar.
+- **H-02 Consultas:** MOB-84 formulário com tipo, modalidade, link `https`, orientação ao paciente e observação interna; "Realizada" e "Faltou" no menu, ligados ao financeiro. MOB-85 visão do mês. MOB-86 lembrete das consultas na Conta da nutri. MOB-87 próxima consulta do paciente com "Entrar na consulta".
+- **H-03 Humor e fora do plano:** MOB-88 fome antes e sensação depois no registro da refeição e "Comi algo fora do plano", offline. MOB-89 médias da semana e registros na adesão do paciente.
+- **H-04 Metas de hábito:** MOB-90 metas no Hoje com sequência e progresso da semana. MOB-99 a água passa a ser uma meta, mantendo "Desfazer último" e "Outro valor". MOB-90b lembrete local por meta. MOB-91 cadastro, modelos e cumprimento na ficha.
+- **H-05 Prescrições:** MOB-92 suplementos, orientações com negrito e lista, modelos de orientação. MOB-93 "Suplementos" e "Orientações" do paciente, com lembrete local do suplemento.
+- **H-06 Documentos:** MOB-94 modelos, emitir atestado e declaração, anular com motivo e compartilhar o PDF. MOB-95 "Documentos" no Perfil do paciente, lista offline.
+- **H-07 Planos:** MOB-96 comparação mensal/anual lida da API, uso dos limites, contagem do teste e aviso no painel; sem preço nem botão quando a chave `exibePrecoEBotao` não permite (D-09).
+- **Testes:** MOB-97 ponta a ponta da web das histórias (`e2e/historias-1-4-0.spec.ts`) com a trava de acessibilidade em cada tela nova, e as 10 abas da ficha no `acessibilidade.spec.ts`.
+- **Fechamento (MOB-98):** versão 1.4.0 no Android (`versionCode` 10400), iOS, desktop e web (`X-App-Versao`); `telas.md` e `divergencias.md` atualizados; cópias dos docs comuns iguais às do backend.
+- Pendente: o planejador por porções ainda não mostra os alertas de alergia (itens por grupo); a web do paciente não tem metas nem prescrições (só online, ver `divergencias.md`).
 
 ## [1.3.0] — M9 e M10: necessidades, protocolos, crianças, exames e anamnese (16/11/2026)
 
