@@ -191,3 +191,8 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Conferido: `CampoNumero` já abria o teclado decimal e a vírgula já era aceita. Faltava a tecla de ação: agora é "Próximo" (leva o foco ao campo seguinte) e "Concluir" no último campo de cada seção de medidas do `AvaliacaoTela`. Nos demais usos de `CampoNumero` (infantil, exames, necessidades) fica "Próximo"; marcar o último campo desses passos fica para quando houver necessidade.
 - Sem mudança visual: nada a atualizar no canvas.
+
+## MOB-86 · Lembrete das consultas na Conta da nutri (18/11/2026)
+
+- Artboard `A-Conta-Lembrete` (DES-17). O bloco "Ao agendar · E-mail de confirmação ao paciente" aparece como texto informativo, sem interruptor: o backend (BE-72) não tem preferência para desligar esse e-mail. Se entrar, vira um campo novo e opcional em `PUT /eu/nutri/preferencias-agenda`.
+- O cartão fica dentro da Conta (entre "Meus protocolos" e a assinatura), não numa tela própria "Agenda e lembretes".
