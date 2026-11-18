@@ -55,18 +55,33 @@ class AgendaViewModel(private val consultas: PortaConsultas, private val pacient
 
     fun mudarModo(modo: ModoAgenda) = atual.update { it.copy(modo = modo) }
     fun hoje() = irPara(agora().toLocalDateTime(fuso()).date)
-    fun anterior() = irPara(atual.value.dia.minus(passo(), DateTimeUnit.DAY))
-    fun proximo() = irPara(atual.value.dia.plus(passo(), DateTimeUnit.DAY))
+    fun anterior() = irPara(deslocar(-1))
+    fun proximo() = irPara(deslocar(1))
     fun irPara(dia: LocalDate) {
         atual.update { it.copy(dia = dia) }
         val c = centro
         if (c != null && c.daysUntil(dia).let { it > 20 || it < -20 }) recarregar()
     }
-    private fun passo() = if (atual.value.modo == ModoAgenda.SEMANA) 7 else 1
+    /** Dia anda de um em um, semana de sete, mês de mês em mês (MOB-85: o dia 31 vai para o último dia do mês seguinte). */
+    private fun deslocar(sentido: Int): LocalDate {
+        val dia = atual.value.dia
+        return when (atual.value.modo) {
+            ModoAgenda.DIA -> dia.plus(sentido, DateTimeUnit.DAY)
+            ModoAgenda.SEMANA -> dia.plus(7 * sentido, DateTimeUnit.DAY)
+            ModoAgenda.MES -> dia.plus(sentido, DateTimeUnit.MONTH)
+        }
+    }
 
     fun nova(pacienteId: Uuid? = null) {
         if (atual.value.enviando) return
         atual.update { it.copy(formulario = FormularioConsulta(pacienteId = pacienteId, data = formatarData(it.dia), chave = novoIdLocal()), errosFormulario = emptySet(), conflitosAvisados = 0, erro = null, aviso = null) }
+    }
+
+    /** MOB-85: tocar num horário livre da visão do mês abre a nova consulta com a data e a hora já preenchidas. */
+    fun novaEm(dia: LocalDate, hora: Int) {
+        if (atual.value.enviando || hora !in 0..23) return
+        atual.update { it.copy(dia = dia, formulario = FormularioConsulta(data = formatarData(dia), hora = hora.toString().padStart(2, '0') + ":00", chave = novoIdLocal()),
+            errosFormulario = emptySet(), conflitosAvisados = 0, erro = null, aviso = null) }
     }
 
     fun remarcar(id: Uuid) {
