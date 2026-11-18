@@ -267,3 +267,14 @@ Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba 
 - O selo "Nova" marca a orientação que o paciente ainda não abriu **neste aparelho**: a marca de lida não vai para o servidor.
 - As orientações anteriores abrem com "Ler" e fecham com "Recolher", em vez de abrir uma tela própria.
 - Na web, o paciente ainda não vê Suplementos e Orientações: o backend só entrega essas coleções pelo `/sync`, que a web não usa. Precisa de `GET /eu/suplementos` e `GET /eu/orientacoes` (fica para uma tarefa do backend).
+## MOB-94 · Nutri: documentos (18/11/2026)
+
+Artboards: `A-Documentos-Paciente`, `A-Documento-Emitir`, `A-Documento-Anular` e `A-Modelos-Documento`. Divergências:
+
+- A aba "Documentos" entra no fim das abas da ficha (depois de Anamnese), não entre Prescrições e Saúde.
+- "Compartilhar PDF" abre o link assinado (10 min) no navegador, que oferece baixar e compartilhar; o app não chama a folha de compartilhamento do sistema.
+- O atestado pede data e horário (opcional). O campo "dias de afastamento" do artboard não existe no backend (os campos são paciente, data, horário, nutri e CRN): a nutri escreve no texto do modelo.
+- A prévia troca os campos no aparelho, só para conferência; quem preenche o documento de verdade é o servidor.
+- Anular abre uma folha com o motivo, em vez de um diálogo por cima da lista.
+- "Modelos de documento" é um cartão na Conta (como "Meus protocolos"), não uma tela própria. "Inserir campo" acrescenta o campo no fim do texto, não na posição do cursor.
+- Na agenda, "Emitir declaração" fica em "Mais ações" das consultas realizadas e abre a mesma folha de emissão.
