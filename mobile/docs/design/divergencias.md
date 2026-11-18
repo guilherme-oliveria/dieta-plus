@@ -305,6 +305,14 @@ Artboard: `P-Hoje-Metas` (a água é uma das metas). Divergências:
 - Não houve migração do banco local. O servidor já devolve o histórico de água como registros da meta (BE-86), e os copos antigos que ainda estavam na fila seguem pelo caminho antigo e continuam somando no dia até o envio. Assim nada se perde e nada conta duas vezes.
 - Sem a meta de água no aparelho (vínculo sem meta ou backend antigo), o cartão funciona como antes: grava pelo caminho antigo e usa 35 ml × peso.
 - Na web (só online) nada muda: ela lê a água de `GET /eu/rotina`, que o servidor mantém com o mesmo total.
+## MOB-90b · Lembrete local por meta (18/11/2026)
+
+Artboard: `P-Metas-Semana` ("Lembrete neste aparelho"). Divergências:
+
+- O artboard não mostra como escolher os horários. Ao ligar, a meta recebe horários sugeridos (água: 9:00, 13:00 e 17:00; as outras: 20:00), e "Mudar horários" abre um campo de texto ("9:00, 13:00"), com até 4 horários.
+- O aviso do rodapé não traz as horas do silêncio ("22:00 às 7:00"): diz só que os lembretes não tocam no horário de silêncio, que o paciente ajusta em Notificações.
+- Além do silêncio, o lembrete não toca no dia em que a meta diária já foi cumprida, nem no resto da semana em que a semanal já está completa.
+- O texto da notificação é genérico ("Hora de registrar sua meta"), sem o nome nem o valor da meta, e a notificação não tem os botões de refeição.
 
 ## MOB-96 · Assinatura: comparar planos (18/11/2026)
 

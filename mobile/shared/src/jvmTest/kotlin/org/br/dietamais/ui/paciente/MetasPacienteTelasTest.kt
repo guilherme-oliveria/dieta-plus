@@ -83,4 +83,29 @@ class MetasPacienteTelasTest {
             }
         }
     }
+
+    // ---- MOB-90b (artboard `P-Metas-Semana`: "Lembrete neste aparelho")
+    @Test fun semanaTemOLembreteDeCadaMetaComOsHorarios() {
+        tamanhos.forEach { tamanho ->
+            runSkikoComposeUiTest(size = tamanho) {
+                val trocas = mutableListOf<Pair<Uuid, Boolean>>(); var editou: Uuid? = null
+                val e = estado().copy(lembretes = mapOf(frutas.id to listOf(kotlinx.datetime.LocalTime(9, 0), kotlinx.datetime.LocalTime(13, 0), kotlinx.datetime.LocalTime(17, 0))))
+                setContent { DietaTheme { MetasSemanaTela(e, AcoesMetasPaciente(aoLembrete = { id, l -> trocas += id to l }, aoEditarHorarios = { editou = it })) } }
+                onNodeWithText("9:00, 13:00 e 17:00").performScrollTo().assertExists()
+                onNodeWithTag("lembrete-${frutas.id}").assertIsOn()
+                onNodeWithTag("lembrete-${caminhada.id}").performScrollTo().assertIsOff().performClick()
+                assertEquals(listOf(caminhada.id to true), trocas)
+                onNodeWithText("Mudar horários").performScrollTo().performClick(); assertEquals(frutas.id, editou)
+                onNodeWithText("Os lembretes não tocam no seu horário de silêncio.").performScrollTo().assertExists()
+            }
+        }
+    }
+
+    @Test fun edicaoDosHorariosMostraOCampoEOErro() = runSkikoComposeUiTest(size = Size(360f, 2000f)) {
+        var salvou = false
+        val e = estado().copy(lembretes = mapOf(frutas.id to listOf(kotlinx.datetime.LocalTime(20, 0))), editandoHorarios = frutas.id, textoHorarios = "25h", erroHorarios = true)
+        setContent { DietaTheme { MetasSemanaTela(e, AcoesMetasPaciente(aoSalvarHorarios = { salvou = true })) } }
+        onNodeWithText("Use de 1 a 4 horários, como 9:00, 13:00.").performScrollTo().assertExists()
+        onNodeWithText("Salvar horários").performScrollTo().performClick(); assertTrue(salvou)
+    }
 }

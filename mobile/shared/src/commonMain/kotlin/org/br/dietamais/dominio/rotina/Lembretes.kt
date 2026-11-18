@@ -53,4 +53,6 @@ data class RotulosAcoes(val comi: String, val troquei: String, val pulei: String
 /** Textos já montados (sem dado clínico) da notificação local; [corpo] recebe o nome da refeição. */
 data class TextosLembrete(val titulo: String, val corpo: (String) -> String, val acoes: RotulosAcoes,
     /** Lembrete de suplemento (MOB-93): texto genérico, sem o nome nem a dose. */
-    val tituloSuplemento: String = titulo, val corpoSuplemento: String = "")
+    val tituloSuplemento: String = titulo, val corpoSuplemento: String = "",
+    /** Lembrete de meta (MOB-90b): texto genérico, sem o nome nem o valor da meta. */
+    val tituloMeta: String = titulo, val corpoMeta: String = "")

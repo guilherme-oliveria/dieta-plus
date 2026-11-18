@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -12,13 +13,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.plus
 import org.br.dietamais.data.remoto.dto.FrequenciaMeta
 import org.br.dietamais.data.remoto.dto.TipoMeta
+import org.br.dietamais.dominio.metas.MAX_HORARIOS_META
 import org.br.dietamais.dominio.metas.ProgressoMeta
+import org.br.dietamais.dominio.metas.formatarHora
 import org.br.dietamais.dominio.metas.SituacaoDia
 import org.br.dietamais.dominio.metas.segundaDe
 import org.br.dietamais.dominio.metas.textoAlvo
@@ -34,10 +38,13 @@ import kotlin.uuid.Uuid
 
 class AcoesMetasPaciente(val aoSomar: (Uuid, Double) -> Unit = { _, _ -> }, val aoCumpri: (Uuid) -> Unit = {}, val aoAbrirOutro: (Uuid) -> Unit = {},
     val aoTextoOutro: (String) -> Unit = {}, val aoConfirmarOutro: () -> Unit = {}, val aoAbrirSemana: () -> Unit = {}, val aoFecharSemana: () -> Unit = {},
-    val aoTentarNovamente: () -> Unit = {})
+    val aoTentarNovamente: () -> Unit = {},
+    /** MOB-90b */
+    val aoLembrete: (Uuid, Boolean) -> Unit = { _, _ -> }, val aoEditarHorarios: (Uuid) -> Unit = {}, val aoTextoHorarios: (String) -> Unit = {},
+    val aoSalvarHorarios: () -> Unit = {})
 
 fun acoesMetasPaciente(vm: MetasPacienteViewModel) = AcoesMetasPaciente(vm::somar, vm::cumpriHoje, vm::abrirOutro, vm::mudarTextoOutro, vm::confirmarOutro,
-    vm::abrirSemana, vm::fecharSemana, vm::tentarNovamente)
+    vm::abrirSemana, vm::fecharSemana, vm::tentarNovamente, vm::alternarLembrete, vm::editarHorarios, vm::mudarTextoHorarios, vm::salvarHorarios)
 
 @Composable
 fun MetasPacienteRota(vm: MetasPacienteViewModel) {
@@ -148,15 +155,16 @@ fun MetasSemanaTela(estado: EstadoMetasPaciente, acoes: AcoesMetasPaciente) {
                 subtitulo = stringResource(Res.string.pacmeta_semana_periodo, diaMes(segunda), diaMes(domingo), nomeDia(hoje.dayOfWeek)))
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.paddingCard).testTag("metas-semana"),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacoMedio)) {
-                estado.semana.forEach { p -> CartaoMetaSemana(p) }
+                estado.semana.forEach { p -> CartaoMetaSemana(p, estado, acoes) }
                 Text(stringResource(Res.string.pacmeta_semana_ajuda), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(Res.string.pacmeta_lembrete_silencio), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
 @Composable
-private fun CartaoMetaSemana(p: ProgressoMeta) {
+private fun CartaoMetaSemana(p: ProgressoMeta, estado: EstadoMetasPaciente, acoes: AcoesMetasPaciente) {
     val m = p.meta
     CardDieta(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -172,7 +180,38 @@ private fun CartaoMetaSemana(p: ProgressoMeta) {
         }
         Text(textoSemana(p) ?: stringResource(Res.string.pacmeta_dias_ate_agora, p.semana.diasCumpridos, p.semana.diasPrevistos),
             style = MaterialTheme.typography.bodySmall)
+        LembreteMeta(p, estado, acoes)
     }
+}
+
+/** MOB-90b (artboard `P-Metas-Semana`): "Lembrete neste aparelho" com os horários; só fica no aparelho. */
+@Composable
+private fun LembreteMeta(p: ProgressoMeta, estado: EstadoMetasPaciente, acoes: AcoesMetasPaciente) {
+    val id = p.meta.id
+    val horarios = estado.lembretes[id].orEmpty()
+    val ligado = horarios.isNotEmpty()
+    Row(Modifier.fillMaxWidth().heightIn(min = Dimens.alvoToque).toggleable(ligado, role = Role.Switch) { acoes.aoLembrete(id, it) }
+        .testTag("lembrete-$id"), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.pacmeta_lembrete), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            if (ligado) Text(listaHorarios(horarios), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(ligado, onCheckedChange = null)
+    }
+    if (!ligado) return
+    BotaoTexto(stringResource(Res.string.pacmeta_lembrete_mudar), { acoes.aoEditarHorarios(id) }, selecionado = estado.editandoHorarios == id)
+    if (estado.editandoHorarios == id) {
+        CampoTexto(stringResource(Res.string.pacmeta_lembrete_rotulo, MAX_HORARIOS_META), estado.textoHorarios, acoes.aoTextoHorarios, Modifier.fillMaxWidth(),
+            erro = if (estado.erroHorarios) stringResource(Res.string.pacmeta_lembrete_invalido, MAX_HORARIOS_META) else null)
+        BotaoPrincipal(stringResource(Res.string.pacmeta_lembrete_salvar), acoes.aoSalvarHorarios)
+    }
+}
+
+/** "9:00, 13:00 e 17:00". */
+@Composable
+private fun listaHorarios(horarios: List<kotlinx.datetime.LocalTime>): String {
+    val textos = horarios.map { formatarHora(it) }
+    return if (textos.size == 1) textos.single() else stringResource(Res.string.pacmeta_lembrete_e, textos.dropLast(1).joinToString(", "), textos.last())
 }
 
 @Composable

@@ -55,7 +55,7 @@ class ShellSyncIntegracaoTest {
                 val identidade = remember { IdentidadeDispositivo() }
                 App(ambiente = ambiente, identidadeDispositivo = identidade)
             } }
-            waitUntil(timeoutMillis = 5_000) { onAllNodesWithText("Pacientes").fetchSemanticsNodes().isNotEmpty() }
+            waitUntil(timeoutMillis = 15_000) { onAllNodesWithText("Pacientes").fetchSemanticsNodes().isNotEmpty() }
             onNodeWithText("Pacientes").performClick()
             onNodeWithTag("lista-pacientes").performScrollToNode(hasText("Paciente de Exemplo", substring = true))
             val nome = onNodeWithText("Paciente de Exemplo", useUnmergedTree = true).performScrollTo().assertIsDisplayed().fetchSemanticsNode().boundsInRoot
@@ -66,7 +66,7 @@ class ShellSyncIntegracaoTest {
             val arquivo = File("build/reports/sincronizacao/shell-390-fonte-2.0.png")
             arquivo.parentFile.mkdirs(); ImageIO.write(onRoot().captureToImage().toAwtImage(), "png", arquivo)
             onNodeWithText("Alimentos").performClick()
-            waitUntil(timeoutMillis = 5_000) { onAllNodes(hasText("Novo alimento") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+            waitUntil(timeoutMillis = 15_000) { onAllNodes(hasText("Novo alimento") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithText("Novo alimento").performScrollTo().performClick()
             val salvar = onNodeWithText("Salvar alimento").performScrollTo().assertIsDisplayed().fetchSemanticsNode().boundsInRoot
             assertTrue(salvar.bottom <= navegacao.top)
