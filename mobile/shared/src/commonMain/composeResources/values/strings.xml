@@ -825,6 +825,33 @@
     <string name="agenda_dia_sex">sex</string>
     <string name="agenda_dia_sab">sáb</string>
     <string name="agenda_dia_dom">dom</string>
+    <!-- MOB-85: visão do mês -->
+    <string name="agenda_mes">Mês</string>
+    <string name="agenda_mes_titulo">%1$s de %2$d</string>
+    <string name="agenda_mes_1">Janeiro</string>
+    <string name="agenda_mes_2">Fevereiro</string>
+    <string name="agenda_mes_3">Março</string>
+    <string name="agenda_mes_4">Abril</string>
+    <string name="agenda_mes_5">Maio</string>
+    <string name="agenda_mes_6">Junho</string>
+    <string name="agenda_mes_7">Julho</string>
+    <string name="agenda_mes_8">Agosto</string>
+    <string name="agenda_mes_9">Setembro</string>
+    <string name="agenda_mes_10">Outubro</string>
+    <string name="agenda_mes_11">Novembro</string>
+    <string name="agenda_mes_12">Dezembro</string>
+    <string name="agenda_mes_iniciais">D,S,T,Q,Q,S,S</string>
+    <string name="agenda_mes_celula_livre">%1$d de %2$s, livre</string>
+    <string name="agenda_mes_celula_uma">%1$d de %2$s, 1 consulta</string>
+    <string name="agenda_mes_celula_varias">%1$d de %2$s, %3$d consultas</string>
+    <string name="agenda_mes_celula_hoje">%1$s, hoje</string>
+    <string name="agenda_mes_dia_titulo">%1$s, %2$s</string>
+    <string name="agenda_mes_contagem_nenhuma">Sem consultas</string>
+    <string name="agenda_mes_contagem_uma">1 consulta</string>
+    <string name="agenda_mes_contagem_varias">%1$d consultas</string>
+    <string name="agenda_livre">Horário livre</string>
+    <string name="agenda_livre_descricao">Nova consulta %1$s às %2$s</string>
+    <string name="agenda_mes_sem_livre">Sem horário livre no expediente (8h às 18h).</string>
     <string name="agenda_prox_titulo">Próxima consulta</string>
     <string name="agenda_prox_quando">%1$s às %2$s · %3$s</string>
     <!-- MOB-87 -->
