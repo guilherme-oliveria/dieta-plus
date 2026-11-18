@@ -199,7 +199,10 @@ test("H-07: a nutri compara os planos na Conta", async ({ page }) => {
   await entrar(page, NUTRI_EXEMPLO);
   await expect(page.getByRole("heading", { name: "Início" })).toBeAttached({ timeout: 30_000 });
   await tocar(page, "Conta");
-  await expect(page.getByRole("heading", { name: "Planos" })).toBeAttached({ timeout: 30_000 });
-  await veTexto(page, /Até \d+ pacientes|Pacientes sem limite/);
+  await expect(page.getByRole("heading", { name: "Minha assinatura" })).toBeAttached({ timeout: 30_000 });
+  // Na web os planos vêm como cartões de escolha (radio) com preço e limite; o título "Planos" só existe na versão sem preço
+  // das lojas (D-09). O texto do cartão pode sair no nome acessível do radio, por isso as duas formas.
+  const limite = /Até \d+ pacientes|Pacientes sem limite/;
+  await expect(page.getByRole("radio", { name: limite }).or(page.getByText(limite)).first()).toBeAttached({ timeout: 30_000 });
   await conferirAcessibilidade(page, "Conta: planos");
 });
