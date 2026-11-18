@@ -2,7 +2,6 @@ package com.br.dietamais.documentos.api;
 
 import com.br.dietamais.comum.api.*;
 import com.br.dietamais.documentos.aplicacao.*;
-import com.br.dietamais.relatorios.api.PdfResposta;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;

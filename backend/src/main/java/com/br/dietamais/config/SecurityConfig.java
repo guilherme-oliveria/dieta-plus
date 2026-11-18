@@ -37,6 +37,7 @@ public class SecurityConfig {
 						.requestMatchers("/actuator/health/**").permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.GET,"/legal/terms-of-use").permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.GET,"/api/v1/planos").permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET,"/api/v1/documentos/conferir/*").permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.GET,"/cal/*").permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.GET,"/api/v1/convites/*").permitAll()
 						.requestMatchers(org.springframework.http.HttpMethod.POST,"/api/v1/convites/*/aceitar").permitAll()
