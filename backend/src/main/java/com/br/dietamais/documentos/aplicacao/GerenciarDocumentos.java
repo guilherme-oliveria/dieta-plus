@@ -9,7 +9,6 @@ import com.br.dietamais.documentos.dominio.PreenchimentoDocumento;
 import com.br.dietamais.documentos.infra.DocumentoStore;
 import com.br.dietamais.documentos.infra.ModeloDocumentoStore;
 import com.br.dietamais.pacientes.api.*;
-import com.br.dietamais.relatorios.api.PdfResposta;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;

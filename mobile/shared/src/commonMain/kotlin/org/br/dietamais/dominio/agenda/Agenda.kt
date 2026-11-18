@@ -109,6 +109,19 @@ fun formularioDe(consulta: ConsultaResposta, fuso: TimeZone): FormularioConsulta
         modalidade = modalidade, link = link.orEmpty(), orientacao = consulta.orientacaoPaciente.orEmpty(), observacao = consulta.observacaoInterna.orEmpty())
 }
 
+/**
+ * MOB-87 (D-03): o que o paciente vê da consulta. Tipo e modalidade já resolvidos (o tipo legado "Online" vira Retorno + Online, C-02),
+ * link só `https` e só com modalidade online, local que não é o link, e a orientação da nutri. Nunca a observação interna.
+ */
+data class ConsultaDoPaciente(val tipo: TipoConsulta, val modalidade: ModalidadeConsulta, val link: String?, val lugar: String?, val orientacao: String?, val duracaoMin: Int)
+
+fun consultaDoPaciente(consulta: ConsultaResposta, fuso: TimeZone): ConsultaDoPaciente {
+    val f = formularioDe(consulta, fuso)
+    val link = f.link.trim().takeIf { f.modalidade == ModalidadeConsulta.ONLINE && linkValido(it) }
+    val lugar = consulta.lugar?.trim()?.takeIf { it.isNotEmpty() && it != link }
+    return ConsultaDoPaciente(f.tipo, f.modalidade, link, lugar, consulta.orientacaoPaciente?.trim()?.takeIf { it.isNotEmpty() }, consulta.duracaoMin)
+}
+
 /** RN-AGE-03: Realizada e Falta saem de Agendada e se corrigem entre si; Cancelada é final. */
 fun podeMarcar(consulta: ConsultaResposta, destino: StatusConsulta): Boolean = when (destino) {
     StatusConsulta.REALIZADA -> consulta.status == StatusConsulta.AGENDADA || consulta.status == StatusConsulta.FALTA

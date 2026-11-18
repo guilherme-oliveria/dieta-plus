@@ -859,6 +859,14 @@
     <string name="fora_erro_hora">Informe um horário válido que já passou (HH:MM).</string>
     <string name="fora_registrado">Registro fora do plano salvo</string>
     <string name="perfil_pergunta_humor">Perguntar fome e como fiquei depois de comer</string>
+    <!-- MOB-87 -->
+    <string name="agenda_prox_hoje">Hoje, %1$s</string>
+    <string name="agenda_prox_amanha">Amanhã, %1$s</string>
+    <string name="agenda_prox_data">%1$s, %2$s</string>
+    <string name="agenda_prox_tipo_duracao">%1$s · %2$d min</string>
+    <string name="agenda_prox_entrar">Entrar na consulta</string>
+    <string name="agenda_prox_entrar_ajuda">Abre a chamada pelo link que a nutri cadastrou.</string>
+    <string name="agenda_prox_orientacao">Orientação da nutri</string>
     <string name="pendencias_motivo">Motivo: %1$s</string>
     <string name="pendencias_codigo_LIMITE_PACIENTES_ATINGIDO">o limite de pacientes do plano foi atingido</string>
     <string name="pendencias_codigo_ASSINATURA_INATIVA">a assinatura não está ativa</string>

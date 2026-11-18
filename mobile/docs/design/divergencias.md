@@ -203,3 +203,19 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 - A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
 - O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
 - Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
+
+## MOB-87 · Paciente: próxima consulta (18/11/2026)
+
+Artboard: `P-Proxima-Consulta`. O cartão do Hoje mostra:
+
+- o título com o selo da modalidade;
+- "Hoje, 15:00", "Amanhã, 15:00" ou a data;
+- "Retorno · 50 min";
+- o local, quando presencial;
+- "Entrar na consulta" com a explicação, só quando a consulta é online e o link é `https`;
+- a "Orientação da nutri".
+
+O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
+
+- A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
+- O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.

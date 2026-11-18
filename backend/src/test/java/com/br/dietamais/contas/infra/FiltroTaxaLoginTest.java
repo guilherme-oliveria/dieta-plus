@@ -45,4 +45,27 @@ class FiltroTaxaLoginTest {
 		filtro.doFilter(outra,new MockHttpServletResponse(),(request,response) -> processados.incrementAndGet());
 		assertThat(processados.get()).isEqualTo(4);
 	}
+
+	/** BE-79, RN-DOC-03: a conferência pública de documentos tem o próprio limite por IP (padrão 30 por minuto). */
+	@Test void limitaAConferenciaPublicaDeDocumentos() throws Exception {
+		var mapper = JsonMapper.builder().build();
+		var filtro = new FiltroTaxaLogin(Clock.fixed(Instant.parse("2026-10-25T12:00:00Z"), ZoneOffset.UTC),new FabricaProblema(mapper),10,10,60,2);
+		var processados = new AtomicInteger();
+		for (int i = 0; i < 3; i++) {
+			var req = new MockHttpServletRequest("GET","/api/v1/documentos/conferir/ABCD-EFGH-JKM" + (i + 2));req.setRemoteAddr("192.0.2.1");
+			var resposta = new MockHttpServletResponse();
+			filtro.doFilter(req,resposta,(request,response) -> processados.incrementAndGet());
+			if (i == 2) {
+				assertThat(resposta.getStatus()).isEqualTo(429);assertThat(resposta.getHeader("Retry-After")).isNotBlank();
+				assertThat(mapper.readTree(resposta.getContentAsString()).path("codigo").asString()).isEqualTo("TAXA_EXCEDIDA");
+			}
+		}
+		assertThat(processados.get()).isEqualTo(2);
+		// outro IP e o endpoint de planos seguem livres
+		var outroIp = new MockHttpServletRequest("GET","/api/v1/documentos/conferir/ABCD-EFGH-JKMN");outroIp.setRemoteAddr("192.0.2.9");
+		filtro.doFilter(outroIp,new MockHttpServletResponse(),(request,response) -> processados.incrementAndGet());
+		var planos = new MockHttpServletRequest("GET","/api/v1/planos");planos.setRemoteAddr("192.0.2.1");
+		filtro.doFilter(planos,new MockHttpServletResponse(),(request,response) -> processados.incrementAndGet());
+		assertThat(processados.get()).isEqualTo(4);
+	}
 }
