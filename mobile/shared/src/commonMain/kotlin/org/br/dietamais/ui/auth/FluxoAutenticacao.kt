@@ -234,7 +234,11 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             Column(Modifier.fillMaxSize()) {
                 AnamnesePacienteRota(anamnese)
                 ProximaConsultaRota(koinViewModel<ConsultasPacienteViewModel>(viewModelStoreOwner = dono))
-                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua), Modifier.weight(1f))
+                HojeTela(estado, AcoesHoje(vm::mudarDia, vm::marcar, vm::abrirTroca, vm::beberAgua, vm::desfazerCheckin, vm::desfazerAgua,
+                    aoFome = vm::escolherFome, aoSensacao = vm::escolherSensacao, aoSalvarHumor = vm::salvarHumor, aoPularHumor = vm::pularHumor,
+                    aoAbrirFora = vm::abrirForaDoPlano, aoTextoFora = vm::mudarTextoFora, aoRefeicaoFora = vm::mudarRefeicaoFora,
+                    aoHoraFora = vm::mudarHoraFora, aoRegistrarFora = vm::registrarForaDoPlano, aoFecharFora = vm::fecharForaDoPlano,
+                    aoDesfazerFora = vm::desfazerForaDoPlano), Modifier.weight(1f))
             }
             TrocaTela(estado, vm::escolherSubstituto, vm::confirmarTroca, vm::cancelarTroca)
         },
@@ -261,7 +265,7 @@ private fun NavegacaoPaciente(aoContaExcluida: () -> Unit) {
             val estadoPriv by priv.estado.collectAsState()
             LaunchedEffect(estadoPriv.contaExcluida) { if (estadoPriv.contaExcluida) aoContaExcluida() }
             PerfilPacienteTela(estadoPerfil, AcoesPerfil(perfil::mudarLembretes, perfil::mudarTipo, perfil::mudarSilencioAtivo, perfil::mudarInicio,
-                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink),
+                perfil::mudarFim, perfil::salvar, perfil::gerarLink, perfil::revogarLink, perfil::mudarPerguntaHumor),
                 extras = { PrivacidadeCard(estadoPriv, acoesPrivacidade(priv), comDadosPessoais = true) })
         })
 }
@@ -275,6 +279,7 @@ private fun NavegacaoNutri() {
     conteudoPacientes = { classe, vinculo, abrir, voltar ->
         PacientesRota(pacientes, classe, vinculo, abrir, voltar, abaConteudo = { aba, paciente ->
           if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+          else if (aba == AbaFicha.PRESCRICOES) org.br.dietamais.ui.nutri.prescricoes.PrescricoesPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
           else if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.AVALIACOES) AvaliacoesNutriRota(koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.sexo, paciente.dataNascimento, koinViewModel<org.br.dietamais.ui.nutri.avaliacao.ExamesNutriViewModel>(viewModelStoreOwner = dono), paciente.nome)
           else if (aba == AbaFicha.ANAMNESE) AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)

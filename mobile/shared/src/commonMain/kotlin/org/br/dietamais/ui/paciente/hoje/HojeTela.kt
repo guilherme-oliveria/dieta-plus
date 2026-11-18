@@ -26,7 +26,10 @@ import org.br.dietamais.ui.theme.Dimens
 import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
 
-class AcoesHoje(val aoMudarDia: (LocalDate) -> Unit, val aoMarcar: (Uuid, StatusCheckin) -> Unit, val aoTrocar: (Uuid) -> Unit, val aoBeberAgua: (Int) -> Unit, val aoDesfazer: () -> Unit = {}, val aoDesfazerAgua: () -> Unit = {})
+class AcoesHoje(val aoMudarDia: (LocalDate) -> Unit, val aoMarcar: (Uuid, StatusCheckin) -> Unit, val aoTrocar: (Uuid) -> Unit, val aoBeberAgua: (Int) -> Unit, val aoDesfazer: () -> Unit = {}, val aoDesfazerAgua: () -> Unit = {},
+    val aoFome: (Int) -> Unit = {}, val aoSensacao: (Int) -> Unit = {}, val aoSalvarHumor: () -> Unit = {}, val aoPularHumor: () -> Unit = {},
+    val aoAbrirFora: () -> Unit = {}, val aoTextoFora: (String) -> Unit = {}, val aoRefeicaoFora: (Uuid?) -> Unit = {}, val aoHoraFora: (String) -> Unit = {},
+    val aoRegistrarFora: () -> Unit = {}, val aoFecharFora: () -> Unit = {}, val aoDesfazerFora: () -> Unit = {})
 
 /** Aba Hoje: dia, próxima refeição com Comi/Troquei/Pulei, demais refeições e água (MOB-14, 15, 17). */
 @Composable
@@ -41,6 +44,7 @@ fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier =
             estado.dieta == null -> EstadoVazio(mensagem = stringResource(Res.string.pac_sem_dieta))
             else -> {
                 if (estado.podeDesfazer) AvisoDesfazer(stringResource(Res.string.pac_checkin_registrado), stringResource(Res.string.pac_desfazer), acoes.aoDesfazer)
+                if (estado.podeDesfazerFora) AvisoDesfazer(stringResource(Res.string.fora_registrado), stringResource(Res.string.pac_desfazer), acoes.aoDesfazerFora)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno)) {
                     estado.dias.forEach { d ->
                         val extenso = descricaoDia(d)
@@ -74,10 +78,15 @@ fun HojeTela(estado: EstadoDietaPaciente, acoes: AcoesHoje, modifier: Modifier =
                         }
                     }
                 }
+                // MOB-88: registro rápido do que saiu do plano, sem julgamento
+                BotaoContornado(stringResource(Res.string.fora_abrir), acoes.aoAbrirFora, Modifier.fillMaxWidth())
                 CardAgua(estado, acoes)
             }
         }
     }
+    estado.humor?.let { FolhaHumor(it, acoes.aoFome, acoes.aoSensacao, acoes.aoSalvarHumor, acoes.aoPularHumor) }
+    estado.foraDoPlano?.let { FolhaForaDoPlano(it, estado.errosForaDoPlano, estado.refeicoes, acoes.aoTextoFora, acoes.aoRefeicaoFora,
+        acoes.aoHoraFora, acoes.aoRegistrarFora, acoes.aoFecharFora) }
 }
 
 @Composable

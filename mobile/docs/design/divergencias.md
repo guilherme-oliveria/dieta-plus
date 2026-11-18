@@ -215,6 +215,12 @@ Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S 
 - "Novo" modelo salva as metas em vigor do paciente aberto (sem a água, RN-MET-04), com um nome. Editar os itens de um modelo existente fica para depois: hoje dá para excluir e salvar de novo. "Usado em N pacientes" não aparece porque o contrato não traz essa contagem.
 - Início e fim são digitados (dd/mm/aaaa), sem seletor de calendário. Apagar o fim de uma meta não limpa no servidor (no PATCH, campo nulo não muda).
 - Escrita e leitura online (C-09): sem rede os botões ficam desabilitados com o aviso.
+## MOB-88 · Fome, sensação e fora do plano (18/11/2026)
+
+- Artboards `P-Refeicao-Humor`, `P-Fora-Plano` e `P-Perfil-Preferencias` (DES-18). As duas folhas usam `AlertDialog` (centralizado), não folha de baixo: é o padrão de diálogo do app hoje e funciona igual nos 3 tamanhos.
+- A pergunta aparece só depois de "Comi". Em "Troquei" o registro vem do fluxo de troca, que já tem a sua confirmação; levar as escalas para lá fica para depois, se a nutri pedir.
+- O prazo de 5 s do "Desfazer" começa ao tocar Salvar ou Pular. Fechar a folha pelo fundo conta como Pular.
+- Na web (online-only) a preferência de desligar a pergunta fica só na memória da sessão, porque não há banco local.
 
 ## MOB-87 · Paciente: próxima consulta (18/11/2026)
 
@@ -232,6 +238,15 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
 
+## MOB-92 · Nutri: prescrever e orientar (18/11/2026)
+
+Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
+
+- Suplementos e orientações ficam numa aba só da ficha, "Prescrições", com dois chips (Suplementos e Orientações), para não somar mais duas abas.
+- Os botões "B" e "•≡" acrescentam o negrito e o item de lista no fim do texto, não na posição do cursor: o `CampoTexto` comum não expõe a seleção.
+- Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
+- "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
+- Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
 ## MOB-93 · Paciente: suplementos e orientações (18/11/2026)
 
 Artboards: `P-Suplementos` e `P-Orientacoes`. As duas telas abrem dentro da aba Dieta, por um cartão de atalho ("Suplementos · 3 em uso", "Orientações · 1 nova") que só aparece quando a nutri já prescreveu ou orientou algo. O push "nova orientação" abre a aba Dieta com as Orientações. Divergências:

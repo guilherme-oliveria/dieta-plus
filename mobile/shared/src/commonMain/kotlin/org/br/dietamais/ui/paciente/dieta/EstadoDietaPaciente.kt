@@ -12,6 +12,9 @@ enum class MensagemDietaPaciente { SEM_CONEXAO, CONFLITO, ERRO }
 /** Troca em andamento: [escolhas] mapeia itemId do snapshot -> alimento substituto escolhido (RN-SUB). */
 data class EstadoTroca(val refeicaoId: Uuid, val escolhas: Map<Uuid, Uuid> = emptyMap(), val itemId: Uuid? = null)
 
+/** MOB-88: pergunta de fome antes e sensação depois, aberta depois de "Comi" (1 a 5, opcionais). */
+data class EstadoHumor(val refeicaoId: Uuid, val nomeRefeicao: String, val fome: Int? = null, val sensacao: Int? = null)
+
 data class EstadoDietaPaciente(
     val carregado: Boolean = false, val dieta: DietaSnapshotResposta? = null, val refeicoes: List<RefeicaoResposta> = emptyList(),
     val proxima: RefeicaoResposta? = null, val alternativas: List<DietaSnapshotResposta> = emptyList(),
@@ -25,6 +28,9 @@ data class EstadoDietaPaciente(
     val podeDesfazer: Boolean = false,
     /** MOB-UX-05: há lançamento de água ainda não enviado. */
     val podeDesfazerAgua: Boolean = false,
+    /** MOB-88 */
+    val humor: EstadoHumor? = null, val foraDoPlano: FormularioForaDoPlano? = null, val errosForaDoPlano: Set<ErroForaDoPlano> = emptySet(),
+    val podeDesfazerFora: Boolean = false,
 ) {
     val gruposListaVisiveis get() = filtrarListaPaciente(gruposLista, buscaLista, grupoListaFiltro)
     val ehHoje get() = dia != null && dia == hoje
