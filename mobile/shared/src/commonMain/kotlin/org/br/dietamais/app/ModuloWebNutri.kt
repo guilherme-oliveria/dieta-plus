@@ -43,6 +43,7 @@ fun moduloWebNutri(ambiente: AmbienteWeb, compartilhamento: Compartilhamento) = 
     val online = ambiente.conectividade.estado.map { it != EstadoConexao.INDISPONIVEL }
     single<Compartilhamento> { compartilhamento }
     single<PortaPacientes> { PacientesOnline(get()) }
+    viewModel { org.br.dietamais.ui.nutri.paciente.SaudePacienteViewModel(get()) }
     single<PortaAlimentos> { AlimentosOnline(get()) }
     single<PortaDietas> { DietasRepositorio(get<ApiDieta>()) { } }
     single<PortaPdf> { PdfRepositorio(get()) }
