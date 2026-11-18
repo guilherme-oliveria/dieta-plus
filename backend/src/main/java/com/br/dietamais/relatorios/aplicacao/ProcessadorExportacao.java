@@ -3,6 +3,7 @@ package com.br.dietamais.relatorios.aplicacao;
 import com.br.dietamais.avaliacoes.api.AvaliacaoResposta;
 import com.br.dietamais.comum.api.*;
 import com.br.dietamais.dietas.api.DietaSnapshotResposta;
+import com.br.dietamais.documentos.api.ArquivosDocumentoPaciente;
 import com.br.dietamais.notificacoes.api.*;
 import com.br.dietamais.relatorios.infra.ExportacaoStore;
 import com.br.dietamais.relatorios.infra.ExportacaoStore.Pedido;
@@ -35,12 +36,12 @@ public class ProcessadorExportacao {
 	public static final String PREFIXO="exportacao";
 	static final Duration VALIDADE=Duration.ofHours(24);
 	static final int MAX_TENTATIVAS=3;
-	private final ExportacaoStore store;private final ContextoPaciente contextos;private final ColetaDadosPaciente coleta;private final ServicoPdf pdfs;
+	private final ExportacaoStore store;private final ContextoPaciente contextos;private final ColetaDadosPaciente coleta;private final ServicoPdf pdfs;private final ArquivosDocumentoPaciente documentos;
 	private final Armazenamento armazenamento;private final EnfileirarEmail emails;private final GeradorIds ids;private final Clock relogio;private final JsonMapper mapper;private final TransactionTemplate tx;
 	private final SecureRandom aleatorio=new SecureRandom();
-	public ProcessadorExportacao(ExportacaoStore store,ContextoPaciente contextos,ColetaDadosPaciente coleta,ServicoPdf pdfs,Armazenamento armazenamento,EnfileirarEmail emails,
-			GeradorIds ids,Clock relogio,JsonMapper mapper,TransactionTemplate tx){
-		this.store=store;this.contextos=contextos;this.coleta=coleta;this.pdfs=pdfs;this.armazenamento=armazenamento;this.emails=emails;this.ids=ids;this.relogio=relogio;this.mapper=mapper;this.tx=tx;
+	public ProcessadorExportacao(ExportacaoStore store,ContextoPaciente contextos,ColetaDadosPaciente coleta,ServicoPdf pdfs,ArquivosDocumentoPaciente documentos,Armazenamento armazenamento,
+			EnfileirarEmail emails,GeradorIds ids,Clock relogio,JsonMapper mapper,TransactionTemplate tx){
+		this.store=store;this.contextos=contextos;this.coleta=coleta;this.pdfs=pdfs;this.documentos=documentos;this.armazenamento=armazenamento;this.emails=emails;this.ids=ids;this.relogio=relogio;this.mapper=mapper;this.tx=tx;
 	}
 
 	@Scheduled(fixedDelayString="${dieta.exportacao.intervalo:PT30S}",initialDelayString="${dieta.exportacao.atraso-inicial:PT20S}")
@@ -100,6 +101,8 @@ public class ProcessadorExportacao {
 			entrada(zip,"LEIAME.txt",LEIAME.getBytes(StandardCharsets.UTF_8));
 			for(var s:snapshots)entrada(zip,"dietas/"+ServicoPdf.slug(s.titulo())+"-"+curto(s.id())+".pdf",pdfs.dietaBytes(s));
 			for(var a:avaliacoes)entrada(zip,"avaliacoes/avaliacao-"+a.dataHora().toString().substring(0,10)+"-"+curto(a.id())+".pdf",pdfs.avaliacaoBytes(a));
+			// BE-84: atestados e declarações recebidos, no PDF original
+			for(var d:documentos.doPaciente(contexto.exigirPaciente()))entrada(zip,"documentos/"+d.nome(),d.conteudo());
 			zip.finish();
 			return saida.toByteArray();
 		}catch(java.io.IOException erro){throw new java.io.UncheckedIOException(erro);}
@@ -115,8 +118,9 @@ public class ProcessadorExportacao {
 	static final String LEIAME="""
 		Cópia dos seus dados no Dieta+ (LGPD, art. 18).
 
-		dados.json: tudo o que o aplicativo mostra a você (perfil, vínculos com nutricionistas, dietas recebidas, registros de rotina, avaliações compartilhadas, questionários, consultas e avisos).
+		dados.json: tudo o que o aplicativo mostra a você (perfil, restrições de saúde, vínculos com nutricionistas, dietas recebidas, registros de rotina com humor e o que comeu fora do plano, metas e seus registros, suplementos, orientações, avaliações compartilhadas, questionários, consultas, documentos e avisos).
 		dietas/ e avaliacoes/: os mesmos planos e avaliações em PDF.
+		documentos/: atestados e declarações que você recebeu, em PDF.
 
 		Este arquivo contém dados de saúde. Guarde-o em lugar seguro e não o compartilhe.
 		""";
