@@ -45,6 +45,10 @@ public class DocumentoStore {
 	public Metadados metadadosDoPaciente(UUID id,UUID paciente){
 		return jdbc.query(META+"where id=? and paciente_id=? and excluido_em is null",this::mapearMeta,id,paciente).stream().findFirst().orElse(null);
 	}
+	/** Todos os documentos do paciente com o PDF guardado, para a exportação (BE-84). */
+	public List<Metadados> metadadosDoPaciente(UUID paciente){
+		return jdbc.query(META+"where paciente_id=? and excluido_em is null order by emitido_em desc,id desc",this::mapearMeta,paciente);
+	}
 	public List<DocumentoPacienteResposta> doPaciente(UUID paciente){
 		return jdbc.query(META+"where paciente_id=? and excluido_em is null order by emitido_em desc,id desc",this::mapearMeta,paciente).stream().map(Metadados::resposta).toList();
 	}

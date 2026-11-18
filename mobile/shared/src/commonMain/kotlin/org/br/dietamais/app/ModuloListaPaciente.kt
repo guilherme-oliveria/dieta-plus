@@ -80,7 +80,8 @@ fun moduloDietaPaciente(ambiente: AmbienteDieta?) = module {
     single<org.br.dietamais.data.repositorio.PortaDietaPaciente> { org.br.dietamais.data.repositorio.DietaPacienteRepositorio(get(), get()) }
     single<org.br.dietamais.data.repositorio.PortaRotina> { org.br.dietamais.data.repositorio.RotinaRepositorio(get()) }
     viewModel { org.br.dietamais.ui.paciente.dieta.DietaPacienteViewModel(get(), get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL },
-        aoGravar = { ambiente?.solicitarLeitura() }) }
+        aoGravar = { ambiente?.solicitarLeitura() },
+        perguntarHumor = getOrNull<org.br.dietamais.data.repositorio.PortaPreferencias>()?.observarPerguntaHumor() ?: kotlinx.coroutines.flow.flowOf(true)) }
 }
 
 fun moduloLembretes(notificacao: org.br.dietamais.plataforma.NotificacaoLocal?) = module {
@@ -109,6 +110,8 @@ fun moduloPerfilNutri(ambiente: AmbienteDieta?) = module {
     viewModel { org.br.dietamais.ui.nutri.protocolos.ProtocolosNutriViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaMetasNutri> { org.br.dietamais.data.repositorio.MetasNutriRepositorio(get()) }
     viewModel { org.br.dietamais.ui.nutri.metas.MetasNutriViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
+    single<org.br.dietamais.data.repositorio.PortaPrescricoesNutri> { org.br.dietamais.data.repositorio.PrescricoesNutriRepositorio(get()) }
+    viewModel { org.br.dietamais.ui.nutri.prescricoes.PrescricoesNutriViewModel(get(), getOrNull(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaPreferenciasAgenda> { org.br.dietamais.data.repositorio.PreferenciasAgendaRepositorio(get()) }
     viewModel { org.br.dietamais.ui.nutri.assinatura.LembreteConsultasViewModel(get(), conectividade = ambiente?.conectividade?.estado?.map { it != EstadoConexao.INDISPONIVEL }) }
     single<org.br.dietamais.data.repositorio.PortaPrivacidade> { org.br.dietamais.data.repositorio.PrivacidadeRepositorio(get()) }
