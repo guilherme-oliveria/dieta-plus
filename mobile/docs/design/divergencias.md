@@ -212,3 +212,15 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
+
+## MOB-94 · Nutri: documentos (18/11/2026)
+
+Artboards: `A-Documentos-Paciente`, `A-Documento-Emitir`, `A-Documento-Anular` e `A-Modelos-Documento`. Divergências:
+
+- A aba "Documentos" entra no fim das abas da ficha (depois de Anamnese), não entre Prescrições e Saúde.
+- "Compartilhar PDF" abre o link assinado (10 min) no navegador, que oferece baixar e compartilhar; o app não chama a folha de compartilhamento do sistema.
+- O atestado pede data e horário (opcional). O campo "dias de afastamento" do artboard não existe no backend (os campos são paciente, data, horário, nutri e CRN): a nutri escreve no texto do modelo.
+- A prévia troca os campos no aparelho, só para conferência; quem preenche o documento de verdade é o servidor.
+- Anular abre uma folha com o motivo, em vez de um diálogo por cima da lista.
+- "Modelos de documento" é um cartão na Conta (como "Meus protocolos"), não uma tela própria. "Inserir campo" acrescenta o campo no fim do texto, não na posição do cursor.
+- Na agenda, "Emitir declaração" fica em "Mais ações" das consultas realizadas e abre a mesma folha de emissão.

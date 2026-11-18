@@ -33,7 +33,9 @@ import kotlin.uuid.Uuid
 data class AcoesAgenda(val aoModo: (ModoAgenda) -> Unit = {}, val aoAnterior: () -> Unit = {}, val aoProximo: () -> Unit = {}, val aoHoje: () -> Unit = {}, val aoNova: () -> Unit = {},
     val aoRemarcar: (Uuid) -> Unit = {}, val aoCancelar: (Uuid) -> Unit = {}, val aoAtualizar: () -> Unit = {}, val aoFinanceiro: (Uuid) -> Unit = {},
     /** MOB-84 (RN-AGE-03): "Realizada" ou "Faltou". */
-    val aoMarcar: (Uuid, StatusConsulta) -> Unit = { _, _ -> })
+    val aoMarcar: (Uuid, StatusConsulta) -> Unit = { _, _ -> },
+    /** MOB-94: declaração de comparecimento da consulta realizada. */
+    val aoDeclaracao: (Uuid) -> Unit = {})
 
 /** Aba Agenda da nutri: dia ou semana, com criar, remarcar e cancelar (MOB-26). */
 @OptIn(ExperimentalLayoutApi::class)
@@ -116,6 +118,7 @@ private fun CartaoConsulta(c: ConsultaResposta, estado: EstadoAgenda, acoes: Aco
                         // RN-AGE-03: Realizada e Faltou saem de Agendada e se corrigem entre si (gravam offline, como remarcar)
                         if (podeMarcar(c, StatusConsulta.REALIZADA)) DropdownMenuItem({ Text(stringResource(Res.string.agenda_marcar_realizada)) }, { menu = false; acoes.aoMarcar(c.id, StatusConsulta.REALIZADA) }, enabled = online)
                         if (podeMarcar(c, StatusConsulta.FALTA)) DropdownMenuItem({ Text(stringResource(Res.string.agenda_marcar_falta)) }, { menu = false; acoes.aoMarcar(c.id, StatusConsulta.FALTA) }, enabled = online)
+                        if (c.status == StatusConsulta.REALIZADA) DropdownMenuItem({ Text(stringResource(Res.string.agenda_emitir_declaracao)) }, { menu = false; acoes.aoDeclaracao(c.id) }, enabled = financeiroLiberado)
                         if (agendada) {
                             if (passou) DropdownMenuItem({ Text(stringResource(Res.string.agenda_remarcar)) }, { menu = false; acoes.aoRemarcar(c.id) }, enabled = online)
                             else DropdownMenuItem({ Text(stringResource(Res.string.financeiro_abrir)) }, { menu = false; acoes.aoFinanceiro(c.id) }, enabled = financeiroLiberado)
