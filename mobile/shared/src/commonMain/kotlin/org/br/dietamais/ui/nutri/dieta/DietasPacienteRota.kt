@@ -49,6 +49,7 @@ fun DietasPacienteRota(viewModel: MontadorDietaViewModel, paciente: PacienteResp
         avisoModelos = biblioteca?.takeIf { !abrirBiblioteca }?.let { it.aviso ?: it.erro },
         pdf = { d ->
             BotaoPdf(stringResource(Res.string.pdf_dieta), !estado.semConexao, { pdf.link(RecursoPdf.DIETA, d.id) })
+            BotaoPdf(stringResource(Res.string.pdf_dieta_suplementos), !estado.semConexao, { pdf.link(RecursoPdf.DIETA_COM_SUPLEMENTOS, d.id) })
             org.br.dietamais.ui.comum.BotoesPdfLista(pdf, d.id, !estado.semConexao)
         })
     if (modelos != null && biblioteca != null && abrirBiblioteca) TelaSobreposta(aoFechar = { abrirBiblioteca = false }) {
