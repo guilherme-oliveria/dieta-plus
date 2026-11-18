@@ -278,6 +278,12 @@ Artboards: `A-Documentos-Paciente`, `A-Documento-Emitir`, `A-Documento-Anular` e
 - Anular abre uma folha com o motivo, em vez de um diálogo por cima da lista.
 - "Modelos de documento" é um cartão na Conta (como "Meus protocolos"), não uma tela própria. "Inserir campo" acrescenta o campo no fim do texto, não na posição do cursor.
 - Na agenda, "Emitir declaração" fica em "Mais ações" das consultas realizadas e abre a mesma folha de emissão.
+## MOB-95 · Paciente: documentos (18/11/2026)
+
+Artboard: `P-Documentos`. Os documentos aparecem num cartão "Documentos" no Perfil, que só existe quando a nutri já emitiu algum. A lista vem do banco local (coleção `documentos` do sync) no app e de `GET /eu/documentos` na web; "Abrir PDF" usa o link assinado e fica desabilitado sem internet. Divergências:
+
+- A linha não mostra o nome da nutri ("17/11/2026 · Nut. Marina" no artboard): os metadados do documento do paciente (BE-79) não trazem quem emitiu.
+- O documento anulado mostra só o selo "Anulado", sem o botão do PDF.
 
 ## MOB-90 · Paciente: metas de hábito (18/11/2026)
 
