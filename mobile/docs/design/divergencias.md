@@ -191,3 +191,14 @@ Revisão do Design e Usabilidade sobre a `develop` do `dieta-mobile` (até MOB-5
 
 - Conferido: `CampoNumero` já abria o teclado decimal e a vírgula já era aceita. Faltava a tecla de ação: agora é "Próximo" (leva o foco ao campo seguinte) e "Concluir" no último campo de cada seção de medidas do `AvaliacaoTela`. Nos demais usos de `CampoNumero` (infantil, exames, necessidades) fica "Próximo"; marcar o último campo desses passos fica para quando houver necessidade.
 - Sem mudança visual: nada a atualizar no canvas.
+
+## MOB-85 · Agenda: visão do mês (18/11/2026)
+
+Artboard: `A-Agenda-Mes`. O app segue o calendário com as iniciais D S T Q Q S S (começa no domingo), um ponto por consulta (até 3), o dia de hoje destacado e o dia escolhido com borda verde, cada dia com `contentDescription` "19 de novembro, 2 consultas" (", hoje" no dia de hoje). Abaixo, a lista do dia escolhido com as consultas e os horários livres; tocar em "Horário livre" abre a nova consulta com data e hora preenchidas. Divergências:
+
+- "Dia", "Semana" e "Mês" continuam como os chips que a agenda já usava, não como abas segmentadas. A navegação também é a que já existia ("Anterior" e "Próximo" com o título "Novembro de 2026" no meio), e não as setas redondas do artboard. No mês, ela anda de mês em mês.
+- O título da lista usa a abreviação do dia que a agenda já usa: "qui, 19/11" (o artboard tem "Quinta, 19/11").
+- Os horários livres são sugeridos em hora cheia dentro de um expediente padrão de 8h às 18h, sem os que já passaram. Horas livres seguidas viram uma linha só (a primeira do intervalo), para a lista não crescer. A nutri ainda não configura o expediente.
+- As consultas da lista usam o mesmo cartão da visão do dia, com Remarcar, Financeiro e o menu, em vez da linha simples do artboard.
+- A partir de 720 dp de largura (tablet deitado e desktop), o calendário e a lista ficam lado a lado. O artboard só tem a versão do celular.
+- A visão da semana continua começando na segunda-feira (MOB-26); só o calendário do mês começa no domingo, como no artboard.

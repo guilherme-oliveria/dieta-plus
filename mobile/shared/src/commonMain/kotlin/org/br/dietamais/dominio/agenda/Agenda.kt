@@ -26,6 +26,55 @@ fun diasDaSemana(dia: LocalDate): List<LocalDate> = inicioDaSemana(dia).let { se
 fun consultasDaSemana(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone): List<Pair<LocalDate, List<ConsultaResposta>>> =
     diasDaSemana(dia).map { it to consultasDoDia(consultas, it, fuso) }
 
+/**
+ * MOB-85: grade do mês começando no domingo (como no artboard `A-Agenda-Mes`). Posições antes do dia 1 e depois do último dia são nulas;
+ * o tamanho é sempre múltiplo de 7.
+ */
+fun gradeDoMes(dia: LocalDate): List<LocalDate?> {
+    val primeiro = LocalDate(dia.year, dia.month, 1)
+    val ultimo = primeiro.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    val antes = (primeiro.dayOfWeek.ordinal + 1) % 7 // domingo = 0
+    val dias = (1..ultimo.day).map { LocalDate(dia.year, dia.month, it) }
+    val celulas = List<LocalDate?>(antes) { null } + dias
+    return celulas + List((7 - celulas.size % 7) % 7) { null }
+}
+
+/** Consultas não canceladas por dia do mês de `dia` (dias sem consulta ficam fora do mapa). */
+fun consultasPorDiaDoMes(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone): Map<LocalDate, Int> =
+    consultas.filter { it.status != StatusConsulta.CANCELADA }.map { diaLocal(it.inicio, fuso) }
+        .filter { it.year == dia.year && it.month == dia.month }.groupingBy { it }.eachCount()
+
+/** Linha da lista do dia na visão do mês: uma consulta ou um horário livre (hora cheia) que abre a nova consulta já preenchida. */
+sealed interface LinhaDoDia {
+    val minutoDoDia: Int
+    data class Consulta(val consulta: ConsultaResposta, override val minutoDoDia: Int) : LinhaDoDia
+    data class Livre(val hora: Int) : LinhaDoDia { override val minutoDoDia get() = hora * 60 }
+}
+
+/** Expediente padrão para sugerir horário livre na visão do mês (MOB-85). */
+const val EXPEDIENTE_INICIO = 8
+const val EXPEDIENTE_FIM = 18
+
+/**
+ * MOB-85: consultas do dia (inclusive canceladas, como na visão do dia) e os horários livres do expediente em hora cheia.
+ * Horas livres seguidas viram uma linha só (a primeira do intervalo), para a lista não crescer; horário que já passou não é oferecido.
+ */
+fun linhasDoDia(consultas: List<ConsultaResposta>, dia: LocalDate, fuso: TimeZone, agora: Instant,
+    inicio: Int = EXPEDIENTE_INICIO, fim: Int = EXPEDIENTE_FIM): List<LinhaDoDia> {
+    val doDia = consultasDoDia(consultas, dia, fuso)
+    val ocupadas = doDia.filter { it.status != StatusConsulta.CANCELADA }
+    val livres = mutableListOf<LinhaDoDia.Livre>()
+    var anteriorLivre = false
+    for (h in inicio until fim) {
+        val comeco = LocalDateTime(dia, LocalTime(h, 0)).toInstant(fuso)
+        val livre = comeco >= agora && ocupadas.none { it.inicio < comeco + 60.minutes && comeco < it.fim }
+        if (livre && !anteriorLivre) livres += LinhaDoDia.Livre(h)
+        anteriorLivre = livre
+    }
+    val linhas = doDia.map { c -> c.inicio.toLocalDateTime(fuso).let { LinhaDoDia.Consulta(c, it.hour * 60 + it.minute) } } + livres
+    return linhas.sortedBy { it.minutoDoDia }
+}
+
 /** Próxima consulta ainda por vir (ou em andamento) que não foi cancelada. */
 fun proximaConsulta(consultas: List<ConsultaResposta>, agora: Instant): ConsultaResposta? =
     consultas.filter { it.status == StatusConsulta.AGENDADA && it.fim > agora }.minByOrNull { it.inicio }
