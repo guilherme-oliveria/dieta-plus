@@ -231,3 +231,13 @@ O paciente nunca vê a observação interna nem "Faltou" (D-03). Divergências:
 
 - A segunda linha não traz o nome da nutri ("Retorno com Nut. Luciana" no artboard): a consulta do sync não tem o nome, e o paciente já sabe com quem marcou.
 - O botão "Adicionar à agenda" do artboard não entrou: a consulta ainda não tem `.ics` próprio no contrato, e o link de agenda do perfil cobre só as refeições. Fica para quando o backend oferecer o evento da consulta.
+
+## MOB-92 · Nutri: prescrever e orientar (18/11/2026)
+
+Artboards: `A-Suplementos-Paciente` e `A-Orientacao-Nova`. Divergências:
+
+- Suplementos e orientações ficam numa aba só da ficha, "Prescrições", com dois chips (Suplementos e Orientações), para não somar mais duas abas.
+- Os botões "B" e "•≡" acrescentam o negrito e o item de lista no fim do texto, não na posição do cursor: o `CampoTexto` comum não expõe a seleção.
+- Horários são digitados separados por vírgula (`08:00, 20:00`) e as datas como `dd/mm/aaaa`, sem seletor de relógio ou calendário.
+- "PDF com suplementos" é um segundo botão ao lado do PDF da dieta, em vez de uma pergunta ao gerar o PDF.
+- Modelos de orientação podem ser usados e excluídos, mas não editados: para mudar, envie com o texto novo e marque "Salvar também como modelo".
