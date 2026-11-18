@@ -115,12 +115,15 @@ export async function tocarAteSumir(page: Page, nome: string | RegExp, tentativa
 //  - aria-required-attr: o Compose emite role="heading" sem aria-level;
 //  - aria-required-children: LazyColumn emite role="list" e os itens saem como botões, sem role="listitem";
 //  - aria-roles: o <canvas> sai com role="generic".
+// Fora da análise fica só o <input class="compose-backing-field">: é o campo oculto que o Compose cria para receber o teclado
+// enquanto um campo de texto tem foco. Ele não tem rótulo, mas o nome acessível do campo vai no nó de semantics (contentDescription),
+// que continua na análise. Só a regra "label" desse input some; os rótulos dos campos de verdade seguem conferidos.
 const DO_COMPOSE = new Set(["aria-required-attr", "aria-required-children", "aria-roles"]);
 
 /** Trava de acessibilidade (A6): axe-core sem violação nossa, ao menos um título e nenhum controle sem nome. */
 export async function conferirAcessibilidade(page: Page, tela: string) {
   await page.waitForTimeout(1200);
-  const { violations } = await new AxeBuilder({ page }).analyze();
+  const { violations } = await new AxeBuilder({ page }).exclude(".compose-backing-field").analyze();
   const nossas = violations.filter((v) => !DO_COMPOSE.has(v.id));
   // O nó de cada violação vai na mensagem: sem ele, o CI só diz a regra e não qual elemento falhou.
   expect(
