@@ -34,10 +34,12 @@ data class AcoesAgenda(val aoModo: (ModoAgenda) -> Unit = {}, val aoAnterior: ()
     val aoRemarcar: (Uuid) -> Unit = {}, val aoCancelar: (Uuid) -> Unit = {}, val aoAtualizar: () -> Unit = {}, val aoFinanceiro: (Uuid) -> Unit = {},
     /** MOB-84 (RN-AGE-03): "Realizada" ou "Faltou". */
     val aoMarcar: (Uuid, StatusConsulta) -> Unit = { _, _ -> },
+    /** MOB-85: escolher um dia no calendário do mês e tocar num horário livre. */
+    val aoDia: (LocalDate) -> Unit = {}, val aoNovaEm: (LocalDate, Int) -> Unit = { _, _ -> },
     /** MOB-94: declaração de comparecimento da consulta realizada. */
     val aoDeclaracao: (Uuid) -> Unit = {})
 
-/** Aba Agenda da nutri: dia ou semana, com criar, remarcar e cancelar (MOB-26). */
+/** Aba Agenda da nutri: dia, semana ou mês (MOB-85), com criar, remarcar e cancelar (MOB-26). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AgendaTela(estado: EstadoAgenda, acoes: AcoesAgenda, fuso: TimeZone = TimeZone.currentSystemDefault(), agora: Instant = Clock.System.now(), rodape: @Composable ColumnScope.() -> Unit = {}) {
@@ -49,7 +51,7 @@ fun AgendaTela(estado: EstadoAgenda, acoes: AcoesAgenda, fuso: TimeZone = TimeZo
         estado.aviso?.let { Text(textoMensagemAgenda(it), color = MaterialTheme.colorScheme.primary, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno), verticalArrangement = Arrangement.spacedBy(Dimens.espacoPequeno), itemVerticalAlignment = Alignment.CenterVertically) {
             ModoAgenda.entries.forEach { modo ->
-                ChipEscolha(estado.modo == modo, { acoes.aoModo(modo) }, label = { Text(stringResource(if (modo == ModoAgenda.DIA) Res.string.agenda_dia else Res.string.agenda_semana)) })
+                ChipEscolha(estado.modo == modo, { acoes.aoModo(modo) }, label = { Text(stringResource(when (modo) { ModoAgenda.DIA -> Res.string.agenda_dia; ModoAgenda.SEMANA -> Res.string.agenda_semana; ModoAgenda.MES -> Res.string.agenda_mes })) })
             }
             BotaoPrincipal(stringResource(Res.string.agenda_nova), acoes.aoNova, habilitado = online && estado.pacientesAgendaveis.isNotEmpty())
             BotaoTexto(stringResource(Res.string.agenda_atualizar), acoes.aoAtualizar, habilitado = !estado.atualizando && !estado.semConexao)
@@ -73,6 +75,7 @@ fun AgendaTela(estado: EstadoAgenda, acoes: AcoesAgenda, fuso: TimeZone = TimeZo
                 if (lista.isEmpty()) Text(stringResource(Res.string.agenda_vazio_semana_dia), style = MaterialTheme.typography.bodySmall)
                 else lista.forEach { CartaoConsulta(it, estado, acoes, online, fuso, agora) }
             }
+            ModoAgenda.MES -> AgendaMes(estado, acoes, online, fuso, agora) { CartaoConsulta(it, estado, acoes, online, fuso, agora) }
         }
         rodape()
     }
@@ -85,6 +88,7 @@ private fun rotuloDia(dia: LocalDate) = nomeDiaSemana(dia.dayOfWeek) + " " + for
 private fun rotuloPeriodo(estado: EstadoAgenda): String = when (estado.modo) {
     ModoAgenda.DIA -> rotuloDia(estado.dia)
     ModoAgenda.SEMANA -> diasDaSemana(estado.dia).let { formatarData(it.first()) + " – " + formatarData(it.last()) }
+    ModoAgenda.MES -> rotuloMes(estado.dia)
 }
 
 @Composable

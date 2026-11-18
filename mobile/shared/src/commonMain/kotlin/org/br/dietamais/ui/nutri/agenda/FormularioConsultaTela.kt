@@ -118,7 +118,8 @@ fun AgendaRota(viewModel: AgendaViewModel, financeiro: FinanceiroViewModel = org
     LaunchedEffect(Unit) { viewModel.abrir(); financeiro.carregarResumo() }
     val abrirFinanceiro: (Uuid) -> Unit = { id -> estado.consultas.firstOrNull { it.id == id }?.let { financeiro.abrir(it, estado.nomeDo(it.pacienteId)) } }
     AgendaTela(estado, AcoesAgenda(viewModel::mudarModo, viewModel::anterior, viewModel::proximo, viewModel::hoje, { viewModel.nova() }, viewModel::remarcar, viewModel::pedirCancelamento, viewModel::recarregar, abrirFinanceiro,
-        aoMarcar = viewModel::marcar, aoDeclaracao = { id -> estado.consultas.firstOrNull { it.id == id }?.let { documentos.emitirDaConsulta(it, estado.nomeDo(it.pacienteId).orEmpty()) } }),
+        aoMarcar = viewModel::marcar, aoDia = viewModel::irPara, aoNovaEm = viewModel::novaEm,
+        aoDeclaracao = { id -> estado.consultas.firstOrNull { it.id == id }?.let { documentos.emitirDaConsulta(it, estado.nomeDo(it.pacienteId).orEmpty()) } }),
         rodape = { ResumoFinanceiroCard(estadoFinanceiro) })
     FinanceiroTela(estadoFinanceiro, AcoesFinanceiro(financeiro::mudarComparecimento, financeiro::mudarValor, financeiro::mudarForma, financeiro::mudarPago, financeiro::salvar, financeiro::fechar))
     FormularioConsultaTela(estado, AcoesFormularioConsulta(viewModel::mudarPaciente, viewModel::mudarData, viewModel::mudarHora, viewModel::mudarDuracao, viewModel::mudarTipo,

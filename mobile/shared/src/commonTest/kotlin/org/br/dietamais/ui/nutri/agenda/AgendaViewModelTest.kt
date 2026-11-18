@@ -38,6 +38,26 @@ class AgendaViewModelTest {
         vm.hoje(); assertEquals(LocalDate(2026, 10, 28), vm.estado.value.dia)
     }
 
+    @Test fun mesAndaDeMesEmMesERecarregaAJanela() = runTest {
+        val c = PortaConsultasFalsa(); val vm = vm(c); vm.abrir(); advanceUntilIdle()
+        vm.mudarModo(ModoAgenda.MES); vm.proximo(); advanceUntilIdle()
+        assertEquals(LocalDate(2026, 11, 28), vm.estado.value.dia); assertEquals(2, c.atualizacoes) // 31 dias além do centro: busca de novo
+        vm.irPara(LocalDate(2026, 11, 30)); vm.proximo(); assertEquals(LocalDate(2026, 12, 30), vm.estado.value.dia)
+        vm.irPara(LocalDate(2027, 1, 31)); vm.proximo(); assertEquals(LocalDate(2027, 2, 28), vm.estado.value.dia) // fevereiro não tem 31
+        vm.anterior(); assertEquals(LocalDate(2027, 1, 28), vm.estado.value.dia)
+    }
+
+    @Test fun horarioLivreAbreANovaConsultaComDataEHora() = runTest {
+        val c = PortaConsultasFalsa(); val vm = vm(c); advanceUntilIdle()
+        vm.mudarModo(ModoAgenda.MES); vm.novaEm(LocalDate(2026, 10, 30), 9)
+        val form = assertNotNull(vm.estado.value.formulario)
+        assertEquals("30/10/2026", form.data); assertEquals("09:00", form.hora); assertNull(form.pacienteId); assertNull(form.id); assertNotNull(form.chave)
+        assertEquals(LocalDate(2026, 10, 30), vm.estado.value.dia)
+        vm.mudarPaciente(ana.id); vm.salvar(); advanceUntilIdle()
+        assertEquals(Instant.parse("2026-10-30T12:00:00Z"), assertNotNull(c.criada).inicio)
+        vm.novaEm(LocalDate(2026, 10, 30), 24); assertNull(vm.estado.value.formulario)
+    }
+
     @Test fun navegarMuitoLongeRecarregaAJanela() = runTest {
         val c = PortaConsultasFalsa(); val vm = vm(c); vm.abrir(); advanceUntilIdle()
         vm.irPara(LocalDate(2026, 11, 10)); advanceUntilIdle(); assertEquals(1, c.atualizacoes)

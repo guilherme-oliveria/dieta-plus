@@ -270,7 +270,8 @@ private fun NavegacaoNutri() {
     NavegacaoApp(PerfilNavegacao.NUTRICIONISTA, resolverVinculo = { ficha -> pacientes.estado.value.lista.firstOrNull { it.id.toString() == ficha }?.vinculoId?.toString() },
     conteudoPacientes = { classe, vinculo, abrir, voltar ->
         PacientesRota(pacientes, classe, vinculo, abrir, voltar, abaConteudo = { aba, paciente ->
-          if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
+          if (aba == AbaFicha.METAS) org.br.dietamais.ui.nutri.metas.MetasPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.metas.MetasNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome)
+          else if (aba == AbaFicha.EVOLUCAO) EvolucaoRota(koinViewModel<EvolucaoViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.AVALIACOES) AvaliacoesNutriRota(koinViewModel<AvaliacoesViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.sexo, paciente.dataNascimento, koinViewModel<org.br.dietamais.ui.nutri.avaliacao.ExamesNutriViewModel>(viewModelStoreOwner = dono), paciente.nome)
           else if (aba == AbaFicha.ANAMNESE) AnamneseNutriRota(koinViewModel<AnamneseNutriViewModel>(viewModelStoreOwner = dono), paciente.id)
           else if (aba == AbaFicha.DOCUMENTOS) org.br.dietamais.ui.nutri.documentos.DocumentosPacienteRota(koinViewModel<org.br.dietamais.ui.nutri.documentos.DocumentosNutriViewModel>(viewModelStoreOwner = dono), paciente.id, paciente.nome, koinInject())
