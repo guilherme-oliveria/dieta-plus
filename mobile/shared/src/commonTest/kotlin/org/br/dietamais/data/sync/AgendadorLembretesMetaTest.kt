@@ -54,7 +54,8 @@ class AgendadorLembretesMetaTest {
     }
     private class Metas(horarios: Map<Uuid, List<LocalTime>>, val dados: DadosMetasPaciente) : PortaMetasPaciente {
         val lembretes = MutableStateFlow(horarios)
-        override fun observar() = flowOf(dados)
+        var coletas = 0
+        override fun observar() = flowOf(dados).onStart { coletas++ }
         override fun registrar(metaId: Uuid, data: LocalDate, valor: Double, agora: Instant) {}
         override fun observarLembretes() = lembretes
     }
@@ -72,7 +73,7 @@ class AgendadorLembretesMetaTest {
         assertNull(erro, "o agendador falhou: ${erro?.stackTraceToString()?.take(1500)}")
         // a meta acaba amanhã: hoje e amanhã às 20h, nada depois
         assertEquals(2, planejarLembretesMeta(listOf(meta), emptyList(), metas.lembretes.value, relogio.now(), TimeZone.UTC).size, "planejador")
-        assertTrue(notificacao.consultas > 0, "o agendador não chegou a conferir a permissão (terminou=$terminou)")
+        assertTrue(notificacao.consultas > 0, "o agendador não chegou a conferir a permissão (terminou=$terminou, cancelou=${notificacao.cancelou}, coletas das metas=${metas.coletas})")
         assertTrue(textosPedidos > 0, "o agendador parou antes de montar os textos (cancelou ${notificacao.cancelou} vez(es))")
         val l = assertNotNull(notificacao.agendados, "nada agendado (cancelou ${notificacao.cancelou} vez(es))")
         assertEquals(listOf(Instant.parse("2026-11-17T20:00:00Z"), Instant.parse("2026-11-18T20:00:00Z")), l.map { it.quando })
